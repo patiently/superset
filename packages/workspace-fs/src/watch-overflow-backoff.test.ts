@@ -270,6 +270,7 @@ describe("FSEvents overflow rescan backoff", () => {
 			overflowRescanInitialMs: 50,
 			overflowRescanMaxMs: 200,
 			overflowBackoffResetMs: 10_000,
+			idleKeepAliveMs: 0,
 		});
 		const events: FsWatchEvent[] = [];
 		const unsubscribe = await manager.subscribe(
