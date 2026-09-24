@@ -70,6 +70,11 @@ const PROBE_TIMEOUT_MS = 4_000;
 const IDLE_KEEP_ALIVE_MS = 60_000;
 const MAX_IDLE_WATCHERS = 3;
 
+// A failed gitignored-dir listing (typically a timeout while every workspace
+// attaches at once) is retried until git answers, then the root re-attaches.
+const GIT_IGNORED_RETRY_INITIAL_MS = 5_000;
+const GIT_IGNORED_RETRY_MAX_MS = 5 * 60_000;
+
 // Backslash-escape every character picomatch (parcel's glob engine) treats as
 // magic, so an absolute path is matched literally when embedded in a glob.
 // Mirrors the metacharacter set `is-glob`/picomatch@2 recognize.
@@ -197,6 +202,15 @@ interface WatcherState {
 	 * targeted watch if you need it".
 	 */
 	prunedRelPrefixes: string[];
+	/**
+	 * The gitignored-dir listing failed at attach, so the static generated-dir
+	 * globs stand in for it (only when default ignores are off). Provisional:
+	 * they can hide tracked build/vendor files, so the root re-attaches with
+	 * git's answer as soon as a retry gets one.
+	 */
+	provisionalPrune: boolean;
+	gitIgnoredRetryTimer: ReturnType<typeof setTimeout> | null;
+	gitIgnoredRetryDelayMs: number;
 	filePaths: Map<string, true>;
 	directoryPaths: Set<string>;
 	pendingEvents: NativeWatchEvent[];
@@ -283,6 +297,9 @@ export interface FsWatcherManagerOptions {
 	overflowRescanInitialMs?: number;
 	overflowRescanMaxMs?: number;
 	overflowBackoffResetMs?: number;
+	/** Backoff for retrying a failed gitignored-dir listing. Test-only overrides. */
+	gitIgnoredRetryInitialMs?: number;
+	gitIgnoredRetryMaxMs?: number;
 	/** How long a watcher with no listeners stays attached; 0 disposes at once. */
 	idleKeepAliveMs?: number;
 	/** Most listener-less watchers kept attached; the longest-idle goes first. */
@@ -300,6 +317,8 @@ export class FsWatcherManager {
 	private readonly overflowRescanInitialMs: number;
 	private readonly overflowRescanMaxMs: number;
 	private readonly overflowBackoffResetMs: number;
+	private readonly gitIgnoredRetryInitialMs: number;
+	private readonly gitIgnoredRetryMaxMs: number;
 	private readonly idleKeepAliveMs: number;
 	private readonly maxIdleWatchers: number;
 	private readonly watchers = new Map<string, WatcherState>();
@@ -345,6 +364,10 @@ export class FsWatcherManager {
 			options.overflowRescanMaxMs ?? OVERFLOW_RESCAN_MAX_MS;
 		this.overflowBackoffResetMs =
 			options.overflowBackoffResetMs ?? OVERFLOW_BACKOFF_RESET_MS;
+		this.gitIgnoredRetryInitialMs =
+			options.gitIgnoredRetryInitialMs ?? GIT_IGNORED_RETRY_INITIAL_MS;
+		this.gitIgnoredRetryMaxMs =
+			options.gitIgnoredRetryMaxMs ?? GIT_IGNORED_RETRY_MAX_MS;
 		this.idleKeepAliveMs = options.idleKeepAliveMs ?? IDLE_KEEP_ALIVE_MS;
 		this.maxIdleWatchers = options.maxIdleWatchers ?? MAX_IDLE_WATCHERS;
 	}
@@ -460,6 +483,7 @@ export class FsWatcherManager {
 		}
 		this.clearOverflowRootCheck(state);
 		this.clearOverflowRescan(state);
+		this.clearGitIgnoredRetry(state);
 		state.generation += 1;
 		state.throttler.dispose();
 		const subscription = state.subscription;
@@ -630,6 +654,9 @@ export class FsWatcherManager {
 			listeners: new Set<WatchListener>(),
 			idleTimer: null,
 			prunedRelPrefixes: [],
+			provisionalPrune: false,
+			gitIgnoredRetryTimer: null,
+			gitIgnoredRetryDelayMs: this.gitIgnoredRetryInitialMs,
 			filePaths: new Map<string, true>(),
 			directoryPaths: new Set<string>(),
 			pendingEvents: [],
@@ -658,7 +685,10 @@ export class FsWatcherManager {
 	 * Split from createWatcher so root-deletion recovery can re-attach to the
 	 * same WatcherState without dropping its listeners.
 	 */
-	private async attachNativeSubscription(state: WatcherState): Promise<void> {
+	private async attachNativeSubscription(
+		state: WatcherState,
+		listedGitIgnoredRelDirs?: string[],
+	): Promise<void> {
 		const { realPath, realPathNormalized, realPathDiffers } =
 			await this.normalizePath(state.absolutePath);
 		state.realPath = realPath;
@@ -677,9 +707,14 @@ export class FsWatcherManager {
 		// about is pruned via whatever git itself considers fully ignored.
 		const [nestedRepoRelDirs, gitIgnoredRelDirs] = await Promise.all([
 			this.computeNestedRepoRelDirs(realPath),
-			this.computeGitIgnoredRelDirs(realPath),
+			listedGitIgnoredRelDirs ?? this.computeGitIgnoredRelDirs(realPath),
 		]);
-		state.prunedRelPrefixes = [...nestedRepoRelDirs, ...gitIgnoredRelDirs];
+		const listingFailed = gitIgnoredRelDirs === null;
+		state.prunedRelPrefixes = [
+			...nestedRepoRelDirs,
+			...(gitIgnoredRelDirs ?? []),
+		];
+		state.provisionalPrune = listingFailed && !this.useDefaultIgnores;
 		// Root-relative escaped globs: parcel matches ignores relative to the
 		// watch root (its defaults are all `**/…`), so an absolute path never
 		// matches. Bare paths aren't safe either — parcel's `is-glob` check
@@ -689,7 +724,13 @@ export class FsWatcherManager {
 			(relDir) => `${escapeGlobMagic(relDir)}/**`,
 		);
 
-		const ignore = [...this.ignore, ...prunedDirIgnores];
+		const ignore = [
+			...new Set([
+				...this.ignore,
+				...(state.provisionalPrune ? DEFAULT_IGNORE_PATTERNS : []),
+				...prunedDirIgnores,
+			]),
+		];
 
 		// Subscribe to the resolved real path so kernel paths come back in a
 		// consistent form; we map them back to `state.absolutePath` in
@@ -709,6 +750,74 @@ export class FsWatcherManager {
 				this.queueNativeEvents(state, events);
 			},
 		});
+
+		if (listingFailed) {
+			this.scheduleGitIgnoredRetry(state);
+		} else {
+			this.clearGitIgnoredRetry(state);
+			state.gitIgnoredRetryDelayMs = this.gitIgnoredRetryInitialMs;
+		}
+	}
+
+	private scheduleGitIgnoredRetry(state: WatcherState): void {
+		if (state.gitIgnoredRetryTimer) {
+			return;
+		}
+		const delayMs = state.gitIgnoredRetryDelayMs;
+		state.gitIgnoredRetryDelayMs = Math.min(
+			delayMs * 2,
+			this.gitIgnoredRetryMaxMs,
+		);
+		const timer = setTimeout(() => {
+			state.gitIgnoredRetryTimer = null;
+			void this.retryGitIgnoredListing(state);
+		}, delayMs);
+		timer.unref?.();
+		state.gitIgnoredRetryTimer = timer;
+	}
+
+	private clearGitIgnoredRetry(state: WatcherState): void {
+		if (state.gitIgnoredRetryTimer) {
+			clearTimeout(state.gitIgnoredRetryTimer);
+			state.gitIgnoredRetryTimer = null;
+		}
+	}
+
+	/**
+	 * The attach ran without git's ignored-dir list. Once git answers, swap the
+	 * subscription onto it: that drops a provisional generated-dir prune (which
+	 * can hide tracked files) or adds the missing gitignored prune (which
+	 * releases the inotify watches the unpruned crawl took).
+	 */
+	private async retryGitIgnoredListing(state: WatcherState): Promise<void> {
+		if (
+			this.watchers.get(state.absolutePath) !== state ||
+			!state.subscription ||
+			state.recoveryTimer
+		) {
+			// Disposed, or root recovery owns the next attach, which re-lists.
+			return;
+		}
+		const dirs = await this.computeGitIgnoredRelDirs(state.realPath);
+		if (this.watchers.get(state.absolutePath) !== state) {
+			return;
+		}
+		if (dirs === null) {
+			this.scheduleGitIgnoredRetry(state);
+			return;
+		}
+		if (await this.swapNativeSubscription(state, dirs)) {
+			// Events under the previously pruned dirs were never delivered.
+			this.emitDirect(state, {
+				events: [
+					{
+						kind: "overflow",
+						absolutePath: state.absolutePath,
+						isDirectory: true,
+					},
+				],
+			});
+		}
 	}
 
 	private queueNativeEvents(
@@ -800,8 +909,11 @@ export class FsWatcherManager {
 	 * excludesfile all honored). Snapshot at attach time: a dir created later
 	 * (first `bun dev` making `.next`) stays watched until the next attach, but
 	 * the git-watcher's own ignored-path filter caps its downstream cost.
+	 * Null when the listing failed, as opposed to git reporting nothing ignored.
 	 */
-	private async computeGitIgnoredRelDirs(realPath: string): Promise<string[]> {
+	private async computeGitIgnoredRelDirs(
+		realPath: string,
+	): Promise<string[] | null> {
 		if (!this.listGitIgnoredDirs) {
 			return [];
 		}
@@ -818,7 +930,7 @@ export class FsWatcherManager {
 				absolutePath: realPath,
 				error: toErrorMessage(error),
 			});
-			return [];
+			return null;
 		}
 	}
 
@@ -849,11 +961,21 @@ export class FsWatcherManager {
 			this.computeNestedRepoRelDirs(state.realPath),
 			this.computeGitIgnoredRelDirs(state.realPath),
 		]);
-		const fresh = new Set([...nestedRepoRelDirs, ...gitIgnoredRelDirs]);
-		const shrunk = state.prunedRelPrefixes.some((dir) => !fresh.has(dir));
-		if (!shrunk) {
+		if (gitIgnoredRelDirs === null) {
 			return false;
 		}
+		const fresh = new Set([...nestedRepoRelDirs, ...gitIgnoredRelDirs]);
+		const shrunk = state.prunedRelPrefixes.some((dir) => !fresh.has(dir));
+		if (!shrunk && !state.provisionalPrune) {
+			return false;
+		}
+		return await this.swapNativeSubscription(state, gitIgnoredRelDirs);
+	}
+
+	private async swapNativeSubscription(
+		state: WatcherState,
+		gitIgnoredRelDirs: string[],
+	): Promise<boolean> {
 		if (!state.subscription || state.recoveryTimer) {
 			// State changed while the providers ran.
 			return false;
@@ -876,7 +998,7 @@ export class FsWatcherManager {
 			return false;
 		}
 		try {
-			await this.attachNativeSubscription(state);
+			await this.attachNativeSubscription(state, gitIgnoredRelDirs);
 		} catch (error) {
 			// The root is now unwatched; a transient failure must not leave it
 			// that way silently. Reuse the root-recovery poll, which re-attaches,
@@ -924,7 +1046,7 @@ export class FsWatcherManager {
 		return isRelPathUnderPrunedDirs(
 			relative,
 			state.prunedRelPrefixes,
-			this.useDefaultIgnores,
+			this.useDefaultIgnores || state.provisionalPrune,
 		);
 	}
 
