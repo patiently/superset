@@ -65,6 +65,11 @@ const OVERFLOW_BACKOFF_RESET_MS = 120_000;
 const PROBE_PREFIX = ".superset-watcher-probe-";
 const PROBE_TIMEOUT_MS = 4_000;
 
+// Re-attaching a large worktree is a full crawl, and switching workspaces
+// releases one; the cap keeps idle cost flat as worktree count grows.
+const IDLE_KEEP_ALIVE_MS = 60_000;
+const MAX_IDLE_WATCHERS = 3;
+
 // Backslash-escape every character picomatch (parcel's glob engine) treats as
 // magic, so an absolute path is matched literally when embedded in a glob.
 // Mirrors the metacharacter set `is-glob`/picomatch@2 recognize.
@@ -151,6 +156,12 @@ interface WatcherState {
 	realPath: string;
 	realPathNormalized: string;
 	realPathDiffers: boolean;
+	/**
+	 * The attached root directory's identity. A root deleted and recreated
+	 * while nobody listens can go unreported, leaving a live-looking
+	 * subscription on a dead tree; reuse compares against this first.
+	 */
+	rootIdentity: string;
 	/** Null while suspended (root deleted, polling for recreation). */
 	subscription: NativeWatchSubscription | null;
 	recoveryTimer: ReturnType<typeof setInterval> | null;
@@ -177,6 +188,8 @@ interface WatcherState {
 	overflowsCoalesced: number;
 	lastOverflowAt: number;
 	listeners: Set<WatchListener>;
+	/** Disposes the watcher once it has sat without listeners for the keep-alive. */
+	idleTimer: ReturnType<typeof setTimeout> | null;
 	/**
 	 * Root-relative directories pruned from the native subscription beyond the
 	 * static defaults (nested repos + gitignored dirs), kept queryable so
@@ -213,6 +226,11 @@ async function unsubscribeQuietly(
 			timer.unref?.();
 		}),
 	]);
+}
+
+async function readRootIdentity(rootPath: string): Promise<string> {
+	const stats = await stat(rootPath);
+	return `${stats.dev}:${stats.ino}:${stats.birthtimeMs}`;
 }
 
 function internalToFsWatchEvent(event: InternalWatchEvent): FsWatchEvent {
@@ -265,6 +283,10 @@ export interface FsWatcherManagerOptions {
 	overflowRescanInitialMs?: number;
 	overflowRescanMaxMs?: number;
 	overflowBackoffResetMs?: number;
+	/** How long a watcher with no listeners stays attached; 0 disposes at once. */
+	idleKeepAliveMs?: number;
+	/** Most listener-less watchers kept attached; the longest-idle goes first. */
+	maxIdleWatchers?: number;
 }
 
 export class FsWatcherManager {
@@ -278,7 +300,11 @@ export class FsWatcherManager {
 	private readonly overflowRescanInitialMs: number;
 	private readonly overflowRescanMaxMs: number;
 	private readonly overflowBackoffResetMs: number;
+	private readonly idleKeepAliveMs: number;
+	private readonly maxIdleWatchers: number;
 	private readonly watchers = new Map<string, WatcherState>();
+	/** Listener-less watchers still attached, oldest-idle first. */
+	private readonly idleWatchers = new Set<WatcherState>();
 	/**
 	 * One-shot dedup so a single ENOSPC report doesn't spam logs across every
 	 * watcher creation that follows it. Mirrors VS Code's `enospcErrorLogged`
@@ -319,6 +345,8 @@ export class FsWatcherManager {
 			options.overflowRescanMaxMs ?? OVERFLOW_RESCAN_MAX_MS;
 		this.overflowBackoffResetMs =
 			options.overflowBackoffResetMs ?? OVERFLOW_BACKOFF_RESET_MS;
+		this.idleKeepAliveMs = options.idleKeepAliveMs ?? IDLE_KEEP_ALIVE_MS;
+		this.maxIdleWatchers = options.maxIdleWatchers ?? MAX_IDLE_WATCHERS;
 	}
 
 	async subscribe(
@@ -326,40 +354,102 @@ export class FsWatcherManager {
 		listener: WatchListener,
 	): Promise<() => Promise<void>> {
 		const absolutePath = normalizeAbsolutePath(options.absolutePath);
-		let state = this.watchers.get(absolutePath);
+		const existing = this.watchers.get(absolutePath);
+		if (
+			existing?.listeners.size === 0 &&
+			!(await this.isStillAttached(existing))
+		) {
+			// A concurrent subscribe may have claimed it during the stat.
+			if (existing.listeners.size === 0) {
+				await this.releaseWatcher(existing);
+			}
+		}
 
+		let state = this.watchers.get(absolutePath);
 		if (!state) {
 			state = await this.createWatcher(absolutePath);
 			this.watchers.set(absolutePath, state);
 		}
 
+		this.markActive(state);
 		state.listeners.add(listener);
 
 		return async () => {
 			const currentState = this.watchers.get(absolutePath);
-			if (!currentState) {
+			if (!currentState?.listeners.delete(listener)) {
 				return;
 			}
-
-			currentState.listeners.delete(listener);
 			if (currentState.listeners.size > 0) {
 				return;
 			}
 
-			// Remove from the map before touching the native layer so a fresh
-			// subscribe can never reuse a state whose teardown is in flight.
-			this.watchers.delete(absolutePath);
-			await this.disposeWatcherState(currentState);
+			if (
+				this.idleKeepAliveMs <= 0 ||
+				this.maxIdleWatchers <= 0 ||
+				currentState.subscription === null
+			) {
+				await this.releaseWatcher(currentState);
+				return;
+			}
+			await this.markIdle(currentState);
 		};
+	}
+
+	private async isStillAttached(state: WatcherState): Promise<boolean> {
+		if (state.subscription === null) {
+			return false;
+		}
+		try {
+			return (await readRootIdentity(state.realPath)) === state.rootIdentity;
+		} catch {
+			return false;
+		}
 	}
 
 	async close(): Promise<void> {
 		const states = Array.from(this.watchers.values());
 		this.watchers.clear();
+		this.idleWatchers.clear();
 		await Promise.all(states.map((state) => this.disposeWatcherState(state)));
 	}
 
+	private markActive(state: WatcherState): void {
+		if (state.idleTimer) {
+			clearTimeout(state.idleTimer);
+			state.idleTimer = null;
+		}
+		this.idleWatchers.delete(state);
+	}
+
+	private async markIdle(state: WatcherState): Promise<void> {
+		state.idleTimer = setTimeout(() => {
+			state.idleTimer = null;
+			void this.releaseWatcher(state);
+		}, this.idleKeepAliveMs);
+		state.idleTimer.unref?.();
+		this.idleWatchers.add(state);
+
+		const excess = this.idleWatchers.size - this.maxIdleWatchers;
+		const evicted = Array.from(this.idleWatchers).slice(0, Math.max(0, excess));
+		await Promise.all(evicted.map((idle) => this.releaseWatcher(idle)));
+	}
+
+	private async releaseWatcher(state: WatcherState): Promise<void> {
+		if (this.watchers.get(state.absolutePath) !== state) {
+			return;
+		}
+		// Remove from the map before touching the native layer so a fresh
+		// subscribe can never reuse a state whose teardown is in flight.
+		this.watchers.delete(state.absolutePath);
+		this.markActive(state);
+		await this.disposeWatcherState(state);
+	}
+
 	private async disposeWatcherState(state: WatcherState): Promise<void> {
+		if (state.idleTimer) {
+			clearTimeout(state.idleTimer);
+			state.idleTimer = null;
+		}
 		if (state.flushTimer) {
 			clearTimeout(state.flushTimer);
 			state.flushTimer = null;
@@ -524,6 +614,7 @@ export class FsWatcherManager {
 			realPath: normalizedPath,
 			realPathNormalized: normalizedPath,
 			realPathDiffers: false,
+			rootIdentity: "",
 			subscription: null,
 			recoveryTimer: null,
 			recovering: false,
@@ -537,6 +628,7 @@ export class FsWatcherManager {
 			overflowsCoalesced: 0,
 			lastOverflowAt: 0,
 			listeners: new Set<WatchListener>(),
+			idleTimer: null,
 			prunedRelPrefixes: [],
 			filePaths: new Map<string, true>(),
 			directoryPaths: new Set<string>(),
@@ -572,6 +664,7 @@ export class FsWatcherManager {
 		state.realPath = realPath;
 		state.realPathNormalized = realPathNormalized;
 		state.realPathDiffers = realPathDiffers;
+		state.rootIdentity = await readRootIdentity(realPath);
 		const generation = ++state.generation;
 
 		// Nested git repos/worktrees (agent tools pile these up — a full repo copy
