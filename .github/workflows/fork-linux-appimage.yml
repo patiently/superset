@@ -1,9 +1,9 @@
 name: Fork Linux AppImage Release
 
 # Builds the Linux AppImage the way build-desktop.yml's build-linux job does,
-# minus production secrets, after proving the GPU regression test goes red
-# without the fix and green with it. Publishes release desktop-v<VERSION> with
-# the upstream asset name.
+# minus production secrets, after proving the GPU and gitignored-dir fallback
+# regression tests go red without their fixes and green with them. Publishes
+# release desktop-v<VERSION> with the upstream asset name.
 
 on:
   push:
@@ -94,9 +94,62 @@ jobs:
         working-directory: apps/desktop
         run: bun test
 
+      - name: Gitignored-dir fallback tests fail without the fix
+        env:
+          PRE_FIX_SHA: d68c6127658a6d41c3311ce90240a6bdb2aab8a8
+        run: |
+          set -u
+          FILES="packages/workspace-fs/src/watch.ts packages/host-service/src/runtime/git/ignored-dirs.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/workspace-fs && bun test src/watch-gitignored-fallback.test.ts) > /tmp/red-fs.log 2>&1
+          (cd packages/host-service && bun test src/runtime/git/ignored-dirs.test.ts) > /tmp/red-hs.log 2>&1
+          set -e
+          cat /tmp/red-fs.log /tmp/red-hs.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          FS="FsWatcherManager gitignored-dir listing failure >"
+          expect /tmp/red-fs.log fail "$FS prunes the well-known generated dirs when the listing fails"
+          expect /tmp/red-fs.log fail "$FS re-attaches with git's list once a failed listing recovers, and tells listeners to refetch"
+          expect /tmp/red-fs.log fail "$FS reports provisionally pruned paths as pruned until git answers"
+          expect /tmp/red-fs.log fail "$FS keeps retrying with the fallback in place while the listing keeps failing"
+          expect /tmp/red-fs.log pass "$FS leaves generated dirs to git's answer when the listing succeeds"
+          expect /tmp/red-fs.log pass "$FS stops retrying once the manager is closed"
+          expect /tmp/red-fs.log pass "$FS does not add the fallback when default ignores are already on"
+          expect /tmp/red-hs.log fail "listGitIgnoredDirs > rejects when git fails on a real repo, so callers can tell failure from nothing ignored"
+          expect /tmp/red-hs.log pass "listGitIgnoredDirs > returns [] for a non-git directory"
+          expect /tmp/red-hs.log pass "listGitIgnoredDirs > returns [] for a missing path"
+          if grep -q "Unhandled error" /tmp/red-fs.log /tmp/red-hs.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Gitignored-dir fallback tests fail against the pre-fix code, as expected"
+
       - name: Workspace-fs test suite
         working-directory: packages/workspace-fs
         run: bun test
+
+      - name: Host-service ignored-dir and git-watcher tests
+        working-directory: packages/host-service
+        run: bun test src/runtime/git/ignored-dirs.test.ts src/runtime/filesystem src/events/git-watcher
+
+      - name: Workspace-fs typecheck
+        working-directory: packages/workspace-fs
+        run: bun run typecheck
+
+      - name: Host-service typecheck
+        working-directory: packages/host-service
+        run: bun run typecheck
 
       - name: Lint
         run: bun run lint
@@ -168,7 +221,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Superset upstream main plus two fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948), and fix(workspace-fs): keep idle watchers warm across workspace switches. Linux x64 AppImage only.
+            --notes "Built from upstream superset-sh/superset main at 62e47f22a, not from the desktop-v1.30.2 tag: the 1.30.2 in the version label understates what this contains. On top of that main, three fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948); fix(workspace-fs): keep idle watchers warm across workspace switches; fix(workspace-fs): don't watch generated dirs when git's ignored-dir listing fails. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
