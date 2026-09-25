@@ -93,7 +93,14 @@ describe("listGitIgnoredDirs", () => {
 			await writeFile(path.join(buildDir, "out.js"), "x");
 		}
 		// Deeper than every build dir, so a shallowest-first cut drops it.
-		const nodeModules = path.join(dir, "pkgs", "deep", "a", "b", "node_modules");
+		const nodeModules = path.join(
+			dir,
+			"pkgs",
+			"deep",
+			"a",
+			"b",
+			"node_modules",
+		);
 		await mkdir(nodeModules, { recursive: true });
 		await writeFile(path.join(nodeModules, "index.js"), "x");
 
