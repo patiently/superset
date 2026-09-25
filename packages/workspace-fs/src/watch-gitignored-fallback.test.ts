@@ -4,10 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import type { FsWatchEvent } from "./types";
 import { FsWatcherManager, type FsWatcherManagerOptions } from "./watch";
-import type {
-	NativeWatchBackend,
-	NativeWatchRequest,
-} from "./watch-backend";
+import type { NativeWatchBackend, NativeWatchRequest } from "./watch-backend";
 
 interface FakeSubscription {
 	request: NativeWatchRequest;
@@ -81,8 +78,7 @@ function createManager(options: FsWatcherManagerOptions): FsWatcherManager {
 	return manager;
 }
 
-const sleep = (ms: number) =>
-	new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function waitUntil(condition: () => boolean, label: string) {
 	const deadline = Date.now() + 2_000;
@@ -155,8 +151,7 @@ describe("FsWatcherManager gitignored-dir listing failure", () => {
 		expect(fake.subscriptions[0]?.disposed).toBe(true);
 		expect(
 			events.some(
-				(event) =>
-					event.kind === "overflow" && event.absolutePath === rootPath,
+				(event) => event.kind === "overflow" && event.absolutePath === rootPath,
 			),
 		).toBe(true);
 	});
