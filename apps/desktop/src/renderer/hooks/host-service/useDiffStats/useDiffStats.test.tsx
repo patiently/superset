@@ -8,8 +8,7 @@ if (!alreadyRegistered) GlobalRegistrator.register();
 	globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-const gitChangedSubscriptions: { workspaceId: string; enabled: boolean }[] =
-	[];
+const gitChangedSubscriptions: { workspaceId: string; enabled: boolean }[] = [];
 let statusQueries = 0;
 
 mock.module("../useWorkspaceEvent", () => ({

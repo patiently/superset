@@ -84,8 +84,7 @@ function mostPrunableFirst(dirs: string[]): string[] {
 	return dirs
 		.map((dir) => ({ dir, ...rank(dir) }))
 		.sort(
-			(a, b) =>
-				Number(b.generated) - Number(a.generated) || a.depth - b.depth,
+			(a, b) => Number(b.generated) - Number(a.generated) || a.depth - b.depth,
 		)
 		.map(({ dir }) => dir);
 }
