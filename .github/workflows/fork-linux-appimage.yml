@@ -170,6 +170,40 @@ jobs:
           fi
           echo "Ignored-dir cap and hover-stats tests fail against the pre-fix code, as expected"
 
+      - name: Uncapped generated-dir tests fail without the fix
+        env:
+          PRE_FIX_SHA: 82e02f22af34da4f12cb1ceff2205246b60c7ace
+        run: |
+          set -u
+          FILES="packages/host-service/src/runtime/git/ignored-dirs.ts packages/workspace-fs/src/watch-backend/ignore-matcher.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/host-service && bun test src/runtime/git/ignored-dirs.test.ts) > /tmp/red-uncapped.log 2>&1
+          (cd packages/workspace-fs && bun test src/watch-backend/watch-backend.test.ts -t createIgnoreMatcher) > /tmp/red-matcher.log 2>&1
+          set -e
+          cat /tmp/red-uncapped.log /tmp/red-matcher.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          expect /tmp/red-uncapped.log fail "listGitIgnoredDirs > keeps every generated dir even when they alone exceed the cap"
+          expect /tmp/red-uncapped.log pass "listGitIgnoredDirs > returns fully-ignored directories, not ignored files or tracked-content dirs"
+          expect /tmp/red-matcher.log fail "createIgnoreMatcher > prunes thousands of escaped directories at a cost set by path depth"
+          expect /tmp/red-matcher.log pass "createIgnoreMatcher > matches escaped glob magic literally"
+          if grep -q "Unhandled error" /tmp/red-uncapped.log /tmp/red-matcher.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Uncapped generated-dir tests fail against the pre-fix code, as expected"
+
       - name: Workspace-fs test suite
         working-directory: packages/workspace-fs
         run: bun test
@@ -256,7 +290,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Built from upstream superset-sh/superset main at 62e47f22a, not from the desktop-v1.30.2 tag: the 1.30.2 in the version label understates what this contains. On top of that main, five fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948); fix(workspace-fs): keep idle watchers warm across workspace switches; fix(workspace-fs): don't watch generated dirs when git's ignored-dir listing fails; fix(host-service): keep node_modules and build dirs when ignored dirs exceed the cap; fix(desktop): read hover-card diff stats once instead of watching the worktree. Linux x64 AppImage only.
+            --notes "Built from upstream superset-sh/superset main at 62e47f22a, not from the desktop-v1.30.2 tag: the 1.30.2 in the version label understates what this contains. On top of that main, five fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948); fix(workspace-fs): keep idle watchers warm across workspace switches; fix(workspace-fs): don't watch generated dirs when git's ignored-dir listing fails; fix(host-service): keep node_modules and build dirs when ignored dirs exceed the cap, then never cap generated ignored dirs and match pruned dirs by set; fix(desktop): read hover-card diff stats once instead of watching the worktree. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
