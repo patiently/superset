@@ -74,8 +74,34 @@ describe("listGitIgnoredDirs", () => {
 
 		const ignored = await listGitIgnoredDirs(dir);
 
-		expect(ignored).toHaveLength(200);
 		expect(ignored).toContain("zz/node_modules");
+		const cacheDirs = ignored.filter((entry) => entry.startsWith("cache-"));
+		expect(cacheDirs).toHaveLength(200);
+	});
+
+	test("keeps every generated dir even when they alone exceed the cap", async () => {
+		const dir = await createRepo();
+		await writeFile(path.join(dir, ".gitignore"), "build/\nnode_modules/\n");
+		for (let index = 0; index < 210; index += 1) {
+			const buildDir = path.join(
+				dir,
+				"pkgs",
+				`p${String(index).padStart(3, "0")}`,
+				"build",
+			);
+			await mkdir(buildDir, { recursive: true });
+			await writeFile(path.join(buildDir, "out.js"), "x");
+		}
+		// Deeper than every build dir, so a shallowest-first cut drops it.
+		const nodeModules = path.join(dir, "pkgs", "deep", "a", "b", "node_modules");
+		await mkdir(nodeModules, { recursive: true });
+		await writeFile(path.join(nodeModules, "index.js"), "x");
+
+		const ignored = await listGitIgnoredDirs(dir);
+
+		expect(ignored).toContain("pkgs/deep/a/b/node_modules");
+		const buildDirs = ignored.filter((entry) => entry.endsWith("/build"));
+		expect(buildDirs).toHaveLength(210);
 	});
 
 	test("returns [] for a missing path", async () => {

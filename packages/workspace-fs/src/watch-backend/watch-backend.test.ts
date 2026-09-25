@@ -169,6 +169,24 @@ describe("createIgnoreMatcher", () => {
 		expect(isIgnored("/repo/vendor/cached", true)).toBe(false);
 	});
 
+	test("prunes thousands of escaped directories at a cost set by path depth", () => {
+		const prunedDirs = Array.from(
+			{ length: 5_000 },
+			(_, index) => `pkg${index}/node_modules/**`,
+		);
+		const isPruned = createIgnoreMatcher("/repo", prunedDirs);
+
+		expect(isPruned("/repo/pkg4999/node_modules/a/index.js", false)).toBe(true);
+		expect(isPruned("/repo/pkg12/node_modules", true)).toBe(true);
+		expect(isPruned("/repo/pkg4999/src/index.js", false)).toBe(false);
+
+		const startedAt = performance.now();
+		for (let index = 0; index < 50_000; index += 1) {
+			isPruned(`/repo/pkg${index % 5_000}/src/file${index}.ts`, false);
+		}
+		expect(performance.now() - startedAt).toBeLessThan(1_000);
+	});
+
 	test("never ignores the root or anything outside it", () => {
 		expect(isIgnored("/repo", true)).toBe(false);
 		expect(isIgnored("/repo/src/modules", true)).toBe(false);
