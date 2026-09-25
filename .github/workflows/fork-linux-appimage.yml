@@ -1,8 +1,9 @@
 name: Fork Linux AppImage Release
 
 # Builds the Linux AppImage the way build-desktop.yml's build-linux job does,
-# minus production secrets, after proving the GPU and gitignored-dir fallback
-# regression tests go red without their fixes and green with them. Publishes
+# minus production secrets, after proving the GPU, gitignored-dir fallback,
+# ignored-dir cap and hover-stats regression tests go red without their fixes
+# and green with them. Publishes
 # release desktop-v<VERSION> with the upstream asset name.
 
 on:
@@ -135,6 +136,40 @@ jobs:
           fi
           echo "Gitignored-dir fallback tests fail against the pre-fix code, as expected"
 
+      - name: Ignored-dir cap and hover-stats tests fail without the fix
+        env:
+          PRE_FIX_SHA: ce00238b76a847ab9843bd59e02291bcbdc318cc
+        run: |
+          set -u
+          FILES="packages/host-service/src/runtime/git/ignored-dirs.ts apps/desktop/src/renderer/hooks/host-service/useDiffStats/useDiffStats.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/host-service && bun test src/runtime/git/ignored-dirs.test.ts) > /tmp/red-cap.log 2>&1
+          (cd apps/desktop && bun test src/renderer/hooks/host-service/useDiffStats) > /tmp/red-hover.log 2>&1
+          set -e
+          cat /tmp/red-cap.log /tmp/red-hover.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          expect /tmp/red-cap.log fail "listGitIgnoredDirs > keeps generated dirs like node_modules when there are more ignored dirs than the cap"
+          expect /tmp/red-cap.log pass "listGitIgnoredDirs > returns fully-ignored directories, not ignored files or tracked-content dirs"
+          expect /tmp/red-hover.log fail "useDiffStats > a one-shot read fetches the stats without subscribing to git:changed"
+          expect /tmp/red-hover.log pass "useDiffStats > subscribes to git:changed by default so the stats stay live"
+          if grep -q "Unhandled error" /tmp/red-cap.log /tmp/red-hover.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Ignored-dir cap and hover-stats tests fail against the pre-fix code, as expected"
+
       - name: Workspace-fs test suite
         working-directory: packages/workspace-fs
         run: bun test
@@ -221,7 +256,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Built from upstream superset-sh/superset main at 62e47f22a, not from the desktop-v1.30.2 tag: the 1.30.2 in the version label understates what this contains. On top of that main, three fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948); fix(workspace-fs): keep idle watchers warm across workspace switches; fix(workspace-fs): don't watch generated dirs when git's ignored-dir listing fails. Linux x64 AppImage only.
+            --notes "Built from upstream superset-sh/superset main at 62e47f22a, not from the desktop-v1.30.2 tag: the 1.30.2 in the version label understates what this contains. On top of that main, five fixes for combined testing: fix(desktop): stop disabling GPU acceleration on Linux (#5948); fix(workspace-fs): keep idle watchers warm across workspace switches; fix(workspace-fs): don't watch generated dirs when git's ignored-dir listing fails; fix(host-service): keep node_modules and build dirs when ignored dirs exceed the cap; fix(desktop): read hover-card diff stats once instead of watching the worktree. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
