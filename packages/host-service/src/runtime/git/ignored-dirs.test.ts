@@ -56,6 +56,28 @@ describe("listGitIgnoredDirs", () => {
 		await expect(listGitIgnoredDirs(dir)).rejects.toThrow();
 	});
 
+	test("keeps generated dirs like node_modules when there are more ignored dirs than the cap", async () => {
+		const dir = await createRepo();
+		await writeFile(path.join(dir, ".gitignore"), "cache-*/\nnode_modules/\n");
+		for (let index = 0; index < 210; index += 1) {
+			const cacheDir = path.join(
+				dir,
+				`cache-${String(index).padStart(3, "0")}`,
+			);
+			await mkdir(cacheDir, { recursive: true });
+			await writeFile(path.join(cacheDir, "entry"), "x");
+		}
+		// Sorts after every cache-* dir, so a plain first-N cut drops it.
+		const nodeModules = path.join(dir, "zz", "node_modules");
+		await mkdir(nodeModules, { recursive: true });
+		await writeFile(path.join(nodeModules, "index.js"), "x");
+
+		const ignored = await listGitIgnoredDirs(dir);
+
+		expect(ignored).toHaveLength(200);
+		expect(ignored).toContain("zz/node_modules");
+	});
+
 	test("returns [] for a missing path", async () => {
 		expect(
 			await listGitIgnoredDirs("/nonexistent/definitely-not-here"),

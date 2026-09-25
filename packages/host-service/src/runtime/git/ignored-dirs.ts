@@ -1,14 +1,18 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { DEFAULT_IGNORE_DIR_NAMES } from "@superset/workspace-fs/host";
 
 const execFileAsync = promisify(execFile);
 
 // Bounds for a pathological repo (thousands of ignored entries): the caller
 // turns each dir into a per-event glob/prefix check, so an unbounded list
-// would trade watcher churn for matcher churn.
+// would trade watcher churn for matcher churn. Past the cap, the dirs most
+// likely to be huge (node_modules, build output) are kept first.
 const MAX_IGNORED_DIRS = 200;
 const TIMEOUT_MS = 3_000;
 const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
+
+const rootsWarnedOverCap = new Set<string>();
 
 /**
  * Worktree-relative directories that git ignores entirely, straight from
@@ -49,17 +53,41 @@ export async function listGitIgnoredDirs(rootPath: string): Promise<string[]> {
 		);
 		const dirs: string[] = [];
 		for (const entry of stdout.split("\0")) {
-			if (!entry.endsWith("/")) continue;
-			dirs.push(entry.slice(0, -1));
-			if (dirs.length >= MAX_IGNORED_DIRS) break;
+			if (entry.endsWith("/")) dirs.push(entry.slice(0, -1));
 		}
-		return dirs;
+		if (dirs.length <= MAX_IGNORED_DIRS) {
+			return dirs;
+		}
+		if (!rootsWarnedOverCap.has(rootPath)) {
+			rootsWarnedOverCap.add(rootPath);
+			console.warn("[ignored-dirs] more ignored dirs than the cap", {
+				rootPath,
+				found: dirs.length,
+				kept: MAX_IGNORED_DIRS,
+			});
+		}
+		return mostPrunableFirst(dirs).slice(0, MAX_IGNORED_DIRS);
 	} catch (error) {
 		if (isNotAWorktree(error)) {
 			return [];
 		}
 		throw error;
 	}
+}
+
+function mostPrunableFirst(dirs: string[]): string[] {
+	const rank = (dir: string) => {
+		const segments = dir.split("/");
+		const generated = DEFAULT_IGNORE_DIR_NAMES.has(segments.at(-1) ?? "");
+		return { generated, depth: segments.length };
+	};
+	return dirs
+		.map((dir) => ({ dir, ...rank(dir) }))
+		.sort(
+			(a, b) =>
+				Number(b.generated) - Number(a.generated) || a.depth - b.depth,
+		)
+		.map(({ dir }) => dir);
 }
 
 function isNotAWorktree(error: unknown): boolean {
