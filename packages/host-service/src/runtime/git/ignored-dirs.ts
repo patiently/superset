@@ -1,8 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import {
-	DEFAULT_IGNORE_DIR_NAMES,
-} from "@superset/workspace-fs/ignore-defaults";
+import { DEFAULT_IGNORE_DIR_NAMES } from "@superset/workspace-fs/ignore-defaults";
 
 const execFileAsync = promisify(execFile);
 

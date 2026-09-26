@@ -394,10 +394,7 @@ export class FsWatcherManager {
 		const absolutePath = normalizeAbsolutePath(options.absolutePath);
 		options.signal?.throwIfAborted();
 		const idle = this.watchers.get(absolutePath);
-		if (
-			idle?.listeners.size === 0 &&
-			!(await this.isStillAttached(idle))
-		) {
+		if (idle?.listeners.size === 0 && !(await this.isStillAttached(idle))) {
 			// A concurrent subscribe may have claimed it during the stat.
 			if (idle.listeners.size === 0) {
 				await this.releaseWatcher(idle);
