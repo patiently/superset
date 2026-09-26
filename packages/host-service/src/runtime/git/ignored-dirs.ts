@@ -22,8 +22,9 @@ const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
  * files (e.g. `.env`) are deliberately excluded — files stay watched so an
  * open gitignored file still live-reloads.
  *
- * Returns [] for non-git roots, timeouts, and every other failure — callers
- * degrade to the static ignore list, never block on this.
+ * Returns [] when the root is not a git worktree or does not exist. Every
+ * other failure (a timeout under attach load, a corrupt index) rejects, so
+ * callers can tell "git ignores nothing here" from "git did not answer".
  */
 export async function listGitIgnoredDirs(rootPath: string): Promise<string[]> {
 	try {
@@ -39,7 +40,12 @@ export async function listGitIgnoredDirs(rootPath: string): Promise<string[]> {
 				"--directory",
 				"-z",
 			],
-			{ timeout: TIMEOUT_MS, maxBuffer: MAX_BUFFER_BYTES },
+			{
+				timeout: TIMEOUT_MS,
+				maxBuffer: MAX_BUFFER_BYTES,
+				// isNotAWorktree matches git's untranslated messages.
+				env: { ...process.env, LC_ALL: "C" },
+			},
 		);
 		const dirs: string[] = [];
 		for (const entry of stdout.split("\0")) {
@@ -48,7 +54,18 @@ export async function listGitIgnoredDirs(rootPath: string): Promise<string[]> {
 			if (dirs.length >= MAX_IGNORED_DIRS) break;
 		}
 		return dirs;
-	} catch {
-		return [];
+	} catch (error) {
+		if (isNotAWorktree(error)) {
+			return [];
+		}
+		throw error;
 	}
+}
+
+function isNotAWorktree(error: unknown): boolean {
+	const stderr = String((error as { stderr?: unknown } | null)?.stderr ?? "");
+	return (
+		stderr.includes("not a git repository") ||
+		stderr.includes("cannot change to")
+	);
 }
