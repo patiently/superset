@@ -1,14 +1,14 @@
 name: Fork Linux AppImage Release
 
-# Watcher arm on current upstream main: the four fs-watcher fixes rebased onto
-# main 2370f60d4 (after #7860 and #7865), without the GPU fix. Proves each fix's
-# tests go red without it and green with it, then builds and publishes
-# desktop-v<VERSION> with the upstream asset name.
+# Full arm on current upstream main: the four fs-watcher fixes and the Linux GPU
+# fix on main 2370f60d4 (after #7860 and #7865). Proves every fix's tests go red
+# without it and green with it, then builds and publishes desktop-v<VERSION>
+# with the upstream asset name.
 
 on:
   push:
     branches:
-      - build/fswatch-main
+      - build/gpu-fswatch-main
 
 permissions:
   contents: write
@@ -58,6 +58,37 @@ jobs:
 
       - name: Build desktop dependencies
         run: bunx turbo run build build:types --filter='@superset/desktop^...'
+
+      - name: Regression test fails without the fix
+        working-directory: apps/desktop
+        env:
+          TEST_ONLY_SHA: 5d93464a58ee42b6026677e96fd5fee5ab91e290
+          SETUP: src/lib/electron-app/factories/app/setup.ts
+        run: |
+          set -u
+          git fetch --depth=1 origin "$TEST_ONLY_SHA"
+          cp "$SETUP" /tmp/setup.fixed.ts
+          git show "$TEST_ONLY_SHA:apps/desktop/$SETUP" > "$SETUP"
+          grep -n "disableHardwareAcceleration" "$SETUP"
+          set +e
+          bun test src/lib/electron-app/factories/app/setup.test.ts 2>&1 | tee /tmp/red.log
+          status=${PIPESTATUS[0]}
+          set -e
+          cp /tmp/setup.fixed.ts "$SETUP"
+          git diff --exit-code -- "$SETUP"
+          if [[ $status -eq 0 ]]; then
+            echo "::error::Regression test passed against the pre-fix setup.ts"
+            exit 1
+          fi
+          if ! grep -q "not.toMatch" /tmp/red.log || ! grep -q "0 pass" /tmp/red.log || grep -q "Unhandled error" /tmp/red.log; then
+            echo "::error::Regression test failed for a reason other than the GPU-policy assertion"
+            exit 1
+          fi
+          echo "Regression test fails against the pre-fix setup.ts, as expected (exit $status)"
+
+      - name: Regression test passes with the fix
+        working-directory: apps/desktop
+        run: bun test src/lib/electron-app/factories/app/setup.test.ts
 
       - name: Desktop test suite
         working-directory: apps/desktop
@@ -225,7 +256,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "WATCHER ARM for A/B measurements on current main: upstream superset-sh/superset main at 2370f60d4 (includes #7860 and #7865) plus the four fs-watcher fixes, rebased, WITHOUT the GPU fix: keep idle watchers warm across workspace switches; don't watch generated dirs when git's ignored-dir listing fails; never cap generated ignored dirs; read hover-card diff stats once instead of watching the worktree. Compare with desktop-v1.30.2-main-control.2 (same commit, no fixes). Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
+            --notes "FULL ARM for A/B measurements on current main: upstream superset-sh/superset main at 2370f60d4 (includes #7860 and #7865) plus the four fs-watcher fixes (rebased) and the Linux GPU fix: fix(desktop): stop disabling GPU acceleration on Linux (#5948); keep idle watchers warm across workspace switches; don't watch generated dirs when git's ignored-dir listing fails; never cap generated ignored dirs; read hover-card diff stats once instead of watching the worktree. Compare with desktop-v1.30.2-main-control.2 (same commit, no fixes) and desktop-v1.30.2-fswatch-only.2 (same commit, watcher fixes only). Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
