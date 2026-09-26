@@ -1,0 +1,248 @@
+name: Fork Linux AppImage Release
+
+# Watcher arm on current upstream main: the four fs-watcher fixes rebased onto
+# main 2370f60d4 (after #7860 and #7865), without the GPU fix. Proves each fix's
+# tests go red without it and green with it, then builds and publishes
+# desktop-v<VERSION> with the upstream asset name.
+
+on:
+  push:
+    branches:
+      - build/fswatch-main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-linux-appimage
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build and release - Linux (x64)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Resolve fork version
+        id: version
+        working-directory: apps/desktop
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ ! "$VERSION" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "::error::Version '$VERSION' has characters outside [0-9A-Za-z.+-]"
+            exit 1
+          fi
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is a plain upstream-shaped version; fork builds need a fork-specific suffix"
+            exit 1
+          fi
+          if gh release view "desktop-v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release desktop-v$VERSION already exists; bump the version instead of replacing a published asset"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen --ignore-scripts
+
+      - name: Build desktop dependencies
+        run: bunx turbo run build build:types --filter='@superset/desktop^...'
+
+      - name: Desktop test suite
+        working-directory: apps/desktop
+        run: bun test
+
+      - name: Gitignored-dir fallback tests fail without the fix
+        env:
+          PRE_FIX_SHA: 9f4b98fa524ea45c3cdbd85066a9c15e0fb58d0f
+        run: |
+          set -u
+          FILES="packages/workspace-fs/src/watch.ts packages/host-service/src/runtime/git/ignored-dirs.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/workspace-fs && bun test src/watch-gitignored-fallback.test.ts) > /tmp/red-fs.log 2>&1
+          (cd packages/host-service && bun test src/runtime/git/ignored-dirs.test.ts) > /tmp/red-hs.log 2>&1
+          set -e
+          cat /tmp/red-fs.log /tmp/red-hs.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          FS="FsWatcherManager gitignored-dir listing failure >"
+          expect /tmp/red-fs.log fail "$FS prunes the well-known generated dirs when the listing fails"
+          expect /tmp/red-fs.log fail "$FS re-attaches with git's list once a failed listing recovers, and tells listeners to refetch"
+          expect /tmp/red-fs.log fail "$FS reports provisionally pruned paths as pruned until git answers"
+          expect /tmp/red-fs.log fail "$FS keeps retrying with the fallback in place while the listing keeps failing"
+          expect /tmp/red-fs.log pass "$FS leaves generated dirs to git's answer when the listing succeeds"
+          expect /tmp/red-fs.log pass "$FS stops retrying once the manager is closed"
+          expect /tmp/red-fs.log pass "$FS does not add the fallback when default ignores are already on"
+          expect /tmp/red-hs.log fail "listGitIgnoredDirs > rejects when git fails on a real repo, so callers can tell failure from nothing ignored"
+          expect /tmp/red-hs.log pass "listGitIgnoredDirs > returns [] for a non-git directory"
+          expect /tmp/red-hs.log pass "listGitIgnoredDirs > returns [] for a missing path"
+          if grep -q "Unhandled error" /tmp/red-fs.log /tmp/red-hs.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Gitignored-dir fallback tests fail against the pre-fix code, as expected"
+
+      - name: Ignored-dir cap and hover-stats tests fail without the fix
+        env:
+          PRE_FIX_SHA: c7f2f98fa1920e7a7dd3f08c7dde9138ba8bd9d1
+        run: |
+          set -u
+          FILES="packages/host-service/src/runtime/git/ignored-dirs.ts apps/desktop/src/renderer/hooks/host-service/useDiffStats/useDiffStats.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/host-service && bun test src/runtime/git/ignored-dirs.test.ts) > /tmp/red-cap.log 2>&1
+          (cd apps/desktop && bun test src/renderer/hooks/host-service/useDiffStats) > /tmp/red-hover.log 2>&1
+          set -e
+          cat /tmp/red-cap.log /tmp/red-hover.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          expect /tmp/red-cap.log fail "listGitIgnoredDirs > keeps generated dirs like node_modules when there are more ignored dirs than the cap"
+          expect /tmp/red-cap.log fail "listGitIgnoredDirs > keeps every generated dir even when they alone exceed the cap"
+          expect /tmp/red-cap.log pass "listGitIgnoredDirs > returns fully-ignored directories, not ignored files or tracked-content dirs"
+          expect /tmp/red-hover.log fail "useDiffStats > a one-shot read fetches the stats without subscribing to git:changed"
+          expect /tmp/red-hover.log pass "useDiffStats > subscribes to git:changed by default so the stats stay live"
+          if grep -q "Unhandled error" /tmp/red-cap.log /tmp/red-hover.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Ignored-dir cap and hover-stats tests fail against the pre-fix code, as expected"
+
+      - name: Workspace-fs test suite
+        working-directory: packages/workspace-fs
+        run: bun test
+
+      - name: Host-service ignored-dir and git-watcher tests
+        working-directory: packages/host-service
+        run: bun test src/runtime/git/ignored-dirs.test.ts src/runtime/filesystem src/events/git-watcher src/events/git-directory-watcher
+
+      - name: Workspace-fs typecheck
+        working-directory: packages/workspace-fs
+        run: bun run typecheck
+
+      - name: Host-service typecheck
+        working-directory: packages/host-service
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Desktop typecheck
+        working-directory: apps/desktop
+        run: bun run typecheck
+
+      - name: Install Linux native build deps
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxkbfile-dev
+
+      - name: Install desktop native dependencies
+        working-directory: apps/desktop
+        run: bun run install:deps
+
+      - name: Clean dev folder
+        working-directory: apps/desktop
+        run: bun run clean:dev
+
+      - name: Generate file icons
+        working-directory: apps/desktop
+        run: bun run generate:icons
+
+      - name: Compile app with electron-vite
+        working-directory: apps/desktop
+        env:
+          SUPERSET_WORKSPACE_NAME: superset
+          TARGET_ARCH: x64
+        run: bun run compile:app
+
+      - name: Build Electron app
+        working-directory: apps/desktop
+        run: bun run package -- --publish never --config electron-builder.ts
+
+      - name: Verify AppImage
+        id: asset
+        working-directory: apps/desktop
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ls -la release
+          ASSET="superset-${VERSION}-x86_64.AppImage"
+          test -f "release/$ASSET" || {
+            echo "::error::Expected release/$ASSET"
+            exit 1
+          }
+          CLI_BIN=$(find release -path "*/resources/resources/bin/superset" -type f -perm -111 | head -1)
+          test -n "$CLI_BIN" || {
+            echo "::error::Bundled Superset CLI missing or not executable"
+            exit 1
+          }
+          "$CLI_BIN" --version
+          SHA256=$(sha256sum "release/$ASSET" | cut -d' ' -f1)
+          echo "name=$ASSET" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "$ASSET sha256=$SHA256"
+
+      - name: Publish release
+        working-directory: apps/desktop
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET: ${{ steps.asset.outputs.name }}
+          SHA256: ${{ steps.asset.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          gh release create "desktop-v$VERSION" "release/$ASSET" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Superset $VERSION (fork)" \
+            --latest=false \
+            --notes "WATCHER ARM for A/B measurements on current main: upstream superset-sh/superset main at 2370f60d4 (includes #7860 and #7865) plus the four fs-watcher fixes, rebased, WITHOUT the GPU fix: keep idle watchers warm across workspace switches; don't watch generated dirs when git's ignored-dir listing fails; never cap generated ignored dirs; read hover-card diff stats once instead of watching the worktree. Compare with desktop-v1.30.2-main-control.2 (same commit, no fixes). Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
+
+          sha256: \`$SHA256\`  $ASSET"
+
+      - name: Verify release asset name and unauthenticated download
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET: ${{ steps.asset.outputs.name }}
+          SHA256: ${{ steps.asset.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          PUBLISHED=$(gh release view "desktop-v$VERSION" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
+          echo "Published assets: $PUBLISHED"
+          if ! grep -Fxq "$ASSET" <<<"$PUBLISHED"; then
+            echo "::error::Release asset is not named exactly '$ASSET' (GitHub may have rewritten characters); got: $PUBLISHED"
+            exit 1
+          fi
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/desktop-v$VERSION/$ASSET"
+          curl -fsSL --retry 5 --retry-delay 5 -o /tmp/downloaded.AppImage "$URL"
+          echo "$SHA256  /tmp/downloaded.AppImage" | sha256sum -c -
+          echo "Verified: $URL"
