@@ -403,6 +403,45 @@ export const gitDeleteBranchTask = defineWorkerTask<
 	},
 });
 
+/**
+ * Whether an automatically named branch can still be renamed: checked out
+ * in the worktree, no upstream, and no remote branch of the same name.
+ */
+export const gitAutomaticBranchRenamableTask = defineWorkerTask<
+	{ worktreePath: string; branch: string; gitEnv: GitTaskEnv },
+	{ renamable: boolean }
+>({
+	type: "git/automaticBranchRenamable",
+	handler: async ({ worktreePath, branch, gitEnv }) => {
+		const git = createUserSimpleGit(worktreePath).env(gitEnv);
+		const [head, upstream, remoteBranches] = await Promise.all([
+			git.raw(["branch", "--show-current"]),
+			git.raw(["for-each-ref", "--format=%(upstream)", `refs/heads/${branch}`]),
+			git.raw(["for-each-ref", "--format=%(refname)", "refs/remotes"]),
+		]);
+		return {
+			renamable:
+				head.trim() === branch &&
+				!upstream.trim() &&
+				!remoteBranches
+					.split("\n")
+					.some((ref) => ref.replace(/^refs\/remotes\/[^/]+\//, "") === branch),
+		};
+	},
+});
+
+export const gitRenameBranchTask = defineWorkerTask<
+	{ worktreePath: string; from: string; to: string; gitEnv: GitTaskEnv },
+	void
+>({
+	type: "git/renameBranch",
+	handler: async ({ worktreePath, from, to, gitEnv }) => {
+		await createUserSimpleGit(worktreePath)
+			.env(gitEnv)
+			.raw(["branch", "-m", from, to]);
+	},
+});
+
 export const gitStagePathsTask = defineWorkerTask<
 	{
 		worktreePath: string;
@@ -569,6 +608,8 @@ export const gitTasks = [
 	gitWorktreeStateTask,
 	gitWorktreeRemoveTask,
 	gitDeleteBranchTask,
+	gitAutomaticBranchRenamableTask,
+	gitRenameBranchTask,
 	gitStagePathsTask,
 	gitCommitTask,
 	gitPushTask,

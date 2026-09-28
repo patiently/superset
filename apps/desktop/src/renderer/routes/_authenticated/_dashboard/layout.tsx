@@ -7,6 +7,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { CommandPaletteHost } from "renderer/commandPalette";
 import { Redirect } from "renderer/components/Redirect";
+import { useWorkspaceNamingFailedToast } from "renderer/hooks/host-service/useWorkspaceNamingFailedToast";
 import { useIsV2CloudEnabled } from "renderer/hooks/useIsV2CloudEnabled";
 import { useOpenNewWorkspace } from "renderer/hooks/useOpenNewWorkspace";
 import { useQuickCreateWorkspace } from "renderer/hooks/useQuickCreateWorkspace";
@@ -119,6 +120,7 @@ function DashboardLayout() {
 		[hostWorkspaces, currentV2WorkspaceId],
 	);
 	const { machineId: localMachineId } = useLocalHostService();
+	useWorkspaceNamingFailedToast();
 	// Forwarding needs port data only for a workspace on another machine;
 	// a local selection must not switch on cross-host port polling.
 	// machineId is "" until the device query answers; treat unknown as local

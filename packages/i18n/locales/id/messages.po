@@ -1572,6 +1572,9 @@ msgstr "Opsi lanjutan"
 msgid "After"
 msgstr "Sesudah"
 
+msgid "After delay (3s)"
+msgstr "Setelah penundaan (3 dtk)"
+
 msgid "Against base"
 msgstr "Terhadap base"
 
@@ -2308,6 +2311,9 @@ msgstr "Otomatis (sistem)"
 
 msgid "Auto follows your system language. You can change it later in Settings."
 msgstr "Otomatis mengikuti bahasa sistem Anda. Anda bisa mengubahnya nanti di Pengaturan."
+
+msgid "Auto Save"
+msgstr "Simpan Otomatis"
 
 msgid "auto-generated"
 msgstr "dibuat otomatis"
@@ -4004,6 +4010,9 @@ msgstr "Kontrol bagaimana mesin lokal Anda dapat diakses dari luar"
 msgid "Control what each click — plain or with a modifier — does to a file or URL. Each row binds one modifier combination to an action."
 msgstr "Atur apa yang dilakukan tiap klik — biasa atau dengan modifier — pada sebuah file atau URL. Tiap baris mengikat satu kombinasi modifier ke satu aksi."
 
+msgid "Controls when manually edited files are saved"
+msgstr "Mengatur kapan file yang diedit secara manual disimpan"
+
 msgid "Conversation"
 msgstr "Percakapan"
 
@@ -4182,9 +4191,6 @@ msgstr "Salin riwayat penjelajahan dan login Anda dari browser lain ke Superset.
 
 msgid "Copy your key now — you won't be able to see it again."
 msgstr "Salin kunci Anda sekarang — Anda tidak akan bisa melihatnya lagi."
-
-msgid "Copying configuration"
-msgstr "Menyalin konfigurasi"
 
 msgid "Cost"
 msgstr "Biaya"
@@ -4460,6 +4466,9 @@ msgstr "Profil Anda tidak dapat dimuat, sehingga penyuntingan dinonaktifkan."
 msgid "Couldn't merge pull request"
 msgstr "Tidak bisa merge pull request"
 
+msgid "Couldn't name \"{name}\" automatically"
+msgstr "Tidak dapat menamai \"{name}\" secara otomatis"
+
 msgid "Couldn't parse this diff: {patchParseError}"
 msgstr "Tidak bisa mengurai diff ini: {patchParseError}"
 
@@ -4712,9 +4721,6 @@ msgstr "membuat"
 
 msgid "Creating"
 msgstr "Membuat"
-
-msgid "Creating git worktree"
-msgstr "Membuat worktree git"
 
 msgid "Creating PR..."
 msgstr "Membuat PR…"
@@ -6652,9 +6658,6 @@ msgstr "Filter"
 msgid "Filters, {activeFilterCount} active"
 msgstr "Filter, {activeFilterCount} aktif"
 
-msgid "Finalizing setup"
-msgstr "Merampungkan penyiapan"
-
 msgid "Find"
 msgstr "Cari"
 
@@ -7688,9 +7691,6 @@ msgstr "Inisialisasi Git"
 msgid "Initialize Git Repository?"
 msgstr "Inisialisasi Repositori Git?"
 
-msgid "Initializing session"
-msgstr "Menginisialisasi sesi"
-
 msgid "Initializing..."
 msgstr "Menginisialisasi..."
 
@@ -7932,6 +7932,9 @@ msgstr "URL issue harus cocok dengan {repoMismatch}."
 
 msgid "Issue…"
 msgstr "Issue…"
+
+msgid "It keeps the title from your prompt."
+msgstr "Judul dari prompt Anda tetap dipakai."
 
 msgid "It may be asleep"
 msgstr "Mungkin sedang tidur"
@@ -10141,6 +10144,9 @@ msgstr "Di host yang tidak bisa kamu jangkau"
 msgid "On click"
 msgstr "Saat diklik"
 
+msgid "On focus change"
+msgstr "Saat fokus berubah"
+
 msgid "On our radar. Order and scope may change."
 msgstr "Ada di radar kami. Urutan dan cakupannya bisa berubah."
 
@@ -10152,6 +10158,9 @@ msgstr "Dengan laju ini"
 
 msgid "On this page"
 msgstr "Di halaman ini"
+
+msgid "On window change"
+msgstr "Saat jendela berubah"
 
 msgid "On your machine. Repos, worktrees, terminal output, and agent sessions stay local by default; cloud sync covers account and organization metadata only. Superset doesn't proxy any API calls."
 msgstr "Di mesin Anda. Repo, worktree, output terminal, dan sesi agen tetap lokal secara bawaan; sinkronisasi cloud hanya mencakup metadata akun dan organisasi. Superset tidak mem-proxy panggilan API apa pun."
@@ -14717,9 +14726,6 @@ msgstr "Sinkronkan Repositori"
 msgid "Sync started"
 msgstr "Sinkronisasi dimulai"
 
-msgid "Syncing with remote"
-msgstr "Menyinkronkan dengan remote"
-
 msgid "Syncing..."
 msgstr "Menyinkronkan..."
 
@@ -16441,9 +16447,6 @@ msgstr "Verifikasi ini"
 
 msgid "Verify your identity"
 msgstr "Memverifikasi identitas Anda"
-
-msgid "Verifying base branch"
-msgstr "Memverifikasi branch dasar"
 
 msgid "Version"
 msgstr "Versi"

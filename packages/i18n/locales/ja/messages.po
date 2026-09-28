@@ -1572,6 +1572,9 @@ msgstr "詳細オプション"
 msgid "After"
 msgstr "変更後"
 
+msgid "After delay (3s)"
+msgstr "遅延後（3秒）"
+
 msgid "Against base"
 msgstr "ベースとの差分"
 
@@ -2308,6 +2311,9 @@ msgstr "自動(システム)"
 
 msgid "Auto follows your system language. You can change it later in Settings."
 msgstr "自動ではシステムの言語に従います。後から設定で変更できます。"
+
+msgid "Auto Save"
+msgstr "自動保存"
 
 msgid "auto-generated"
 msgstr "自動生成"
@@ -4004,6 +4010,9 @@ msgstr "このマシンに外部からどのように接続できるかを設定
 msgid "Control what each click — plain or with a modifier — does to a file or URL. Each row binds one modifier combination to an action."
 msgstr "クリック(修飾キーの有無)ごとのファイルやURLへの動作を設定します。各行が1つの修飾キーの組み合わせを1つのアクションに割り当てます。"
 
+msgid "Controls when manually edited files are saved"
+msgstr "手動で編集したファイルを保存するタイミングを制御します"
+
 msgid "Conversation"
 msgstr "会話"
 
@@ -4182,9 +4191,6 @@ msgstr "別のブラウザから閲覧履歴とログイン情報をSupersetに�
 
 msgid "Copy your key now — you won't be able to see it again."
 msgstr "キーを今すぐコピーしてください — 後で再表示することはできません。"
-
-msgid "Copying configuration"
-msgstr "設定をコピー中"
 
 msgid "Cost"
 msgstr "コスト"
@@ -4460,6 +4466,9 @@ msgstr "プロフィールを読み込めなかったため、編集は無効で
 msgid "Couldn't merge pull request"
 msgstr "プルリクエストをマージできませんでした"
 
+msgid "Couldn't name \"{name}\" automatically"
+msgstr "「{name}」に自動で名前を付けられませんでした"
+
 msgid "Couldn't parse this diff: {patchParseError}"
 msgstr "この差分を解析できませんでした: {patchParseError}"
 
@@ -4712,9 +4721,6 @@ msgstr "作成中"
 
 msgid "Creating"
 msgstr "作成中"
-
-msgid "Creating git worktree"
-msgstr "git worktreeを作成中"
 
 msgid "Creating PR..."
 msgstr "PRを作成中…"
@@ -6652,9 +6658,6 @@ msgstr "フィルター"
 msgid "Filters, {activeFilterCount} active"
 msgstr "フィルター、{activeFilterCount}件適用中"
 
-msgid "Finalizing setup"
-msgstr "セットアップを完了中"
-
 msgid "Find"
 msgstr "検索"
 
@@ -7688,9 +7691,6 @@ msgstr "Gitを初期化"
 msgid "Initialize Git Repository?"
 msgstr "Gitリポジトリを初期化しますか?"
 
-msgid "Initializing session"
-msgstr "セッションを初期化中"
-
 msgid "Initializing..."
 msgstr "初期化中..."
 
@@ -7932,6 +7932,9 @@ msgstr "IssueのURLは{repoMismatch}と一致する必要があります。"
 
 msgid "Issue…"
 msgstr "Issue…"
+
+msgid "It keeps the title from your prompt."
+msgstr "プロンプトから付けたタイトルのままになります。"
 
 msgid "It may be asleep"
 msgstr "スリープ中かもしれません"
@@ -10141,6 +10144,9 @@ msgstr "接続できないホスト上"
 msgid "On click"
 msgstr "クリック時"
 
+msgid "On focus change"
+msgstr "フォーカス変更時"
+
 msgid "On our radar. Order and scope may change."
 msgstr "視野には入っています。順序や範囲は変わる可能性があります。"
 
@@ -10152,6 +10158,9 @@ msgstr "このペースなら"
 
 msgid "On this page"
 msgstr "このページの内容"
+
+msgid "On window change"
+msgstr "ウィンドウ変更時"
 
 msgid "On your machine. Repos, worktrees, terminal output, and agent sessions stay local by default; cloud sync covers account and organization metadata only. Superset doesn't proxy any API calls."
 msgstr "お使いのマシンです。リポジトリ、ワークツリー、ターミナルの出力、エージェントのセッションは既定でローカルに留まります。クラウド同期の対象はアカウントと組織のメタデータのみです。SupersetはAPI呼び出しを一切中継しません。"
@@ -14717,9 +14726,6 @@ msgstr "リポジトリを同期"
 msgid "Sync started"
 msgstr "同期を開始しました"
 
-msgid "Syncing with remote"
-msgstr "リモートと同期中"
-
 msgid "Syncing..."
 msgstr "同期中..."
 
@@ -16441,9 +16447,6 @@ msgstr "これを確認して"
 
 msgid "Verify your identity"
 msgstr "本人確認"
-
-msgid "Verifying base branch"
-msgstr "ベースブランチを確認中"
 
 msgid "Version"
 msgstr "バージョン"

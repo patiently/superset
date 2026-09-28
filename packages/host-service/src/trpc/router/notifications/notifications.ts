@@ -10,6 +10,7 @@ import type { HostServiceContext } from "../../../types";
 import { touchLocalWorkspaceActivity } from "../../../workspaces/local-workspace-store";
 import { publicProcedure, router } from "../../index";
 import { captureSessionAccount } from "../usage/session-account/session-account";
+import { continueWorkspaceNaming } from "../workspace-creation/utils/workspace-naming-job";
 
 // Hook scripts emit "" for unset env vars; we coerce to undefined so the
 // AgentIdentity broadcast carries only meaningful fields.
@@ -233,6 +234,18 @@ export const notificationsRouter = router({
 		} catch (err) {
 			console.warn(
 				`[notifications.hook] failed to record activity for workspace ${terminalSession.originWorkspaceId}:`,
+				err,
+			);
+		}
+
+		try {
+			continueWorkspaceNaming(ctx, terminalSession.originWorkspaceId, {
+				eventType,
+				agentReply: preview,
+			});
+		} catch (err) {
+			console.warn(
+				`[notifications.hook] failed to schedule naming for workspace ${terminalSession.originWorkspaceId}:`,
 				err,
 			);
 		}

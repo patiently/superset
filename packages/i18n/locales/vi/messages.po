@@ -1572,6 +1572,9 @@ msgstr "Tùy chọn nâng cao"
 msgid "After"
 msgstr "Sau"
 
+msgid "After delay (3s)"
+msgstr "Sau khoảng trễ (3 giây)"
+
 msgid "Against base"
 msgstr "So với nhánh gốc"
 
@@ -2308,6 +2311,9 @@ msgstr "Tự động (theo hệ thống)"
 
 msgid "Auto follows your system language. You can change it later in Settings."
 msgstr "Tự động sẽ theo ngôn ngữ hệ thống. Bạn có thể đổi sau trong Cài đặt."
+
+msgid "Auto Save"
+msgstr "Tự động lưu"
 
 msgid "auto-generated"
 msgstr "tự động tạo"
@@ -4004,6 +4010,9 @@ msgstr "Kiểm soát cách máy cục bộ của bạn có thể được truy c
 msgid "Control what each click — plain or with a modifier — does to a file or URL. Each row binds one modifier combination to an action."
 msgstr "Chọn mỗi kiểu nhấp — thường hoặc kèm phím bổ trợ — sẽ làm gì với một tệp hoặc URL. Mỗi dòng gắn một tổ hợp phím bổ trợ với một hành động."
 
+msgid "Controls when manually edited files are saved"
+msgstr "Kiểm soát thời điểm lưu các tệp được chỉnh sửa thủ công"
+
 msgid "Conversation"
 msgstr "Cuộc thảo luận"
 
@@ -4182,9 +4191,6 @@ msgstr "Sao chép lịch sử duyệt web và thông tin đăng nhập từ trì
 
 msgid "Copy your key now — you won't be able to see it again."
 msgstr "Hãy sao chép khóa ngay — bạn sẽ không xem lại được nữa."
-
-msgid "Copying configuration"
-msgstr "Đang sao chép cấu hình"
 
 msgid "Cost"
 msgstr "Chi phí"
@@ -4460,6 +4466,9 @@ msgstr "Không tải được hồ sơ của bạn nên chức năng chỉnh s�
 msgid "Couldn't merge pull request"
 msgstr "Không thể merge pull request"
 
+msgid "Couldn't name \"{name}\" automatically"
+msgstr "Không thể tự động đặt tên cho \"{name}\""
+
 msgid "Couldn't parse this diff: {patchParseError}"
 msgstr "Không thể phân tích diff này: {patchParseError}"
 
@@ -4712,9 +4721,6 @@ msgstr "đang tạo"
 
 msgid "Creating"
 msgstr "Đang tạo"
-
-msgid "Creating git worktree"
-msgstr "Đang tạo git worktree"
 
 msgid "Creating PR..."
 msgstr "Đang tạo PR…"
@@ -6652,9 +6658,6 @@ msgstr "Bộ lọc"
 msgid "Filters, {activeFilterCount} active"
 msgstr "Bộ lọc, {activeFilterCount} đang bật"
 
-msgid "Finalizing setup"
-msgstr "Đang hoàn tất thiết lập"
-
 msgid "Find"
 msgstr "Tìm"
 
@@ -7688,9 +7691,6 @@ msgstr "Khởi tạo Git"
 msgid "Initialize Git Repository?"
 msgstr "Khởi tạo repository Git?"
 
-msgid "Initializing session"
-msgstr "Đang khởi tạo phiên"
-
 msgid "Initializing..."
 msgstr "Đang khởi tạo..."
 
@@ -7932,6 +7932,9 @@ msgstr "URL của issue phải khớp với {repoMismatch}."
 
 msgid "Issue…"
 msgstr "Issue…"
+
+msgid "It keeps the title from your prompt."
+msgstr "Tiêu đề từ lời nhắc của bạn sẽ được giữ nguyên."
 
 msgid "It may be asleep"
 msgstr "Máy có thể đang ngủ"
@@ -10141,6 +10144,9 @@ msgstr "Trên một host bạn không kết nối được"
 msgid "On click"
 msgstr "Khi nhấp"
 
+msgid "On focus change"
+msgstr "Khi thay đổi tiêu điểm"
+
 msgid "On our radar. Order and scope may change."
 msgstr "Đang trong tầm ngắm. Thứ tự và phạm vi có thể thay đổi."
 
@@ -10152,6 +10158,9 @@ msgstr "Với tốc độ này"
 
 msgid "On this page"
 msgstr "Trên trang này"
+
+msgid "On window change"
+msgstr "Khi thay đổi cửa sổ"
 
 msgid "On your machine. Repos, worktrees, terminal output, and agent sessions stay local by default; cloud sync covers account and organization metadata only. Superset doesn't proxy any API calls."
 msgstr "Trên máy của bạn. Repo, worktree, output terminal và phiên agent mặc định vẫn ở cục bộ; đồng bộ cloud chỉ gồm metadata tài khoản và tổ chức. Superset không proxy bất kỳ lệnh gọi API nào."
@@ -14717,9 +14726,6 @@ msgstr "Đồng bộ repository"
 msgid "Sync started"
 msgstr "Đã bắt đầu đồng bộ"
 
-msgid "Syncing with remote"
-msgstr "Đang đồng bộ với remote"
-
 msgid "Syncing..."
 msgstr "Đang đồng bộ..."
 
@@ -16441,9 +16447,6 @@ msgstr "Xác minh điều này"
 
 msgid "Verify your identity"
 msgstr "Xác minh danh tính của bạn"
-
-msgid "Verifying base branch"
-msgstr "Đang kiểm tra nhánh gốc"
 
 msgid "Version"
 msgstr "Phiên bản"

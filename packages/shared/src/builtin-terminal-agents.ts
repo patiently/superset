@@ -66,7 +66,7 @@ export const BUILTIN_TERMINAL_AGENTS = [
 		resumeCommand: "claude --dangerously-skip-permissions --resume",
 		forkCommand:
 			"claude --dangerously-skip-permissions --resume {sessionId} --fork-session",
-		nonInteractiveCommand: "claude -p",
+		nonInteractiveCommand: "claude --strict-mcp-config -p",
 		includeInDefaultTerminalPresets: true,
 	}),
 	createBuiltinTerminalAgent({

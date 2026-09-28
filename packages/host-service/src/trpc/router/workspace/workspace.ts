@@ -11,6 +11,7 @@ import {
 	toCloudShape,
 	updateLocalWorkspace,
 } from "../../../workspaces/local-workspace-store";
+import { cancelAndWaitWorkspaceTitleCommit } from "../../../workspaces/workspace-title-jobs";
 import { protectedProcedure, router } from "../../index";
 import { resolveWorktreePath } from "../git/utils/resolve-worktree";
 import { destroyWorkspace } from "../workspace-cleanup";
@@ -134,6 +135,8 @@ export const workspaceRouter = router({
 					tags: getWorkspaceTags(ctx.db, current.id, ctx.userId),
 				};
 			}
+			if (patch.name !== undefined || patch.branch !== undefined)
+				await cancelAndWaitWorkspaceTitleCommit(ctx.db, input.id);
 			const updated = updateLocalWorkspace(
 				{ db: ctx.db, eventBus: ctx.eventBus, userId: ctx.userId },
 				input.id,

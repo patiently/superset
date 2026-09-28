@@ -1572,6 +1572,9 @@ msgstr "Opciones avanzadas"
 msgid "After"
 msgstr "Después"
 
+msgid "After delay (3s)"
+msgstr "Después de un retraso (3s)"
+
 msgid "Against base"
 msgstr "Frente a la base"
 
@@ -2308,6 +2311,9 @@ msgstr "Automático (sistema)"
 
 msgid "Auto follows your system language. You can change it later in Settings."
 msgstr "Automático sigue el idioma del sistema. Puedes cambiarlo más adelante en Configuración."
+
+msgid "Auto Save"
+msgstr "Guardado automático"
 
 msgid "auto-generated"
 msgstr "generado automáticamente"
@@ -4004,6 +4010,9 @@ msgstr "Controla cómo se puede acceder a tu máquina local desde el exterior"
 msgid "Control what each click — plain or with a modifier — does to a file or URL. Each row binds one modifier combination to an action."
 msgstr "Controla qué hace cada clic, solo o con un modificador, sobre un archivo o una URL. Cada fila asocia una combinación de modificadores a una acción."
 
+msgid "Controls when manually edited files are saved"
+msgstr "Controla cuándo se guardan los archivos editados manualmente"
+
 msgid "Conversation"
 msgstr "Conversación"
 
@@ -4182,9 +4191,6 @@ msgstr "Copiar el historial de navegación y los inicios de sesión de otro nave
 
 msgid "Copy your key now — you won't be able to see it again."
 msgstr "Copia tu clave ahora: no podrás volver a verla."
-
-msgid "Copying configuration"
-msgstr "Copiando la configuración"
 
 msgid "Cost"
 msgstr "Coste"
@@ -4460,6 +4466,9 @@ msgstr "No se pudo cargar tu perfil, así que la edición está desactivada."
 msgid "Couldn't merge pull request"
 msgstr "No se pudo fusionar la pull request"
 
+msgid "Couldn't name \"{name}\" automatically"
+msgstr "No se pudo nombrar «{name}» automáticamente"
+
 msgid "Couldn't parse this diff: {patchParseError}"
 msgstr "No se pudo analizar este diff: {patchParseError}"
 
@@ -4712,9 +4721,6 @@ msgstr "creando"
 
 msgid "Creating"
 msgstr "Creando"
-
-msgid "Creating git worktree"
-msgstr "Creando el worktree de git"
 
 msgid "Creating PR..."
 msgstr "Creando PR…"
@@ -6652,9 +6658,6 @@ msgstr "Filtros"
 msgid "Filters, {activeFilterCount} active"
 msgstr "Filtros, {activeFilterCount} activos"
 
-msgid "Finalizing setup"
-msgstr "Finalizando la configuración"
-
 msgid "Find"
 msgstr "Buscar"
 
@@ -7688,9 +7691,6 @@ msgstr "Inicializar Git"
 msgid "Initialize Git Repository?"
 msgstr "¿Inicializar el repositorio de Git?"
 
-msgid "Initializing session"
-msgstr "Inicializando la sesión"
-
 msgid "Initializing..."
 msgstr "Inicializando..."
 
@@ -7932,6 +7932,9 @@ msgstr "La URL del issue debe coincidir con {repoMismatch}."
 
 msgid "Issue…"
 msgstr "Issue…"
+
+msgid "It keeps the title from your prompt."
+msgstr "Conserva el título de tu instrucción."
 
 msgid "It may be asleep"
 msgstr "Puede que esté en reposo"
@@ -10141,6 +10144,9 @@ msgstr "En un host que no puedes alcanzar"
 msgid "On click"
 msgstr "Al hacer clic"
 
+msgid "On focus change"
+msgstr "Al cambiar el foco"
+
 msgid "On our radar. Order and scope may change."
 msgstr "Lo tenemos en el radar. El orden y el alcance pueden cambiar."
 
@@ -10152,6 +10158,9 @@ msgstr "A este ritmo"
 
 msgid "On this page"
 msgstr "En esta página"
+
+msgid "On window change"
+msgstr "Al cambiar de ventana"
 
 msgid "On your machine. Repos, worktrees, terminal output, and agent sessions stay local by default; cloud sync covers account and organization metadata only. Superset doesn't proxy any API calls."
 msgstr "En tu equipo. Los repositorios, los worktrees, la salida de la terminal y las sesiones de agente se quedan en local por defecto; la sincronización en la nube solo cubre los metadatos de cuenta y organización. Superset no hace de proxy de ninguna llamada a la API."
@@ -14717,9 +14726,6 @@ msgstr "Sincronizar los repositorios"
 msgid "Sync started"
 msgstr "Sincronización iniciada"
 
-msgid "Syncing with remote"
-msgstr "Sincronizando con el remoto"
-
 msgid "Syncing..."
 msgstr "Sincronizando..."
 
@@ -16441,9 +16447,6 @@ msgstr "Verifica esto"
 
 msgid "Verify your identity"
 msgstr "Verificar tu identidad"
-
-msgid "Verifying base branch"
-msgstr "Verificando la rama base"
 
 msgid "Version"
 msgstr "Versión"
