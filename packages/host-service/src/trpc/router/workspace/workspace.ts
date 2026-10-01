@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { basename } from "node:path";
 import { workspaceTagsInputSchema } from "@superset/shared/workspace-tags";
 import { TRPCError } from "@trpc/server";
-import { eq, isNull } from "drizzle-orm";
+import { eq, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { projects, workspaces } from "../../../db/schema";
 import {
@@ -47,8 +47,22 @@ export const workspaceRouter = router({
 	list: protectedProcedure
 		.input(z.object({ includeArchived: z.boolean().default(false) }).optional())
 		.query(({ ctx, input }) => {
+			const deletedProjectIds = new Set(
+				ctx.db
+					.select({ id: projects.id })
+					.from(projects)
+					.where(isNotNull(projects.deletedAt))
+					.all()
+					.map((project) => project.id),
+			);
 			const rows = input?.includeArchived
-				? ctx.db.select().from(workspaces).all()
+				? ctx.db
+						.select()
+						.from(workspaces)
+						.all()
+						.filter(
+							(row) => !row.projectId || !deletedProjectIds.has(row.projectId),
+						)
 				: ctx.db
 						.select()
 						.from(workspaces)

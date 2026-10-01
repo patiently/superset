@@ -49,6 +49,12 @@ over: a pane still open on the deleted workspace keeps asking
 `cloudWorkspace.access` and logs "Cloud workspace is deleted" until it is
 closed.
 
+**Cloud automations start boxes on a schedule. Open.** An automation set to a
+new cloud workspace each run leaves one box per run. Each box stops after four
+idle hours but keeps its snapshot, and nothing deletes it. A pinned automation
+reuses one box. There is no spend limit; per-org rate limits are the planned
+answer.
+
 ## Credentials and blast radius
 
 **Model credentials are the person's sign-in, never ours and never the

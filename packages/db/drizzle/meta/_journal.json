@@ -897,6 +897,48 @@
       "when": 1790361707624,
       "tag": "0127_environments_region",
       "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1790620165276,
+      "tag": "0128_drop_environments_name_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1790627951542,
+      "tag": "0129_page_reports_and_takedown",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1790640314160,
+      "tag": "0130_automations_cloud_target",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1790653034319,
+      "tag": "0131_cloud_presence_and_task_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1790733596109,
+      "tag": "0132_rename_cloud_workspace_attachment_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1790745321789,
+      "tag": "0133_cloud_workspace_unarchived_event",
+      "breakpoints": true
     }
   ]
 }

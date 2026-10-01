@@ -302,6 +302,7 @@ export const PLUGIN_CATALOG: readonly PluginCatalogEntry[] = [
 		version: "1.0.0",
 		description: "Debug with production error context",
 		interface: { displayName: "Sentry", category: "Developer tools" },
+		auth: [{ type: "oauth2" }],
 		mcpServers: {
 			sentry: { type: "http", url: "https://mcp.sentry.dev/mcp" },
 		},

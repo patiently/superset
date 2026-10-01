@@ -335,7 +335,13 @@ export const gitWorktreeStateTask = defineWorkerTask<
 });
 
 export const gitWorktreeRemoveTask = defineWorkerTask<
-	{ repoPath: string; worktreePath: string; gitEnv: GitTaskEnv },
+	{
+		repoPath: string;
+		worktreePath: string;
+		gitEnv: GitTaskEnv;
+		/** false lets git refuse a worktree with uncommitted changes. */
+		force?: boolean;
+	},
 	{ stillRegistered: boolean; removeError?: string }
 >({
 	type: "git/removeWorktree",
@@ -343,7 +349,10 @@ export const gitWorktreeRemoveTask = defineWorkerTask<
 	// HOST-SERVICE-47) and the timeout named only the budget. Its steps stall
 	// for unrelated reasons, so each announces itself before starting and the
 	// pool names the last one in the timeout error.
-	handler: async ({ repoPath, worktreePath, gitEnv }, reportPhase) => {
+	handler: async (
+		{ repoPath, worktreePath, gitEnv, force = true },
+		reportPhase,
+	) => {
 		// Labelled from the first statement so every moment of the handler
 		// falls under some phase — an unlabelled timeout would be
 		// indistinguishable from one reported by a build without this.
@@ -364,7 +373,11 @@ export const gitWorktreeRemoveTask = defineWorkerTask<
 		reportPhase?.("worktree-remove");
 		let removeError: string | undefined;
 		await git
-			.raw(["worktree", "remove", "--force", "--force", target])
+			.raw(
+				force
+					? ["worktree", "remove", "--force", "--force", target]
+					: ["worktree", "remove", target],
+			)
 			.catch((err: unknown) => {
 				removeError = (err instanceof Error ? err.message : String(err)).trim();
 				console.warn("[git/removeWorktree] git worktree remove failed", {

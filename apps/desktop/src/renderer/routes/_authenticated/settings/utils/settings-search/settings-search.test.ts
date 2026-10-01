@@ -117,7 +117,7 @@ describe("settings search - usage in sidebar", () => {
 describe("settings search - auto save", () => {
 	it('lists Auto Save for v2 users when searching "onFocusChange"', () => {
 		const ids = getVisibleItemsForSection({
-			section: "behavior",
+			section: "files",
 			searchQuery: "onFocusChange",
 			isV2: true,
 		});
@@ -130,7 +130,7 @@ describe("settings search - auto save", () => {
 		"on window change",
 	])('lists Auto Save for v2 users when searching "%s"', (searchQuery) => {
 		const ids = getVisibleItemsForSection({
-			section: "behavior",
+			section: "files",
 			searchQuery,
 			isV2: true,
 		});

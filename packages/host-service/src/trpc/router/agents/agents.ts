@@ -18,6 +18,10 @@ import {
 	envOverlayPrefix,
 	sanitizePromptForPty,
 } from "@superset/shared/agent-prompt-launch";
+import {
+	type TerminalColors,
+	terminalColorsSchema,
+} from "@superset/shared/terminal-colors";
 import { TRPCError } from "@trpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
@@ -124,6 +128,7 @@ function buildAttachmentBlock(
 }
 
 export interface AgentRunInput {
+	colors?: TerminalColors;
 	workspaceId: string;
 	agent: string;
 	prompt: string;
@@ -493,6 +498,7 @@ async function runTerminalAgent(
 		db: ctx.db,
 		eventBus: ctx.eventBus,
 		initialCommand: fullCommand,
+		colors: input.colors,
 	});
 
 	if ("error" in result) {
@@ -650,6 +656,7 @@ export const agentsRouter = router({
 		.input(
 			z.object({
 				workspaceId: z.string().uuid(),
+				colors: terminalColorsSchema.optional(),
 				agent: z.string().min(1),
 				// Optional: an empty prompt launches the bare agent (the builder
 				// drops promptArgs).

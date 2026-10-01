@@ -3,6 +3,7 @@ import type { RendererContext } from "@superset/panes";
 import { toast } from "@superset/ui/sonner";
 import { cn } from "@superset/ui/utils";
 import { workspaceTrpc } from "@superset/workspace-client";
+import { terminalQueryColors } from "renderer/lib/terminal/terminal-query-colors";
 import type { OpenFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/types";
 import "@xterm/xterm/css/xterm.css";
 import {
@@ -13,21 +14,18 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
-import { env } from "renderer/env.renderer";
 import { useTerminalAppearance } from "renderer/hooks/useTerminalAppearance";
-import { useV2UserPreferences } from "renderer/hooks/useV2UserPreferences";
 import { useHotkey } from "renderer/hotkeys";
 import {
 	actionLabel,
 	type FolderClickPolicy,
 	folderIntentLabel,
-	type LinkAction,
 	LinkHoverHint,
+	type UrlLinkAction,
 	useTerminalFilePolicy,
 	useTerminalFolderPolicy,
-	useTerminalUrlPolicy,
+	useUrlLinkAction,
 } from "renderer/lib/clickPolicy";
-import { parseSupersetPageUrl } from "renderer/lib/parseSupersetPageUrl";
 import {
 	type ConnectionState,
 	terminalRuntimeRegistry,
@@ -55,6 +53,7 @@ import {
 } from "../../utils/runTerminalLinkAction";
 import { TerminalAgentAutoResume } from "./components/TerminalAgentAutoResume";
 import { TerminalCopiedIndicator } from "./components/TerminalCopiedIndicator";
+import { TerminalNarrowedBanner } from "./components/TerminalNarrowedBanner";
 import { TerminalRichInput } from "./components/TerminalRichInput";
 import { terminalContextMenuLinkStore } from "./contextMenuLinkStore";
 import { useCopyOnSelect } from "./hooks/useCopyOnSelect";
@@ -82,9 +81,8 @@ export function TerminalPane({
 }: TerminalPaneProps) {
 	const { t } = useLingui();
 	const filePolicy = useTerminalFilePolicy();
-	const urlPolicy = useTerminalUrlPolicy();
+	const getUrlAction = useUrlLinkAction("4-tier");
 	const folderPolicy = useTerminalFolderPolicy();
-	const { preferences } = useV2UserPreferences();
 	const {
 		hoveredLink,
 		liveHoveredLinkRef,
@@ -145,6 +143,10 @@ export function TerminalPane({
 	const themedUrl = new URL(baseWebsocketUrl);
 	themedUrl.searchParams.set("workspaceId", workspaceId);
 	themedUrl.searchParams.set("themeType", themeType);
+	themedUrl.searchParams.set(
+		"colors",
+		JSON.stringify(terminalQueryColors(appearance.theme)),
+	);
 	if (paneData.createOnAttach) {
 		themedUrl.searchParams.set("create", "1");
 	}
@@ -340,17 +342,7 @@ export function TerminalPane({
 					);
 				},
 				onUrlClick: (event, url) => {
-					const pageSlug = parseSupersetPageUrl(url, env.NEXT_PUBLIC_WEB_URL);
-					if (pageSlug) {
-						event.preventDefault();
-						runUrlLinkAction(
-							linkActionDepsRef.current,
-							url,
-							preferences.pageOpenAction,
-						);
-						return;
-					}
-					const action = urlPolicy.getAction(event);
+					const action = getUrlAction(event, url);
 					if (action === null) {
 						showHint(event.clientX, event.clientY);
 						return;
@@ -371,9 +363,8 @@ export function TerminalPane({
 		onLinkLeave,
 		showHint,
 		filePolicy,
-		urlPolicy,
+		getUrlAction,
 		folderPolicy,
-		preferences.pageOpenAction,
 	]);
 
 	// Publish what a right-click landed on so the pane context menu (built in
@@ -624,6 +615,10 @@ export function TerminalPane({
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 		>
+			<TerminalNarrowedBanner
+				terminalId={terminalId}
+				terminalInstanceId={terminalInstanceId}
+			/>
 			<div className="relative min-h-0 flex-1 overflow-hidden">
 				<TerminalSearch
 					searchAddon={searchAddon}
@@ -662,10 +657,9 @@ export function TerminalPane({
 				hoverLabel={resolveHoverLabel(
 					hoveredLink,
 					filePolicy,
-					urlPolicy,
+					getUrlAction,
 					folderPolicy,
 					worktreePath,
-					preferences.pageOpenAction,
 				)}
 				hoverPosition={hoveredLink}
 				clickHint={hint}
@@ -682,10 +676,9 @@ export function TerminalPane({
 function resolveHoverLabel(
 	hovered: HoveredLink | null,
 	filePolicy: ReturnType<typeof useTerminalFilePolicy>,
-	urlPolicy: ReturnType<typeof useTerminalUrlPolicy>,
+	getUrlAction: UrlLinkAction,
 	folderPolicy: FolderClickPolicy,
 	worktreePath: string | undefined,
-	pageOpenAction: LinkAction,
 ): string | null {
 	if (!hovered) return null;
 	const event = {
@@ -694,11 +687,7 @@ function resolveHoverLabel(
 		shiftKey: hovered.shift,
 	};
 	if (hovered.info.kind === "url") {
-		const pageSlug = parseSupersetPageUrl(
-			hovered.info.url,
-			env.NEXT_PUBLIC_WEB_URL,
-		);
-		const action = pageSlug ? pageOpenAction : urlPolicy.getAction(event);
+		const action = getUrlAction(event, hovered.info.url);
 		return action ? actionLabel(action, "url") : null;
 	}
 	if (hovered.info.isDirectory) {

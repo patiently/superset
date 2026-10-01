@@ -279,6 +279,14 @@ export const BUILTIN_TERMINAL_AGENTS = [
 		// untrusted directory without this.
 		nonInteractiveCommand: "devin --respect-workspace-trust false -p",
 	}),
+	createBuiltinTerminalAgent({
+		id: "ufo",
+		label: "UFO",
+		description:
+			"UFO's workspace assistant for local and remote terminal workflows.",
+		command: "ufo",
+		resumeCommand: "ufo --resume",
+	}),
 ] as const;
 
 export type BuiltinTerminalAgentType =

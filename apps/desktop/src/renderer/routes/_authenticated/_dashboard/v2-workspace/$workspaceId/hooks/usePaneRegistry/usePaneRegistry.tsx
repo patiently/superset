@@ -841,6 +841,7 @@ export function usePaneRegistry({
 				),
 				renderHeaderExtras: (ctx: RendererContext<PaneViewerData>) => (
 					<PagePaneHeaderExtras
+						onCreateNewAgentSession={createNewAgentSession}
 						data={ctx.pane.data as PagePaneData}
 						paneId={ctx.pane.id}
 						workspaceId={workspaceId}
