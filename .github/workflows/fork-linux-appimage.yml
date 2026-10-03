@@ -1,6 +1,6 @@
 name: Fork Linux AppImage Release
 
-# Daily build on upstream main e629b619a: the Linux GPU fix and the fs-watcher
+# Daily build on upstream main b8c5ad799: the Linux GPU fix and the fs-watcher
 # fixes. Proves every fix's tests go red without it and green with it, then
 # builds and publishes desktop-v<VERSION> with the upstream asset name.
 
@@ -255,7 +255,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Daily build: upstream superset-sh/superset main at e629b619a (1.33.0) plus the Linux GPU fix and the four fs-watcher fixes, the same code as the open upstream PRs #7880 (GPU), #7878 (keep-alive) and #7879 (hover card), plus the two held-back ignored-dir listing fixes. Not an A/B arm: the measured arms are desktop-v1.30.2-main-control.2, desktop-v1.30.2-fswatch-only.2 and desktop-v1.30.2-gpu-fswatch.5, all on main 2370f60d4. Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
+            --notes "Daily build: upstream superset-sh/superset main at b8c5ad799 (1.35.0) plus the Linux GPU fix and the four fs-watcher fixes, the same code as the open upstream PRs #7880 (GPU), #7878 (keep-alive) and #7879 (hover card), plus the two held-back ignored-dir listing fixes. Not an A/B arm: the measured arms are desktop-v1.30.2-main-control.2, desktop-v1.30.2-fswatch-only.2 and desktop-v1.30.2-gpu-fswatch.5, all on main 2370f60d4. Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 

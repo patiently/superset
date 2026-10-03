@@ -23,6 +23,7 @@ import sentryIconUrl from "renderer/assets/icons/sentry-icon.svg";
 import slackIconUrl from "renderer/assets/icons/slack-icon.svg";
 import supabaseIconUrl from "renderer/assets/icons/supabase-icon.png";
 import superhumanIconUrl from "renderer/assets/icons/superhuman-icon.png";
+import ynabIconUrl from "renderer/assets/icons/ynab-icon.png";
 
 /**
  * Per-plugin brand icons. Icons stay per-app rather than in the shared
@@ -52,6 +53,7 @@ const IMAGE_ICONS: Record<string, string> = {
 	neon: neonIconUrl,
 	circleback: circlebackIconUrl,
 	gmail: gmailIconUrl,
+	ynab: ynabIconUrl,
 };
 
 const PLUGIN_ICONS: Record<

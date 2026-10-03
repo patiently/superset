@@ -10,7 +10,7 @@ import { createRelaySocket } from "@superset/workspace-client";
 import { useEffect } from "react";
 import { env } from "renderer/env.renderer";
 import { useActiveOrganizationId } from "renderer/hooks/useActiveOrganizationId";
-import { getJwt } from "renderer/lib/auth-client";
+import { ensureFreshJwt } from "renderer/lib/auth-client";
 import { cloudTrpc } from "renderer/lib/cloud-trpc";
 
 /**
@@ -48,6 +48,8 @@ export function RealtimeNudges() {
 					case "automation_runs":
 						void utils.automation.latestRuns.invalidate(undefined, options);
 						void utils.automation.listRuns.invalidate(undefined, options);
+						void utils.automation.listOrgRuns.invalidate(undefined, options);
+						void utils.automation.orgRunStats.invalidate(undefined, options);
 						break;
 				}
 			}
@@ -83,7 +85,7 @@ export function RealtimeNudges() {
 		const socket = createRelaySocket({
 			buildUrl: () =>
 				`${env.REALTIME_URL}${realtimeNudgesPath(organizationId)}`,
-			getToken: () => getJwt(),
+			getToken: () => ensureFreshJwt(),
 			minReconnectionDelay: 1_000,
 			maxReconnectionDelay: 30_000,
 		});
