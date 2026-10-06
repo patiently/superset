@@ -13,12 +13,16 @@ import { cn } from "@superset/ui/utils";
 import { workspaceTrpc } from "@superset/workspace-client";
 import {
 	Circle,
+	FileDiff,
 	FileText,
+	FolderTree,
 	GitCompareArrows,
 	GitPullRequest,
+	GitPullRequestArrow,
 	Globe,
 	MessageSquare,
 	Monitor,
+	Smartphone,
 } from "lucide-react";
 import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useMemo } from "react";
@@ -74,7 +78,13 @@ import { openSubagentPaneInStore } from "../../utils/openSubagentPaneInStore";
 import { useAgentSessionLauncher } from "../useAgentSessionLauncher";
 import type { OpenReviewDiff } from "../useReviewCommentNavigation";
 import type { TerminalLauncher } from "../useV2TerminalLauncher";
+import {
+	AgentSurfaceToggle,
+	AgentTerminalPane,
+	useAgentSurfaceSwitch,
+} from "./components/AgentTerminalPane";
 import { BrowserPane, BrowserPaneToolbar } from "./components/BrowserPane";
+import { ChangesListPane } from "./components/ChangesListPane";
 import { ChatV3Pane } from "./components/ChatV3Pane";
 import { CommentPane } from "./components/CommentPane";
 import { CommentPaneHeaderExtras } from "./components/CommentPane/components/CommentPaneHeaderExtras";
@@ -84,13 +94,15 @@ import { DiffPane } from "./components/DiffPane";
 import { DiffPaneHeaderExtras } from "./components/DiffPane/components/DiffPaneHeaderExtras";
 import { FilePane } from "./components/FilePane";
 import { FilePaneHeaderExtras } from "./components/FilePane/components/FilePaneHeaderExtras";
+import { FilesTreePane } from "./components/FilesTreePane";
+import { MobilePane } from "./components/MobilePane";
 import { PagePane } from "./components/PagePane";
 import { PagePaneHeaderExtras } from "./components/PagePaneHeaderExtras";
 import { PagePaneTitle } from "./components/PagePaneTitle";
 import { PullRequestPane } from "./components/PullRequestPane";
 import { PullRequestPaneHeaderExtras } from "./components/PullRequestPane/components/PullRequestPaneHeaderExtras";
+import { ReviewPane } from "./components/ReviewPane";
 import { SubagentPane } from "./components/SubagentPane";
-import { TerminalPane } from "./components/TerminalPane";
 import { TerminalPaneHeaderExtras } from "./components/TerminalPane/components/TerminalPaneHeaderExtras";
 import { TerminalPaneIcon } from "./components/TerminalPane/components/TerminalPaneIcon";
 import { TerminalSessionDropdown } from "./components/TerminalPane/components/TerminalSessionDropdown";
@@ -149,6 +161,8 @@ interface UsePaneRegistryOptions {
 	onRevealPath: (path: string) => void;
 	launcher: TerminalLauncher;
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
+	linkedStores?: StoreApi<WorkspaceStore<PaneViewerData>>[];
+	onSearch?: () => void;
 }
 
 export function usePaneRegistry({
@@ -158,11 +172,14 @@ export function usePaneRegistry({
 	onRevealPath,
 	launcher,
 	store,
+	linkedStores,
+	onSearch,
 }: UsePaneRegistryOptions): PaneRegistry<PaneViewerData> {
 	const { t } = useLingui();
 	const { workspace } = useWorkspace();
 	const workspaceId = workspace.id;
 	const isChatV3Enabled = useFeatureFlagEnabled(FEATURE_FLAGS.CHAT_V3) ?? false;
+	const agentSurface = useAgentSurfaceSwitch(workspaceId);
 	const host = useWorkspaceHostTarget(workspaceId);
 	const desktopUrl =
 		host.status === "ready" && host.kind === "sandbox" ? host.desktopUrl : null;
@@ -367,7 +384,14 @@ export function usePaneRegistry({
 						message: "Terminal",
 					}),
 				titleSource: (pane) => {
-					const { terminalId } = pane.data as TerminalPaneData;
+					const { terminalId, agentSurface, chatTitle } =
+						pane.data as TerminalPaneData;
+					if (agentSurface === "acp") {
+						return {
+							subscribe: () => () => {},
+							getSnapshot: () => chatTitle,
+						};
+					}
 					const instanceId = pane.id;
 					return {
 						subscribe: (callback) =>
@@ -401,14 +425,30 @@ export function usePaneRegistry({
 					);
 				},
 				onAfterClose: (pane, closedPanes) => {
-					const { terminalId } = pane.data as TerminalPaneData;
+					const {
+						acpSessionId,
+						agentSurface: surface,
+						terminalId,
+					} = pane.data as TerminalPaneData;
+					// On the ACP surface the adapter is the only process the close has
+					// left to end: the pty was either stopped by the switch or — for a
+					// chat opened from the launcher — never started, and asking the
+					// host to kill an id it has never seen only logs a failure.
+					if (surface === "acp") {
+						if (acpSessionId) void agentSurface.stopChat(acpSessionId);
+						return;
+					}
 					const firstClosed = closedPanes.find(
 						(candidate) =>
 							candidate.kind === "terminal" &&
 							(candidate.data as TerminalPaneData).terminalId === terminalId,
 					);
 					if (firstClosed?.id !== pane.id) return;
-					if (findTerminalPaneLocation(store.getState(), terminalId)) {
+					if (
+						[store, ...(linkedStores ?? [])].some((candidate) =>
+							findTerminalPaneLocation(candidate.getState(), terminalId),
+						)
+					) {
 						terminalRuntimeRegistry.release(terminalId, pane.id);
 						return;
 					}
@@ -432,6 +472,13 @@ export function usePaneRegistry({
 							onSessionRemoved={clearWorkspaceRunTerminal}
 							context={ctx}
 							launcher={launcher}
+							workspaceId={workspaceId}
+						/>
+						<AgentSurfaceToggle
+							data={ctx.pane.data as TerminalPaneData}
+							onChange={(surface, agent) =>
+								void agentSurface.switchSurface(ctx, surface, agent)
+							}
 							workspaceId={workspaceId}
 						/>
 						<V2NotificationStatusIndicator
@@ -473,11 +520,11 @@ export function usePaneRegistry({
 					);
 				},
 				renderPane: (ctx: RendererContext<PaneViewerData>) => (
-					<TerminalPane
+					<AgentTerminalPane
 						ctx={ctx}
-						workspaceId={workspaceId}
 						onOpenFile={onOpenFile}
 						onRevealPath={onRevealPath}
+						workspaceId={workspaceId}
 					/>
 				),
 				contextMenuActions: (_ctx, defaults) => {
@@ -704,6 +751,39 @@ export function usePaneRegistry({
 						},
 					}
 				: {}),
+			files: {
+				getIcon: () => <FolderTree className="size-3.5" />,
+				getTitle: () => t({ message: "Files" }),
+				renderPane: (ctx: RendererContext<PaneViewerData>) => (
+					<FilesTreePane
+						context={ctx}
+						workspaceId={workspaceId}
+						onSearch={onSearch}
+					/>
+				),
+			},
+			"changes-list": {
+				getIcon: () => <FileDiff className="size-3.5" />,
+				getTitle: () => t({ message: "Changes" }),
+				renderPane: (ctx: RendererContext<PaneViewerData>) => (
+					<ChangesListPane context={ctx} workspaceId={workspaceId} />
+				),
+			},
+			review: {
+				getIcon: () => <GitPullRequestArrow className="size-3.5" />,
+				getTitle: () => t({ message: "Review" }),
+				renderPane: (ctx: RendererContext<PaneViewerData>) => (
+					<ReviewPane context={ctx} workspaceId={workspaceId} />
+				),
+			},
+			mobile: {
+				getIcon: () => <Smartphone className="size-3.5" />,
+				getTitle: () =>
+					t({
+						message: "Mobile",
+					}),
+				renderPane: () => <MobilePane />,
+			},
 			...(isChatV3Enabled
 				? {
 						"chat-v3": {
@@ -716,7 +796,9 @@ export function usePaneRegistry({
 								const data = ctx.pane.data as ChatV3PaneData;
 								return (
 									<ChatV3Pane
+										isActive={ctx.isActive}
 										workspaceId={workspaceId}
+										onOpenFile={onOpenFile}
 										sessionId={data.sessionId}
 										onSessionIdChange={(id) =>
 											ctx.actions.updateData({ ...data, sessionId: id })
@@ -841,6 +923,7 @@ export function usePaneRegistry({
 				),
 				renderHeaderExtras: (ctx: RendererContext<PaneViewerData>) => (
 					<PagePaneHeaderExtras
+						onCreateNewAgentSession={createNewAgentSession}
 						data={ctx.pane.data as PagePaneData}
 						paneId={ctx.pane.id}
 						workspaceId={workspaceId}
@@ -886,8 +969,10 @@ export function usePaneRegistry({
 		}),
 		[
 			store,
+			linkedStores,
 			workspaceId,
 			isChatV3Enabled,
+			agentSurface,
 			clearWorkspaceRunTerminal,
 			clearShortcut,
 			scrollToBottomShortcut,
@@ -899,6 +984,7 @@ export function usePaneRegistry({
 			onOpenComment,
 			onOpenFile,
 			onRevealPath,
+			onSearch,
 			createNewAgentSession,
 			focusAgentTerminal,
 			workspaceTrpcUtils,

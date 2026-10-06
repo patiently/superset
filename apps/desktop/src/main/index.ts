@@ -47,10 +47,10 @@ import { resolveAppLocale } from "./lib/language";
 import { localDb } from "./lib/local-db";
 import { requestLocalNetworkAccess } from "./lib/local-network-permission";
 import { menuEmitter } from "./lib/menu-events";
-import { syncInstalledPluginMcpServers } from "./lib/plugin-installs";
 import { portForwardManager } from "./lib/port-forward";
 import { ensureProjectIconsDir, getProjectIconPath } from "./lib/project-icons";
 import { runQuitCleanup } from "./lib/quit-sequence";
+import { startResourceJournal } from "./lib/resource-metrics/resource-journal";
 import { initSentry } from "./lib/sentry";
 import {
 	prewarmTerminalRuntime,
@@ -590,13 +590,6 @@ if (!gotTheLock) {
 			console.error("[main] Failed to set up agent integrations:", error);
 		}
 		try {
-			// Converge agent MCP configs on the installed-plugin set, so
-			// installs/uninstalls that missed a mid-session sync land here.
-			syncInstalledPluginMcpServers();
-		} catch (error) {
-			console.error("[main] Failed to sync installed plugins:", error);
-		}
-		try {
 			installBundledCliShim();
 		} catch (error) {
 			console.error("[main] Failed to install bundled CLI shim:", error);
@@ -617,6 +610,7 @@ if (!gotTheLock) {
 		);
 		setupAutoUpdater();
 		initTray();
+		startResourceJournal();
 
 		const coldStartUrl = findDeepLinkInArgv(process.argv);
 		if (coldStartUrl) {

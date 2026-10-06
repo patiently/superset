@@ -13,12 +13,21 @@ import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createApiClient } from "./api";
-import { createChatV3Mount, registerChatV3Routes } from "./chat-v3";
+import {
+	createChatAgentBridge,
+	createChatV3Mount,
+	promptChatSession,
+	registerChatV3Routes,
+} from "./chat-v3";
 import { createDb, type HostDb } from "./db";
 import { EventBus, GitWatcher, registerEventBusRoute } from "./events";
 import { agentIsBusy, PageWatchManager } from "./page-watch/index.ts";
 import { registerForwardMuxRoute } from "./ports/forward-mux-route";
 import { portManager } from "./ports/port-manager";
+import {
+	PROJECT_PURGE_INTERVAL_MS,
+	purgeExpiredProjects,
+} from "./projects/project-deletion";
 import type { ApiAuthProvider } from "./providers/auth";
 import type { HostAuthProvider } from "./providers/host-auth";
 import { runArchivedWorkspaceReconcile } from "./runtime/archived-workspace-reconcile";
@@ -42,6 +51,7 @@ import {
 	SqliteTerminalAgentBindingPersistence,
 	TerminalAgentStore,
 } from "./terminal-agents";
+import { matchesAgentBinding } from "./terminal-agents/matches-agent-binding";
 import { appRouter } from "./trpc/router";
 import { gitStatusStore } from "./trpc/router/git/utils/git-status-store";
 import {
@@ -60,6 +70,7 @@ import type {
 } from "./types";
 import { getHostWorkerPool } from "./workers/host-worker-pool";
 import { gitWorkspaceRefsTask } from "./workers/tasks/git";
+import { disposeWorkspaceTitleJobs } from "./workspaces/workspace-title-jobs";
 
 export interface CreateAppOptions {
 	config: {
@@ -183,13 +194,6 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	});
 	pullRequestRuntime.start();
 
-	// Chat v3 runtime (plans/chat-v3-pane-mount.md). Registered unconditionally:
-	// the routes sit behind the same auth as every other host route, and the
-	// runtime is built on first request, so chat.db is never created on a host
-	// nobody chats with. Exposure is a client concern — the renderer gates the
-	// pane on the `chat-v3` PostHog flag.
-	const chatV3 = createChatV3Mount({ db, dbPath: config.dbPath });
-
 	const app = new Hono();
 	const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
@@ -248,6 +252,21 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 			text,
 			signal,
 		}) => {
+			const chat = terminalAgentStore.getChat(terminalId);
+			const chatSessionId = chat?.chatSessionId;
+			if (chatSessionId) {
+				if (!matchesAgentBinding(chat, expectedAgent)) {
+					throw new Error("The chat's agent changed before delivery");
+				}
+				await promptChatSession({
+					runtime: chatV3.runtime(),
+					chatSessionId,
+					text,
+					acquireDelivery,
+					signal,
+				});
+				return;
+			}
 			const result = await sendAgentMessage({
 				terminalId,
 				workspaceId,
@@ -265,12 +284,22 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 				throw new Error(result.error);
 			}
 		},
-		isTerminalAlive: (terminalId, workspaceId) =>
-			isAgentTerminalAlive({ terminalId, workspaceId, db, eventBus }),
+		isTerminalAlive: (terminalId, workspaceId) => {
+			const chat = terminalAgentStore.getChat(terminalId);
+			if (chat) return chat.lastEventType !== "Failed";
+			return isAgentTerminalAlive({ terminalId, workspaceId, db, eventBus });
+		},
 		isAgentBusy: (terminalId) =>
-			agentIsBusy(terminalAgentStore.get(terminalId)?.lastEventType),
+			agentIsBusy(
+				(
+					terminalAgentStore.getChat(terminalId) ??
+					terminalAgentStore.get(terminalId)
+				)?.lastEventType,
+			),
 		getAgent: (terminalId) => {
-			const binding = terminalAgentStore.get(terminalId);
+			const binding =
+				terminalAgentStore.getChat(terminalId) ??
+				terminalAgentStore.get(terminalId);
 			return binding?.endedAt === undefined ? binding : undefined;
 		},
 	});
@@ -282,6 +311,36 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		pageWatch,
 	};
 
+	// Chat v3 runtime (plans/chat-v3-pane-mount.md). Registered unconditionally:
+	// the routes sit behind the same auth as every other host route, and the
+	// runtime is built on first request, so chat.db is never created on a host
+	// nobody chats with. Exposure is a client concern — the renderer gates the
+	// pane on the `chat-v3` PostHog flag.
+	const chatAgentContext: HostServiceContext = {
+		git,
+		credentials: providers.credentials,
+		github,
+		execGh,
+		api,
+		db,
+		runtime,
+		eventBus,
+		terminalAgentStore,
+		organizationId: config.organizationId,
+		isAuthenticated: true,
+		browserBridge: config.browserBridge,
+	};
+	const chatV3 = createChatV3Mount({
+		db,
+		dbPath: config.dbPath,
+		agents: createChatAgentBridge(chatAgentContext),
+		onSessionChanged: ({ scopeId, occurredAt }) =>
+			eventBus.broadcastChatSessionsChanged({
+				workspaceId: scopeId,
+				occurredAt,
+			}),
+	});
+
 	// Startup sweeps run in the background so they don't block server
 	// startup.
 	//
@@ -290,6 +349,24 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	// process crashed out of — and a sandbox is provisioned fresh with exactly
 	// one project and one workspace, seeded by us, that no earlier build ever
 	// touched. There is nothing to recover, so the sweeps can only invent.
+	const purgeContext = {
+		credentials: providers.credentials,
+		api,
+		db,
+		eventBus,
+		organizationId: config.organizationId,
+	};
+	const runProjectPurge = () =>
+		purgeExpiredProjects(purgeContext).catch((err) => {
+			console.warn("[host-service] project purge failed:", err);
+			return 0;
+		});
+	const projectPurgeTimer =
+		process.env.SUPERSET_HOST_RUN_MODE === "sandbox"
+			? null
+			: setInterval(() => void runProjectPurge(), PROJECT_PURGE_INTERVAL_MS);
+	projectPurgeTimer?.unref?.();
+
 	void (async () => {
 		if (process.env.SUPERSET_HOST_RUN_MODE === "sandbox") return;
 		await runProjectBackfill({
@@ -315,6 +392,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 		}).catch((err) => {
 			console.warn("[host-service] archived-workspace reconcile failed:", err);
 		});
+		await runProjectPurge();
 		// Re-share the default account's Claude/Codex config into the selected
 		// provider profiles. Last: it touches no host state the sweeps above
 		// repair, and a slow filesystem must not delay them.
@@ -443,6 +521,8 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 
 	const ownsDb = options.db === undefined;
 	const dispose = async (): Promise<void> => {
+		if (projectPurgeTimer) clearInterval(projectPurgeTimer);
+		await disposeWorkspaceTitleJobs(db);
 		// Each step is best-effort and isolated: a throw in one cleanup must
 		// not skip the others, otherwise a flaky `.stop()` could leak the
 		// open SQLite handle for the rest of the process lifetime.

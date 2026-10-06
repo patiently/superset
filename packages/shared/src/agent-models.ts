@@ -83,6 +83,12 @@ export const SUPERSET_CHAT_MODELS: readonly SupersetChatModel[] = [
 	},
 	{ id: "anthropic/claude-fable-5", label: "Fable 5", provider: "Anthropic" },
 	{
+		id: "anthropic/claude-sonnet-5-5",
+		label: "Sonnet 5.5",
+		provider: "Anthropic",
+	},
+	{ id: "anthropic/claude-sonnet-5", label: "Sonnet 5", provider: "Anthropic" },
+	{
 		id: "anthropic/claude-sonnet-4-6",
 		label: "Sonnet 4.6",
 		provider: "Anthropic",
@@ -92,6 +98,7 @@ export const SUPERSET_CHAT_MODELS: readonly SupersetChatModel[] = [
 		label: "Haiku 4.5",
 		provider: "Anthropic",
 	},
+	{ id: "openai/gpt-6.1-sol", label: "GPT-6.1 Sol", provider: "OpenAI" },
 	{ id: "openai/gpt-6-astra", label: "GPT-6 Astra", provider: "OpenAI" },
 	{ id: "openai/gpt-6-sol", label: "GPT-6 Sol", provider: "OpenAI" },
 	{ id: "openai/gpt-6-luna", label: "GPT-6 Luna", provider: "OpenAI" },
@@ -130,6 +137,7 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 			{ id: "claude-fable-5", label: "Fable 5", group: PINNED_GROUP },
 			{ id: "claude-opus-5-5", label: "Opus 5.5", group: PINNED_GROUP },
 			{ id: "claude-opus-5", label: "Opus 5", group: PINNED_GROUP },
+			{ id: "claude-sonnet-5-5", label: "Sonnet 5.5", group: PINNED_GROUP },
 			{ id: "claude-sonnet-5", label: "Sonnet 5", group: PINNED_GROUP },
 			{ id: "claude-opus-4-8", label: "Opus 4.8", group: PINNED_GROUP },
 			{ id: "claude-opus-4-7", label: "Opus 4.7", group: PINNED_GROUP },
@@ -145,6 +153,7 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 		models: [
 			// Availability is account-dependent; ids are verified against Codex's
 			// live catalog (`codex app-server` → `model/list`).
+			{ id: "gpt-6.1-sol", label: "GPT-6.1 Sol", group: CURRENT_GROUP },
 			{ id: "gpt-6-astra", label: "GPT-6 Astra", group: CURRENT_GROUP },
 			{ id: "gpt-6-sol", label: "GPT-6 Sol", group: CURRENT_GROUP },
 			{ id: "gpt-6-luna", label: "GPT-6 Luna", group: CURRENT_GROUP },
@@ -160,6 +169,8 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 		presetId: "gemini",
 		modelFlag: "--model",
 		models: [
+			{ id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+			{ id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
 			{ id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
 			{ id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
 		],
@@ -168,6 +179,24 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 		presetId: "copilot",
 		modelFlag: "--model",
 		models: [
+			{ id: "auto", label: "Auto" },
+			{ id: "claude-opus-5.5", label: "Claude Opus 5.5" },
+			{ id: "claude-opus-5", label: "Claude Opus 5" },
+			{ id: "claude-fable-5.1", label: "Claude Fable 5.1" },
+			{ id: "claude-sonnet-5.5", label: "Claude Sonnet 5.5" },
+			{ id: "claude-sonnet-5", label: "Claude Sonnet 5" },
+			{ id: "claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
+			{ id: "claude-haiku-4.5", label: "Claude Haiku 4.5" },
+			{ id: "gpt-6-astra", label: "GPT-6 Astra" },
+			{ id: "gpt-6-sol", label: "GPT-6 Sol" },
+			{ id: "gpt-6-luna", label: "GPT-6 Luna" },
+			{ id: "gpt-5.6-sol", label: "GPT-5.6 Sol" },
+			{ id: "gpt-5.6-terra", label: "GPT-5.6 Terra" },
+			{ id: "gpt-5.6-luna", label: "GPT-5.6 Luna" },
+			{ id: "gpt-5.3-codex", label: "Codex 5.3" },
+			{ id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+			{ id: "grok-4.7", label: "Grok 4.7" },
+			{ id: "kimi-k3", label: "Kimi K3" },
 			{ id: "claude-fable-5", label: "Claude Fable 5" },
 			{ id: "claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
 			{ id: "gpt-5.1", label: "GPT-5.1" },
@@ -180,7 +209,7 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 			// cursor-agent has no effort flag: every effort level is its own
 			// model id, and these are each family's default level. The effort
 			// picker swaps in the sibling id (`CURSOR_EFFORT_VARIANTS`). Ids
-			// verified against a live account's `--list-models` (2026-09-04);
+			// verified against a live account's `--list-models` (2026-09-26);
 			// the list is account-dependent and unknown ids are rejected by
 			// the CLI, not silently ignored. "auto" is the only id free-plan
 			// accounts can use (besides composer) — named models fail there
@@ -188,6 +217,11 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 			// choice in the picker.
 			{ id: "auto", label: "Auto" },
 			{ id: "composer-2.5", label: "Composer 2.5" },
+			{
+				id: "claude-opus-5-5-medium",
+				label: "Opus 5.5",
+				group: CURSOR_ANTHROPIC_GROUP,
+			},
 			{
 				id: "claude-fable-5-1-thinking-high",
 				label: "Fable 5.1",
@@ -251,6 +285,12 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 				label: "Grok 4.6",
 				group: CURSOR_OTHER_GROUP,
 			},
+			{ id: "grok-4.7-high", label: "Grok 4.7", group: CURSOR_OTHER_GROUP },
+			{
+				id: "muse-spark-1.3-high",
+				label: "Muse Spark 1.3",
+				group: CURSOR_OTHER_GROUP,
+			},
 			{ id: "kimi-k3-max", label: "Kimi K3", group: CURSOR_OTHER_GROUP },
 			{ id: "glm-5.2-high", label: "GLM 5.2", group: CURSOR_OTHER_GROUP },
 		],
@@ -265,10 +305,15 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 			// appear in that listing; `claude-fable-5-1` was checked against
 			// models.dev directly (2026-09-01), the gpt-6 family likewise
 			// (2026-09-23).
+			{ id: "anthropic/claude-opus-5-5", label: "Claude Opus 5.5" },
+			{ id: "anthropic/claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
+			{ id: "anthropic/claude-sonnet-5", label: "Claude Sonnet 5" },
 			{ id: "anthropic/claude-opus-5", label: "Claude Opus 5" },
 			{ id: "anthropic/claude-fable-5-1", label: "Claude Fable 5.1" },
 			{ id: "anthropic/claude-fable-5", label: "Claude Fable 5" },
+			{ id: "anthropic/claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
 			{ id: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
+			{ id: "google/gemini-3.8-flash", label: "Gemini 3.8 Flash" },
 			{ id: "openai/gpt-6-astra", label: "GPT-6 Astra" },
 			{ id: "openai/gpt-6-sol", label: "GPT-6 Sol" },
 			{ id: "openai/gpt-6-luna", label: "GPT-6 Luna" },
@@ -289,6 +334,9 @@ export const AGENT_MODEL_SUPPORT: readonly AgentModelSupport[] = [
 			{ id: "@smol", label: "Configured fast model" },
 			{ id: "@slow", label: "Configured slow model" },
 			{ id: "@plan", label: "Configured plan model" },
+			{ id: "anthropic/claude-opus-5-5", label: "Claude Opus 5.5" },
+			{ id: "anthropic/claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
+			{ id: "anthropic/claude-sonnet-5", label: "Claude Sonnet 5" },
 			{ id: "anthropic/claude-opus-5", label: "Claude Opus 5" },
 			{ id: "anthropic/claude-fable-5-1", label: "Claude Fable 5.1" },
 			{ id: "anthropic/claude-fable-5", label: "Claude Fable 5" },
@@ -403,6 +451,24 @@ const CURSOR_GPT_LEVELS = [
 const CURSOR_EFFORT_VARIANTS: Readonly<
 	Record<string, Readonly<Record<string, string>>>
 > = {
+	"claude-opus-5-5-medium": cursorEffortVariants(
+		"claude-opus-5-5",
+		CURSOR_CLAUDE_LEVELS,
+	),
+	"grok-4.7-high": cursorEffortVariants("grok-4.7", [
+		"low",
+		"medium",
+		"high",
+		"xhigh",
+	]),
+	"muse-spark-1.3-high": cursorEffortVariants("muse-spark-1.3", [
+		"minimal",
+		"low",
+		"medium",
+		"high",
+		"xhigh",
+		"max",
+	]),
 	"claude-fable-5-1-thinking-high": cursorEffortVariants(
 		"claude-fable-5-1-thinking",
 		CURSOR_CLAUDE_LEVELS,
@@ -528,6 +594,7 @@ export const AGENT_EFFORT_SUPPORT: readonly AgentEffortSupport[] = [
 				id: "max",
 				label: "Max",
 				models: [
+					"gpt-6.1-sol",
 					"gpt-6-astra",
 					"gpt-6-sol",
 					"gpt-6-luna",
@@ -539,7 +606,13 @@ export const AGENT_EFFORT_SUPPORT: readonly AgentEffortSupport[] = [
 			{
 				id: "ultra",
 				label: "Ultra",
-				models: ["gpt-6-astra", "gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-terra"],
+				models: [
+					"gpt-6.1-sol",
+					"gpt-6-astra",
+					"gpt-6-sol",
+					"gpt-5.6-sol",
+					"gpt-5.6-terra",
+				],
 			},
 		],
 	},
@@ -579,6 +652,7 @@ export const AGENT_EFFORT_SUPPORT: readonly AgentEffortSupport[] = [
 		effortFlag: null,
 		efforts: [
 			{ id: "none", label: "None" },
+			{ id: "minimal", label: "Minimal" },
 			{ id: "low", label: "Low" },
 			{ id: "medium", label: "Medium" },
 			{ id: "high", label: "High" },

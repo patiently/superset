@@ -20,6 +20,7 @@ import {
 	trackWorkspaceDeleted,
 	unarchiveLocalWorkspace,
 } from "../../../workspaces/local-workspace-store";
+import { cancelAndWaitWorkspaceTitleCommit } from "../../../workspaces/workspace-title-jobs";
 import type {
 	DeleteInProgressCause,
 	TeardownFailureCause,
@@ -46,6 +47,23 @@ const destroysInFlight = new Set<string>();
 
 /** @internal — exposed for tests to introspect / clear the guard. */
 export const __testDestroysInFlight = destroysInFlight;
+
+const restoresInFlight = new Set<string>();
+
+/**
+ * Claim a workspace for a restore. Returns the release function, or null
+ * while a destroy or another restore of it is running. Destroy refuses to
+ * start while the claim is held.
+ */
+export function claimWorkspaceRestore(
+	workspaceId: string,
+): (() => void) | null {
+	if (destroysInFlight.has(workspaceId) || restoresInFlight.has(workspaceId)) {
+		return null;
+	}
+	restoresInFlight.add(workspaceId);
+	return () => restoresInFlight.delete(workspaceId);
+}
 
 export interface DestroyWorkspaceInput {
 	workspaceId: string;
@@ -233,6 +251,13 @@ export async function destroyWorkspace(
 			cause: { kind: "DELETE_IN_PROGRESS" } satisfies DeleteInProgressCause,
 		});
 	}
+	if (restoresInFlight.has(input.workspaceId)) {
+		throw new TRPCError({
+			code: "CONFLICT",
+			message: "This workspace is being restored",
+			cause: { kind: "DELETE_IN_PROGRESS" } satisfies DeleteInProgressCause,
+		});
+	}
 	destroysInFlight.add(input.workspaceId);
 	try {
 		return await runDestroy(ctx, input);
@@ -245,6 +270,7 @@ async function runDestroy(
 	ctx: HostServiceContext,
 	input: DestroyWorkspaceInput,
 ) {
+	await cancelAndWaitWorkspaceTitleCommit(ctx.db, input.workspaceId);
 	const warnings: string[] = [];
 
 	// `isLocalCheckoutWorkspace` already loads workspace + project rows from

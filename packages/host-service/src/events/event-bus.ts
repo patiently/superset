@@ -274,6 +274,15 @@ export class EventBus {
 		return () => this.terminalLifecycleListeners.delete(listener);
 	}
 
+	broadcastChatSessionsChanged(
+		message: Omit<
+			Extract<ServerMessage, { type: "chat:sessions-changed" }>,
+			"type"
+		>,
+	): void {
+		this.broadcast({ type: "chat:sessions-changed", ...message });
+	}
+
 	broadcastPageWatchChanged(
 		message: Omit<
 			Extract<ServerMessage, { type: "page-watch:changed" }>,
@@ -331,6 +340,15 @@ export class EventBus {
 		>,
 	): void {
 		this.broadcast({ type: "workspace:create-settled", ...message });
+	}
+
+	broadcastWorkspaceNamingFailed(
+		message: Omit<
+			Extract<ServerMessage, { type: "workspace:naming-failed" }>,
+			"type"
+		>,
+	): void {
+		this.broadcast({ type: "workspace:naming-failed", ...message });
 	}
 
 	/**

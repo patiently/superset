@@ -1,9 +1,9 @@
 name: Fork Linux AppImage Release
 
-# Watcher arm on current upstream main: the four fs-watcher fixes rebased onto
-# main 2370f60d4 (after #7860 and #7865), without the GPU fix. Proves each fix's
-# tests go red without it and green with it, then builds and publishes
-# desktop-v<VERSION> with the upstream asset name.
+# Daily build on upstream main d944abbc0 (everything in 1.36.0, which includes
+# the Linux GPU fix, plus 9 later commits) with the four fs-watcher fixes.
+# Proves each fix's tests go red without it and green with it, then builds and
+# publishes desktop-v<VERSION> with the upstream asset name.
 
 on:
   push:
@@ -225,7 +225,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "WATCHER ARM for A/B measurements on current main: upstream superset-sh/superset main at 2370f60d4 (includes #7860 and #7865) plus the four fs-watcher fixes, rebased, WITHOUT the GPU fix: keep idle watchers warm across workspace switches; don't watch generated dirs when git's ignored-dir listing fails; never cap generated ignored dirs; read hover-card diff stats once instead of watching the worktree. Compare with desktop-v1.30.2-main-control.2 (same commit, no fixes). Not the desktop-v1.30.2 tag. Linux x64 AppImage only.
+            --notes "Daily build: upstream superset-sh/superset main at d944abbc0 plus the four fs-watcher fixes. That main is everything in desktop-v1.36.0 (including the Linux GPU fix, merged upstream as #7880) plus 9 later commits; main itself still reads 1.35.0 because the 1.36.0 version bump lives on the release branch. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 

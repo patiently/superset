@@ -49,6 +49,12 @@ over: a pane still open on the deleted workspace keeps asking
 `cloudWorkspace.access` and logs "Cloud workspace is deleted" until it is
 closed.
 
+**Cloud automations start boxes on a schedule. Open.** An automation set to a
+new cloud workspace each run leaves one box per run. Each box stops after four
+idle hours but keeps its snapshot, and nothing deletes it. A pinned automation
+reuses one box. There is no spend limit; per-org rate limits are the planned
+answer.
+
 ## Credentials and blast radius
 
 **Model credentials are the person's sign-in, never ours and never the
@@ -92,6 +98,16 @@ reaches every repository the creator can reach through the App, including ones
 the visitor cannot. Before cloud workspaces leave the team this needs an
 answer: per-member identity inside a shared box, or a workspace falling back
 to the installation token while someone other than its creator holds a ticket.
+
+**A box reaches its creator's private workspaces. Open.** `superset` in a
+box calls the API as the creator, held to the box's organization. Inside it,
+`access` and `hostTicket` mint shell tickets for every workspace the creator
+can see, their private ones included, and `delete` and `rename` reach the
+same set. A teammate who opened the box, or an agent prompted by an
+automation's event, gets that reach. Closing it means holding a box to
+itself and the workspaces its organization shares, in `loadReadyWorkspace`,
+`loadVisibleWorkspace` and `delete` together; a check on one of them is
+bypassed through the others.
 
 **A sandbox has exactly one gate, and it is ours.** A sandbox's own port is
 a public URL that clients never see; they reach a workspace through the

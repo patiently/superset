@@ -2,7 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { UserContent } from "@superset/chat/protocol";
 import { Button } from "@superset/ui/button";
 import type { ReactNode } from "react";
-import { Composer } from "../Composer";
+import { Composer } from "../../../ChatSession/components/Composer";
 
 export const HARNESSES = ["claude-code", "codex"] as const;
 export type HarnessId = (typeof HARNESSES)[number];
@@ -10,12 +10,14 @@ export type HarnessId = (typeof HARNESSES)[number];
 export function NewSessionView({
 	harness,
 	headerLeft,
+	isActive,
 	onHarnessChange,
 	onSend,
 	workspaceId,
 }: {
 	workspaceId: string;
 	harness: HarnessId;
+	isActive: boolean;
 	onHarnessChange: (harness: HarnessId) => void;
 	onSend: (content: UserContent[]) => void;
 	headerLeft?: ReactNode;
@@ -47,12 +49,15 @@ export function NewSessionView({
 				</span>
 			</div>
 			<Composer
+				// No session yet, so no agent has reported its commands.
+				availableCommands={[]}
 				draftKey={`chat-v3-draft:new:${workspaceId}`}
+				isActive={isActive}
 				onSend={(content) => {
 					onSend(content);
 					return null;
 				}}
-				outbox={[]}
+				workspaceId={workspaceId}
 				placeholder={t({
 					message: `Start a ${harness} session`,
 				})}

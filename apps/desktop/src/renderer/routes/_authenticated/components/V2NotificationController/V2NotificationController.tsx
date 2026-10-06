@@ -4,6 +4,7 @@ import { useLiveQuery } from "@tanstack/react-db";
 import { useEffectEvent, useMemo } from "react";
 import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
 import { useRelayUrl } from "renderer/hooks/useRelayUrl";
+import { useV2UserPreferences } from "renderer/hooks/useV2UserPreferences";
 import { electronTrpc } from "renderer/lib/electron-trpc";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import type { PaneViewerData } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/types";
@@ -67,6 +68,7 @@ export function V2NotificationController() {
 	const relayUrl = useRelayUrl();
 	const visibleWorkspaceIds = useVisibleSidebarWorkspaceIds();
 	const { workspaces: hostWorkspaces } = useHostWorkspaces();
+	const isRightAreaOpen = useV2UserPreferences().preferences.rightSidebarOpen;
 	const allWorkspaceHosts = useMemo<WorkspaceHostRow[]>(
 		() =>
 			hostWorkspaces.map((workspace) => ({
@@ -89,6 +91,7 @@ export function V2NotificationController() {
 				.select(({ v2WorkspaceLocalState }) => ({
 					workspaceId: v2WorkspaceLocalState.workspaceId,
 					paneLayout: v2WorkspaceLocalState.paneLayout,
+					rightPaneLayout: v2WorkspaceLocalState.rightPaneLayout,
 				})),
 		[collections],
 	);
@@ -111,8 +114,9 @@ export function V2NotificationController() {
 			getNotificationWorkspaceStatesById({
 				workspaceHosts,
 				localWorkspaceRows,
+				isRightAreaOpen,
 			}),
-		[workspaceHosts, localWorkspaceRows],
+		[workspaceHosts, localWorkspaceRows, isRightAreaOpen],
 	);
 	const hostGroups = useMemo(
 		() =>
@@ -148,6 +152,7 @@ export function V2NotificationController() {
 					occurredAt: Date.now(),
 				},
 				paneLayout: workspace.paneLayout,
+				rightPaneLayout: workspace.rightPaneLayout,
 			});
 
 			// Statuses derive from host bindings, so the host must hear the
@@ -188,18 +193,29 @@ export function V2NotificationController() {
 function getNotificationWorkspaceStatesById({
 	workspaceHosts,
 	localWorkspaceRows,
+	isRightAreaOpen,
 }: {
 	workspaceHosts: WorkspaceHostRow[];
 	localWorkspaceRows: Array<{
 		workspaceId: string;
 		paneLayout: unknown;
+		rightPaneLayout?: unknown;
 	}>;
+	isRightAreaOpen: boolean;
 }): Map<string, HostNotificationWorkspaceState> {
 	const paneLayoutsByWorkspaceId = new Map(
 		localWorkspaceRows.map((row) => [
 			row.workspaceId,
 			row.paneLayout as WorkspaceState<PaneViewerData>,
 		]),
+	);
+	const rightPaneLayoutsByWorkspaceId = new Map(
+		isRightAreaOpen
+			? localWorkspaceRows.map((row) => [
+					row.workspaceId,
+					row.rightPaneLayout as WorkspaceState<PaneViewerData> | undefined,
+				])
+			: [],
 	);
 
 	const statesById = new Map<string, HostNotificationWorkspaceState>(
@@ -209,6 +225,8 @@ function getNotificationWorkspaceStatesById({
 				workspaceId: row.workspaceId,
 				workspaceName: "Workspace",
 				paneLayout: paneLayoutsByWorkspaceId.get(row.workspaceId) ?? null,
+				rightPaneLayout:
+					rightPaneLayoutsByWorkspaceId.get(row.workspaceId) ?? null,
 			},
 		]),
 	);
@@ -219,6 +237,8 @@ function getNotificationWorkspaceStatesById({
 			workspaceName: getNotificationWorkspaceName(workspace),
 			projectName: workspace.projectName,
 			paneLayout: paneLayoutsByWorkspaceId.get(workspace.workspaceId) ?? null,
+			rightPaneLayout:
+				rightPaneLayoutsByWorkspaceId.get(workspace.workspaceId) ?? null,
 		});
 	}
 

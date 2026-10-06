@@ -239,6 +239,13 @@ export interface PageWatchChangedMessage {
 	occurredAt: number;
 }
 
+/** A chat session in the workspace was created, changed, stopped or removed; refetch `listSessions`. */
+export interface ChatSessionsChangedMessage {
+	type: "chat:sessions-changed";
+	workspaceId: string;
+	occurredAt: number;
+}
+
 export type ServerMessage =
 	| FsEventsMessage
 	| GitChangedMessage
@@ -248,10 +255,24 @@ export type ServerMessage =
 	| PortChangedMessage
 	| WorkspaceChangedMessage
 	| WorkspaceCreateSettledMessage
+	| WorkspaceNamingFailedMessage
 	| ProjectChangedMessage
 	| TagFoldersChangedMessage
 	| PageWatchChangedMessage
+	| ChatSessionsChangedMessage
 	| EventBusErrorMessage;
+
+/**
+ * Automatic naming gave up on a workspace after its last attempt; the
+ * prompt-derived title stays. Not sent when no agent was ever going to name
+ * it — a prompt-derived title is the whole plan there.
+ */
+export interface WorkspaceNamingFailedMessage {
+	type: "workspace:naming-failed";
+	workspaceId: string;
+	name: string;
+	occurredAt: number;
+}
 
 // ── Client → Server ────────────────────────────────────────────────
 

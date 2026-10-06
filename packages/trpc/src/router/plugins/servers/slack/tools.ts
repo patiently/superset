@@ -63,6 +63,7 @@ interface SlackMessage {
 	permalink?: string;
 	channel?: { id?: string; name?: string } | string;
 	reactions?: { name?: string; count?: number; users?: string[] }[];
+	attachments?: { title?: string; title_link?: string; fallback?: string }[];
 }
 
 interface SlackChannel {
@@ -96,8 +97,23 @@ function sender(message: SlackMessage): string {
 	return message.username ?? message.bot_id ?? message.app_id ?? "Unknown";
 }
 
-function describeMessage(message: SlackMessage): string {
-	let line = `[${message.ts}] ${sender(message)}: ${message.text ?? ""}`;
+// Apps such as GitHub post a card with no text; without this the message lists as empty.
+function attachmentText(message: SlackMessage): string {
+	return (message.attachments ?? [])
+		.map((attachment) =>
+			attachment.title
+				? [attachment.title, attachment.title_link].filter(Boolean).join(" ")
+				: (attachment.fallback ?? ""),
+		)
+		.filter(Boolean)
+		.join(" | ");
+}
+
+export function describeMessage(message: SlackMessage): string {
+	const text = [message.text, attachmentText(message)]
+		.filter(Boolean)
+		.join(" ");
+	let line = `[${message.ts}] ${sender(message)}: ${text}`;
 	if (message.reply_count && message.reply_count > 0) {
 		line += ` 💬 ${message.reply_count} ${message.reply_count === 1 ? "reply" : "replies"}`;
 	} else if (message.thread_ts && message.thread_ts !== message.ts) {

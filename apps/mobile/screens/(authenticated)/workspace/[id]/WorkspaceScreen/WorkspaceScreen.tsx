@@ -7,6 +7,7 @@ import type {
 	ComposerSessionTab,
 } from "@superset/composer";
 import { i18n } from "@superset/i18n";
+import { TitlePress } from "@superset/title-press";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -20,7 +21,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
+	Dimensions,
 	Keyboard,
+	type KeyboardEvent,
 	LayoutAnimation,
 	Pressable,
 	View,
@@ -28,6 +31,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { useArchivedCloudWorkspaces } from "@/hooks/useArchivedCloudWorkspaces";
 import { getHostWorkspacesQueryKey } from "@/hooks/useHostWorkspaces";
 import { useWorkspaceHost } from "@/hooks/useWorkspaceHost";
 import { errorCopy } from "@/lib/errors";
@@ -41,6 +45,10 @@ import {
 	useHostTerminals,
 } from "@/screens/(authenticated)/(home)/home/hooks/useHostTerminals";
 import { HeaderNotice } from "@/screens/(authenticated)/components/HeaderNotice";
+import {
+	anchorOf,
+	ToolbarAnchor,
+} from "@/screens/(authenticated)/components/ToolbarAnchor";
 import { useAgentIconUris } from "@/screens/(authenticated)/hooks/useAgentIconUris";
 import { useCreateTerminalWorkspace } from "@/screens/(authenticated)/hooks/useCreateTerminalWorkspace";
 import { useSlashCommands } from "@/screens/(authenticated)/hooks/useSlashCommands";
@@ -68,6 +76,7 @@ import { useHostCompatibility } from "../hooks/useHostCompatibility";
 import { usePullRequestIconUri } from "../hooks/usePullRequestIconUri";
 import { useWorkspaceHeaderActions } from "../hooks/useWorkspaceHeaderActions";
 import { useWorkspacePullRequests } from "../hooks/useWorkspacePullRequest";
+import { keyboardOverlap } from "../utils/keyboardOverlap";
 import { orderTerminalRows } from "../utils/orderTerminalRows";
 import { PULL_REQUEST_SYMBOL, pullRequestStatus } from "../utils/pullRequest";
 import { WorkspaceCreateFailedState } from "./components/WorkspaceCreateFailedState";
@@ -131,10 +140,21 @@ export function WorkspaceScreen() {
 		host,
 		cloud,
 		sandboxUnreachable,
+		sandboxWaking,
 		retrySandbox,
 		isResolving,
 	} = useWorkspaceHost(id ?? null);
-	const { terminalsByWorkspace, isReady } = useHostTerminals(host);
+	const { workspaces: archivedRows } = useArchivedCloudWorkspaces({
+		enabled: !cloud && !workspace && !isResolving,
+	});
+	const archivedCloud = cloud
+		? null
+		: (archivedRows.find((row) => row.id === id) ?? null);
+	const {
+		terminalsByWorkspace,
+		isReady: terminalsReady,
+		isError: terminalsFailed,
+	} = useHostTerminals(host);
 	const pullRequests = useWorkspacePullRequests(id ?? null);
 
 	// Tabs hold the arrangement the user dragged in the sessions sheet, falling
@@ -167,17 +187,26 @@ export function WorkspaceScreen() {
 		// picking the first row now attaches a stream to the wrong session and
 		// swaps it out from under the user when the remembered tab lands.
 		if (!tabsHydrated) return null;
-		for (const candidate of [
-			pickedTerminalId,
-			params.tab,
-			rememberedTerminalId,
-		]) {
+		const candidates = [pickedTerminalId, params.tab, rememberedTerminalId];
+		// An unanswered or failed list says nothing about whether it is gone.
+		if (!terminalsReady || terminalsFailed) {
+			return candidates.find((candidate) => !!candidate) ?? null;
+		}
+		for (const candidate of candidates) {
 			if (candidate && rows.some((row) => row.terminalId === candidate)) {
 				return candidate;
 			}
 		}
 		return rows[0]?.terminalId ?? null;
-	}, [tabsHydrated, pickedTerminalId, params.tab, rememberedTerminalId, rows]);
+	}, [
+		tabsHydrated,
+		terminalsReady,
+		terminalsFailed,
+		pickedTerminalId,
+		params.tab,
+		rememberedTerminalId,
+		rows,
+	]);
 
 	// Remembered here rather than in the tab-strip handler: every route into a
 	// session ends at this value — the strip, the sessions sheet, a new
@@ -418,6 +447,14 @@ export function WorkspaceScreen() {
 	useEffect(() => {
 		if (id) clearManualUnread(id);
 	}, [id, clearManualUnread]);
+	const markCloudRead = useUnreadWorkspacesStore(
+		(state) => state.markCloudRead,
+	);
+	const cloudAgentStatusAt = cloud?.agentStatusAt?.getTime() ?? null;
+	useEffect(() => {
+		if (id && cloudAgentStatusAt !== null)
+			markCloudRead(id, cloudAgentStatusAt);
+	}, [id, cloudAgentStatusAt, markCloudRead]);
 
 	// Port of desktop's useClearActivePaneAttention: viewing the tab clears
 	// its `review` state by advancing the seen mark to the binding's last
@@ -488,9 +525,9 @@ export function WorkspaceScreen() {
 
 	const killTerminal = useCallback(
 		(terminalId: string) => {
-			if (!workspace || !hostUrl) return;
+			if (!hostUrl || !id) return;
 			void getHostServiceClientByUrl(hostUrl)
-				.terminal.killSession.mutate({ terminalId, workspaceId: workspace.id })
+				.terminal.killSession.mutate({ terminalId, workspaceId: id })
 				// A kill that fails leaves the tab exactly where it was, which reads
 				// as the tap having missed. Cheap to ignore while closing was a
 				// long-press only; the strip now offers it on every selected tab and
@@ -505,7 +542,7 @@ export function WorkspaceScreen() {
 				)
 				.finally(invalidateTerminals);
 		},
-		[workspace, hostUrl, invalidateTerminals, t],
+		[id, hostUrl, invalidateTerminals, t],
 	);
 
 	// The composer reports the intent and stops there: it has no idea that
@@ -545,6 +582,7 @@ export function WorkspaceScreen() {
 	const [keyboardHeight, setKeyboardHeight] = useState(0);
 	const [composerActive, setComposerActive] = useState(false);
 	const composerRef = useRef<ComposerHandle>(null);
+	const shareAnchorRef = useRef<View>(null);
 	const [select, setSelect] = useState<TerminalSelectState>({
 		active: false,
 		hasSelection: false,
@@ -575,11 +613,11 @@ export function WorkspaceScreen() {
 	// cannot take text, and the name belongs to the host, not to the strip.
 	const renameTerminal = useCallback(
 		(terminalId: string, title: string) => {
-			if (!workspace || !hostUrl) return;
+			if (!hostUrl || !id) return;
 			void getHostServiceClientByUrl(hostUrl)
 				.terminal.rename.mutate({
 					terminalId,
-					workspaceId: workspace.id,
+					workspaceId: id,
 					title,
 				})
 				.catch((cause: unknown) =>
@@ -592,7 +630,7 @@ export function WorkspaceScreen() {
 				)
 				.finally(invalidateTerminals);
 		},
-		[workspace, hostUrl, invalidateTerminals, t],
+		[id, hostUrl, invalidateTerminals, t],
 	);
 
 	const promptRenameTerminal = useCallback(
@@ -636,22 +674,25 @@ export function WorkspaceScreen() {
 	);
 
 	useEffect(() => {
-		const show = Keyboard.addListener("keyboardWillShow", (event) => {
+		const animate = (event: KeyboardEvent) =>
 			LayoutAnimation.configureNext({
 				duration: event.duration || 250,
 				update: { type: LayoutAnimation.Types.keyboard },
 			});
-			setKeyboardHeight(event.endCoordinates.height);
+		// Change-frame, not just show: on iPad the keyboard docks, undocks,
+		// floats and splits without ever hiding.
+		const change = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
+			animate(event);
+			setKeyboardHeight(
+				keyboardOverlap(event.endCoordinates, Dimensions.get("window").height),
+			);
 		});
 		const hide = Keyboard.addListener("keyboardWillHide", (event) => {
-			LayoutAnimation.configureNext({
-				duration: event.duration || 250,
-				update: { type: LayoutAnimation.Types.keyboard },
-			});
+			animate(event);
 			setKeyboardHeight(0);
 		});
 		return () => {
-			show.remove();
+			change.remove();
 			hide.remove();
 		};
 	}, []);
@@ -707,8 +748,31 @@ export function WorkspaceScreen() {
 		});
 	}, [connectionState, id, activeTerminalId]);
 
+	const wakingMessage = t({
+		message:
+			"This cloud workspace is waking up, which can take up to 30 seconds after it has been idle.",
+	});
 	const bannerDescriptor = STATE_BANNERS[connectionState];
-	const banner = bannerDescriptor ? i18n._(bannerDescriptor) : undefined;
+	const banner =
+		sandboxWaking &&
+		(connectionState === "connecting" || connectionState === "reconnecting")
+			? wakingMessage
+			: bannerDescriptor
+				? i18n._(bannerDescriptor)
+				: undefined;
+
+	// A stopped sandbox refused everything asked of it before the wake landed.
+	const wasWaking = useRef(sandboxWaking);
+	useEffect(() => {
+		if (wasWaking.current && !sandboxWaking) {
+			invalidateTerminals();
+			void queryClient.invalidateQueries({
+				queryKey: ["host-service", "workspaces", "list"],
+			});
+			terminalRef.current?.retry();
+		}
+		wasWaking.current = sandboxWaking;
+	}, [sandboxWaking, invalidateTerminals, queryClient]);
 	const showComposer =
 		activeTerminalId !== null &&
 		host !== null &&
@@ -719,9 +783,14 @@ export function WorkspaceScreen() {
 	const attachmentTarget = useMemo(
 		() =>
 			id && hostUrl && workspace?.worktreePath
-				? { workspaceId: id, hostUrl, draftKey: workspaceDraftKey(id) }
+				? {
+						workspaceId: id,
+						hostUrl,
+						isCloud: cloud !== null,
+						draftKey: workspaceDraftKey(id),
+					}
 				: null,
-		[id, hostUrl, workspace],
+		[id, hostUrl, workspace, cloud],
 	);
 
 	// The chip beside the quick keys, or nothing. Mark and colour both come off
@@ -820,7 +889,7 @@ export function WorkspaceScreen() {
 			<Stack.Screen
 				options={{
 					...headerOptions,
-					title: workspace?.name ?? cloud?.name ?? "",
+					title: workspace?.name ?? cloud?.name ?? archivedCloud?.name ?? "",
 					headerTitle: notice
 						? () => (
 								<HeaderNotice
@@ -834,6 +903,7 @@ export function WorkspaceScreen() {
 				}}
 			/>
 
+			{workspace ? <TitlePress onPress={openActions} /> : null}
 			{workspace ? (
 				<Stack.Toolbar placement="right">
 					<Stack.Toolbar.Menu
@@ -878,19 +948,28 @@ export function WorkspaceScreen() {
 							</Stack.Toolbar.Menu>
 							<Stack.Toolbar.MenuAction
 								icon="square.and.arrow.up"
-								onPress={shareWorkspace}
+								onPress={() => shareWorkspace(anchorOf(shareAnchorRef))}
 							>
 								{t({ message: "Share" })}
 							</Stack.Toolbar.MenuAction>
 						</Stack.Toolbar.Menu>
 						<Stack.Toolbar.Menu inline>
-							<Stack.Toolbar.MenuAction
-								icon="trash"
-								destructive
-								onPress={deleteWorkspace}
-							>
-								{t({ message: "Delete workspace" })}
-							</Stack.Toolbar.MenuAction>
+							{cloud ? (
+								<Stack.Toolbar.MenuAction
+									icon="archivebox"
+									onPress={deleteWorkspace}
+								>
+									{t({ message: "Archive workspace" })}
+								</Stack.Toolbar.MenuAction>
+							) : (
+								<Stack.Toolbar.MenuAction
+									icon="trash"
+									destructive
+									onPress={deleteWorkspace}
+								>
+									{t({ message: "Delete workspace" })}
+								</Stack.Toolbar.MenuAction>
+							)}
 						</Stack.Toolbar.Menu>
 					</Stack.Toolbar.Menu>
 				</Stack.Toolbar>
@@ -987,15 +1066,30 @@ export function WorkspaceScreen() {
 							}}
 						/>
 					</>
-				) : cloud && !workspace ? (
+				) : archivedCloud ? (
+					<CloudWorkspaceProvisioningState
+						cloud={archivedCloud}
+						unreachable={false}
+						onRetry={retrySandbox}
+					/>
+				) : cloud && !host ? (
 					<CloudWorkspaceProvisioningState
 						cloud={cloud}
 						unreachable={sandboxUnreachable}
 						onRetry={retrySandbox}
 					/>
-				) : isResolving || ((!isReady || !tabsHydrated) && host) ? (
+				) : isResolving ||
+					((!terminalsReady ||
+						!tabsHydrated ||
+						(cloud && terminalsFailed && rows.length === 0)) &&
+						host) ? (
 					<Centered>
 						<ActivityIndicator />
+						{sandboxWaking ? (
+							<Text className="text-muted-foreground mt-4 max-w-[280px] text-center text-[13px] leading-relaxed">
+								{wakingMessage}
+							</Text>
+						) : null}
 					</Centered>
 				) : !host ? (
 					<WorkspacePlaceholder
@@ -1043,10 +1137,10 @@ export function WorkspaceScreen() {
 					workspaceId={id}
 					allowAttachments={activeRow?.agentId != null}
 					slashCommands={slashCommands}
-					// A cloud workspace exists on screen before anything serves
-					// it; the strip would offer sessions on a sandbox that is not
-					// up yet.
-					sessionTabs={cloud && !workspace ? [] : sessionTabs}
+					// A cloud workspace exists on screen before its sandbox is
+					// even addressed; the strip would offer sessions on one that
+					// isn't reachable yet.
+					sessionTabs={cloud && !host ? [] : sessionTabs}
 					onSessionTabPress={pickTerminal}
 					onSessionTabClose={confirmCloseTerminal}
 					onSessionTabRename={promptRenameTerminal}
@@ -1066,6 +1160,7 @@ export function WorkspaceScreen() {
 					selectHasSelection={select.hasSelection}
 				/>
 			) : null}
+			<ToolbarAnchor ref={shareAnchorRef} />
 		</View>
 	);
 }

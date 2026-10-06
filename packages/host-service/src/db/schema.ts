@@ -114,6 +114,11 @@ export const projects = sqliteTable(
 		// Empty string means "not yet backfilled" — the startup sweep targets
 		// these rows (name from cloud legacy row if reachable, else basename).
 		name: text().notNull().default(""),
+		// Non-null = soft-deleted: hidden everywhere, restorable until the
+		// purge sweep removes it. Workspaces deleted with the project carry
+		// the same value as their archivedAt, which is how restore finds them.
+		deletedAt: integer("deleted_at"),
+		deletedByUserId: text("deleted_by_user_id"),
 		// 0 means "predates local ownership"; write paths always set it.
 		updatedAt: integer("updated_at").notNull().default(0),
 		createdAt: integer("created_at")

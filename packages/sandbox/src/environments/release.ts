@@ -16,7 +16,7 @@
  *      internal organization's environment -> the new golden + bundle + the
  *      setup and start overrides; the previous golden deleted
  *
- *   SUPERSET_INTERNAL_ORGANIZATION_ID=… bun run release [--production] [--skip-image] [--keep-old]
+ *   SUPERSET_INTERNAL_ORGANIZATION_ID=… SUPERSET_INTERNAL_ENVIRONMENT_ID=… bun run release [--production] [--skip-image] [--keep-old]
  *
  * Needs VERCEL_SANDBOX_*, SANDBOX_GATE_SECRET, CDN_R2_* and, for the image,
  * Docker with Buildx. Rows go to DATABASE_URL, or with
@@ -52,8 +52,10 @@ process.env.SKIP_ENV_VALIDATION ??= "1";
 const SKIP_IMAGE = process.argv.includes("--skip-image");
 const KEEP_OLD = process.argv.includes("--keep-old");
 const PRODUCTION = process.argv.includes("--production");
+/** The environment the release rebuilds; without it, the release creates one named INTERNAL_NAME. */
+const ENVIRONMENT_ID = process.env.SUPERSET_INTERNAL_ENVIRONMENT_ID;
 const INTERNAL_NAME =
-	process.env.SUPERSET_INTERNAL_ENVIRONMENT_NAME ?? "Superset";
+	process.env.SUPERSET_INTERNAL_ENVIRONMENT_NAME ?? "Satya's Superset";
 const ORGANIZATION_ID = process.env.SUPERSET_INTERNAL_ORGANIZATION_ID;
 const ENV_FILE = process.env.SUPERSET_INTERNAL_ENV_FILE;
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -147,7 +149,7 @@ const {
 const { probeBox, checkWakeLog } = await import("./probe");
 
 const setupScript = readFileSync(
-	join(import.meta.dir, "internal-setup.sh"),
+	join(import.meta.dir, "satya-setup.sh"),
 	"utf8",
 );
 const setupHook = [setupScript];
@@ -263,7 +265,7 @@ const setup = await runLong(
 );
 for (const line of setup.logs
 	.split("\n")
-	.filter((l) => l.includes("[internal-setup]")))
+	.filter((l) => l.includes("[satya-setup]")))
 	log(`  ${line.trim()}`);
 if (setup.code !== 0)
 	fail(`setup hook exited ${setup.code}; ${golden} left for inspection`);
@@ -290,6 +292,10 @@ const checks: Array<[label: string, command: string, expect: RegExp]> = [
 	["vercel", "vercel --version", /\d+\.\d+\.\d+/],
 	["wrangler", "wrangler --version", /\d+\.\d+\.\d+/],
 	["eas-cli", "eas --version", /\d+\.\d+\.\d+/],
+	["psql", "psql --version", /\d+\.\d+/],
+	["ntn", "ntn --version", /\d+\.\d+\.\d+/],
+	["lim", "lim --version", /\d+\.\d+\.\d+/],
+	["stripe", "stripe --version", /\d+\.\d+\.\d+/],
 ];
 let failed = 0;
 for (const [label, command, expect] of checks) {
@@ -458,40 +464,45 @@ log(
 	`rows: ${SHARED_ENVIRONMENT_NAME} -> image ${SANDBOX_IMAGE_NAME}, bundle ${bundle.sha256.slice(0, 12)}`,
 );
 
-const previous = await db.query.environments.findFirst({
-	where: (row, { and: both, eq: equals }) =>
-		both(
-			equals(row.organizationId, ORGANIZATION_ID as string),
-			equals(row.name, INTERNAL_NAME),
-		),
-});
-await dbWs.transaction(async (tx) => {
-	const [internal] = await tx
-		.insert(environments)
-		.values({
-			organizationId: ORGANIZATION_ID as string,
-			name: INTERNAL_NAME,
-			provider: "vercel",
-			sourceKind: "fork",
-			sourceRef: golden,
-			region: REGION,
-			bundleSha: bundle.sha256,
-			hooksRepositoryId: monorepo.id,
+const previous = ENVIRONMENT_ID
+	? await db.query.environments.findFirst({
+			where: (row, { and: both, eq: equals }) =>
+				both(
+					equals(row.id, ENVIRONMENT_ID),
+					equals(row.organizationId, ORGANIZATION_ID as string),
+				),
 		})
-		.onConflictDoUpdate({
-			target: [environments.organizationId, environments.name],
-			set: {
-				provider: "vercel",
-				sourceKind: "fork",
-				sourceRef: golden,
-				region: REGION,
-				bundleSha: bundle.sha256,
-				hooksRepositoryId: monorepo.id,
-				archivedAt: null,
-			},
-		})
-		.returning({ id: environments.id });
-	if (!internal) throw new Error(`${INTERNAL_NAME} row missing after upsert`);
+	: undefined;
+if (ENVIRONMENT_ID && !previous)
+	fail(
+		`rows: environment ${ENVIRONMENT_ID} is not in organization ${ORGANIZATION_ID}; ${golden} left for inspection`,
+	);
+const fromGolden = {
+	provider: "vercel" as const,
+	sourceKind: "fork" as const,
+	sourceRef: golden,
+	region: REGION,
+	bundleSha: bundle.sha256,
+	hooksRepositoryId: monorepo.id,
+	archivedAt: null,
+};
+const internal = await dbWs.transaction(async (tx) => {
+	const [internal] = previous
+		? await tx
+				.update(environments)
+				.set(fromGolden)
+				.where(eq(environments.id, previous.id))
+				.returning({ id: environments.id, name: environments.name })
+		: await tx
+				.insert(environments)
+				.values({
+					organizationId: ORGANIZATION_ID as string,
+					name: INTERNAL_NAME,
+					...fromGolden,
+				})
+				.returning({ id: environments.id, name: environments.name });
+	if (!internal)
+		throw new Error("internal environment row missing after write");
 	await tx
 		.delete(environmentRepositories)
 		.where(eq(environmentRepositories.environmentId, internal.id));
@@ -499,10 +510,15 @@ await dbWs.transaction(async (tx) => {
 		environmentId: internal.id,
 		repositoryId: monorepo.id,
 	});
+	return internal;
 });
 log(
-	`rows: ${INTERNAL_NAME} -> fork of ${golden}, bundle ${bundle.sha256.slice(0, 12)}`,
+	`rows: ${internal.name} (${internal.id}) -> fork of ${golden}, bundle ${bundle.sha256.slice(0, 12)}`,
 );
+if (!previous)
+	log(
+		`rows: created; set SUPERSET_INTERNAL_ENVIRONMENT_ID=${internal.id} so the next release updates it`,
+	);
 
 if (
 	previous &&

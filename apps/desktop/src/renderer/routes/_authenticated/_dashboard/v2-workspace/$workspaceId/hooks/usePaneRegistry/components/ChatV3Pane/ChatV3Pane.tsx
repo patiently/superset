@@ -1,19 +1,24 @@
 import type { UserContent } from "@superset/chat/protocol";
 import { useCallback, useState } from "react";
+import type { OpenFile } from "../../../../types";
+import { SessionView } from "../ChatSession/components/SessionView";
+import { useSessionClient } from "../ChatSession/hooks/useSessionClient";
 import type { HarnessId } from "./components/NewSessionView";
 import { NewSessionView } from "./components/NewSessionView";
 import { SessionPicker } from "./components/SessionPicker";
-import { SessionView } from "./components/SessionView";
-import { useSessionClient } from "./hooks/useSessionClient";
 
 export function ChatV3Pane({
+	isActive,
+	onOpenFile,
 	onSessionIdChange,
 	sessionId,
 	workspaceId,
 }: {
 	workspaceId: string;
+	isActive: boolean;
 	sessionId: string | null;
 	onSessionIdChange: (sessionId: string | null) => void;
+	onOpenFile?: OpenFile;
 }) {
 	const { client, wiring } = useSessionClient(sessionId);
 	const [harness, setHarness] = useState<HarnessId>("claude-code");
@@ -49,6 +54,7 @@ export function ChatV3Pane({
 			<NewSessionView
 				harness={harness}
 				headerLeft={picker}
+				isActive={isActive}
 				onHarnessChange={setHarness}
 				onSend={(content) => void createSession(content)}
 				workspaceId={workspaceId}
@@ -58,10 +64,13 @@ export function ChatV3Pane({
 
 	return (
 		<SessionView
+			workspaceId={workspaceId}
 			client={client}
 			headerLeft={picker}
+			isActive={isActive}
 			key={sessionId}
 			onFirstPromptSent={() => setPendingFirstPrompt(null)}
+			openFile={onOpenFile}
 			pendingFirstPrompt={pendingFirstPrompt}
 			sessionId={sessionId}
 		/>

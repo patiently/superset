@@ -1,14 +1,15 @@
-import { useLingui } from "@lingui/react/macro";
-import { errorMessage } from "@superset/i18n/errors";
 import { workspaceTrpc } from "@superset/workspace-client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
 	isSamePullRequest,
 	pullRequestRefFromUrl,
 } from "renderer/lib/github/pullRequestRef";
-import { WorkItemDetailState } from "renderer/routes/_authenticated/_dashboard/components/WorkItemDetailState";
+import { PullRequestDetailContent } from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestDetailContent";
 import { PullRequestDetailHeader } from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestDetailHeader";
-import { PullRequestSummaryContent } from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestSummaryContent";
+import {
+	type PullRequestDetailTab,
+	PullRequestDetailTabs,
+} from "renderer/routes/_authenticated/_dashboard/pull-requests/components/PullRequestDetailTabs";
 import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
 import { normalizeThreadsToComments } from "../../../../components/CommentsSection/utils/normalizeThreadsToComments";
 import type { CommentPaneData, PullRequestPaneData } from "../../../../types";
@@ -30,7 +31,7 @@ export function PullRequestPane({
 	onOpenDiff,
 	onOpenComment,
 }: PullRequestPaneProps) {
-	const { t } = useLingui();
+	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("summary");
 	const { workspace, hostUrl: workspaceHostUrl } = useWorkspace();
 	const detail = usePullRequestPaneDetail(data);
 
@@ -73,34 +74,32 @@ export function PullRequestPane({
 					isLoading={detail.isLoading}
 					showStartWorkspace={false}
 				/>
-			</div>
-			{detail.data ? (
-				<div className="min-h-0 flex-1">
-					<PullRequestSummaryContent data={detail.data}>
-						{isLinkedPR ? (
-							<PullRequestComments
-								workspaceId={workspace.id}
-								comments={comments}
-								isLoading={threads.isLoading}
-								isError={threads.isError}
-								onOpenComment={onOpenComment}
-								onOpenInDiff={onOpenInDiff}
-							/>
-						) : null}
-					</PullRequestSummaryContent>
-				</div>
-			) : (
-				<WorkItemDetailState
-					message={
-						detail.error
-							? errorMessage(detail.error)
-							: t({ message: "Loading pull request…" })
-					}
-					isLoading={detail.isLoading}
-					isError={!!detail.error}
-					onRetry={detail.error ? () => void detail.refetch() : undefined}
+				<PullRequestDetailTabs
+					activeTab={activeTab}
+					onTabChange={setActiveTab}
+					className="px-4 pb-2"
 				/>
-			)}
+			</div>
+			<PullRequestDetailContent
+				activeTab={activeTab}
+				detail={detail}
+				projectId={detail.projectId}
+				repoFullName={data.repoFullName}
+				prNumber={data.number}
+				hostUrl={workspaceHostUrl}
+				hostId={workspace.hostId}
+			>
+				{isLinkedPR ? (
+					<PullRequestComments
+						workspaceId={workspace.id}
+						comments={comments}
+						isLoading={threads.isLoading}
+						isError={threads.isError}
+						onOpenComment={onOpenComment}
+						onOpenInDiff={onOpenInDiff}
+					/>
+				) : null}
+			</PullRequestDetailContent>
 		</div>
 	);
 }

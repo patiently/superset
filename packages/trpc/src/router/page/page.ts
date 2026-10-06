@@ -27,6 +27,7 @@ import {
 	ilike,
 	inArray,
 	isNotNull,
+	isNull,
 	lt,
 	notExists,
 	or,
@@ -35,6 +36,7 @@ import {
 } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "../../env";
+import { deletePageStorage } from "../../lib/page-store";
 import { deleteObjects, objectExists, presignedGetUrl } from "../../lib/r2";
 import { protectedProcedure, publicProcedure, userError } from "../../trpc";
 import { requireActiveOrgMembership } from "../utils/active-org";
@@ -44,6 +46,7 @@ import { decodePageCursor, encodePageCursor } from "./cursor";
 import { pageUrl } from "./page-url";
 import { publishPage } from "./publish";
 import { isEntryPathConflict } from "./publish-rules";
+import { pageReportRouter } from "./reports";
 import {
 	clearPageWatchSchema,
 	createPageSchema,
@@ -219,6 +222,14 @@ async function latestVersionNumber(pageId: string): Promise<number | null> {
 	return row?.version ?? null;
 }
 
+async function wipePageStorage(pageId: string): Promise<void> {
+	try {
+		await deletePageStorage(pageId);
+	} catch (error) {
+		console.error("[pages] hub wipe failed after delete", { pageId, error });
+	}
+}
+
 async function listPageBatch({
 	organizationId,
 	userId,
@@ -383,6 +394,7 @@ async function listPageBatch({
 
 export const pageRouter = {
 	assets: pageAssetRouter,
+	...pageReportRouter,
 
 	/**
 	 * A page with no versions yet. Assets stage against a page id, so a first
@@ -718,7 +730,7 @@ export const pageRouter = {
 						? { description: input.description }
 						: {}),
 				})
-				.where(eq(pages.id, page.id))
+				.where(and(eq(pages.id, page.id), isNull(pages.takenDownAt)))
 				.returning();
 
 			if (!updated) {
@@ -747,7 +759,7 @@ export const pageRouter = {
 			const [updated] = await db
 				.update(pages)
 				.set({ visibility: input.visibility })
-				.where(eq(pages.id, page.id))
+				.where(and(eq(pages.id, page.id), isNull(pages.takenDownAt)))
 				.returning();
 
 			if (!updated) {
@@ -934,7 +946,7 @@ export const pageRouter = {
 			const [updated] = await db
 				.update(pages)
 				.set({ sharedVersion: resolved })
-				.where(eq(pages.id, page.id))
+				.where(and(eq(pages.id, page.id), isNull(pages.takenDownAt)))
 				.returning();
 
 			if (!updated) {
@@ -977,6 +989,7 @@ export const pageRouter = {
 						),
 					)
 					.returning({ id: pages.id });
+				if (discarded) await wipePageStorage(page.id);
 				return { id: page.id, deleted: Boolean(discarded) };
 			}
 
@@ -1039,6 +1052,8 @@ export const pageRouter = {
 					error,
 				});
 			}
+
+			await wipePageStorage(page.id);
 
 			return { id: page.id, deleted: true };
 		}),
@@ -1179,6 +1194,7 @@ export const pageRouter = {
 				.where(eq(pages.slug, input.slug))
 				.limit(1);
 			if (!page || page.visibility !== "everyone") return null;
+			if (page.takenDownAt) return null;
 
 			const version = servedVersion(
 				page.sharedVersion,

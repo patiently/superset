@@ -37,10 +37,6 @@ export const env = createEnv({
 		GH_APP_ID: z.string().min(1),
 		GH_APP_PRIVATE_KEY: z.string().min(1),
 		GH_WEBHOOK_SECRET: z.string().min(1),
-		// Set once a provider's traffic is routed through Hookdeck. While it
-		// is absent every webhook route verifies the provider's own
-		// signature, exactly as it always has.
-		HOOKDECK_SIGNING_SECRET: z.string().min(1).optional(),
 		SLACK_CLIENT_ID: z.string().min(1),
 		SLACK_CLIENT_SECRET: z.string().min(1),
 		SLACK_SIGNING_SECRET: z.string(),
@@ -76,6 +72,7 @@ export const env = createEnv({
 		// The published app's slug, used to build the install URL.
 		SENTRY_APP_SLUG: z.string().optional(),
 		RELAY_URL: z.string().url().default("https://relay.superset.sh"),
+		REALTIME_URL: z.string().url().default("https://realtime.superset.sh"),
 	},
 	client: {
 		NEXT_PUBLIC_API_URL: z.string().url(),

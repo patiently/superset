@@ -43,13 +43,21 @@ export type ChatSession = {
 	connection: StreamStatus;
 	outbox: OutboxEntry[];
 	hasOlder: boolean;
-	sendPrompt(content: UserContent[]): OutboxEntry;
+	sendPrompt(
+		content: UserContent[],
+		steer?: { expectedTurnId: string },
+	): OutboxEntry;
 	retryPrompt(clientId: string): void;
 	discardPrompt(clientId: string): void;
-	loadOlder(): Promise<void>;
-	cancelTurn(turnId: string): Promise<void>;
+	loadOlder(): Promise<boolean>;
+	removeQueuedPrompt(itemId: string): Promise<void>;
+	steerQueuedPrompt(itemId: string): Promise<void>;
+	resumeQueue(): Promise<void>;
+	cancelTurn(turnId: string, options?: { pauseQueue?: boolean }): Promise<void>;
+	stopBackgroundTask(taskId: string): Promise<boolean>;
 	respondToApproval(approvalId: string, decision: Decision): Promise<void>;
 	setMode(modeId: string): Promise<void>;
+	setConfigOption(configId: string, value: string): Promise<void>;
 };
 
 function confirmEchoes(outbox: Outbox, batch: readonly Envelope[]): void {
@@ -92,6 +100,7 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 						commandId: entry.commandId,
 						clientId: entry.clientId,
 						content: entry.content,
+						...(entry.steer ? { steer: entry.steer } : {}),
 					});
 				},
 			}),
@@ -192,8 +201,8 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 	}, [client, deltasKey, pageSize, enqueue, resync]);
 
 	const sendPrompt = useCallback(
-		(content: UserContent[]) => {
-			const entry = outbox.enqueue(content);
+		(content: UserContent[], steer?: { expectedTurnId: string }) => {
+			const entry = outbox.enqueue(content, steer);
 			void outbox.flush();
 			return entry;
 		},
@@ -217,13 +226,13 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 
 	const loadOlder = useCallback(async () => {
 		const before = nextBeforeRef.current;
-		if (!before) return;
+		if (!before) return true;
 		nextBeforeRef.current = null;
 		const page = await client.getItems({ before, limit: pageSize });
-		if (clientRef.current !== client) return;
+		if (clientRef.current !== client) return true;
 		if (!page.ok) {
 			nextBeforeRef.current = before;
-			return;
+			return false;
 		}
 		nextBeforeRef.current = page.nextBefore;
 		setHasOlder(page.nextBefore !== null);
@@ -235,10 +244,27 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 				items: new Map([...older.items, ...prev.items]),
 			};
 		});
+		return true;
 	}, [client, pageSize]);
 
+	const removeQueuedPrompt = useCallback(
+		(itemId: string) => client.removeQueuedPrompt(itemId),
+		[client],
+	);
+	const steerQueuedPrompt = useCallback(
+		(itemId: string) => client.steerQueuedPrompt(itemId),
+		[client],
+	);
+
+	const resumeQueue = useCallback(() => client.resumeQueue(), [client]);
+
 	const cancelTurn = useCallback(
-		(turnId: string) => client.cancelTurn(turnId),
+		(turnId: string, options?: { pauseQueue?: boolean }) =>
+			client.cancelTurn(turnId, options),
+		[client],
+	);
+	const stopBackgroundTask = useCallback(
+		(taskId: string) => client.stopBackgroundTask(taskId),
 		[client],
 	);
 	const respondToApproval = useCallback(
@@ -248,6 +274,12 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 	);
 	const setMode = useCallback(
 		(modeId: string) => client.setMode(modeId),
+		[client],
+	);
+
+	const setConfigOption = useCallback(
+		(configId: string, value: string) =>
+			client.setConfigOption(configId, value),
 		[client],
 	);
 
@@ -261,8 +293,13 @@ export function useChatSession(options: UseChatSessionOptions): ChatSession {
 		retryPrompt,
 		discardPrompt,
 		loadOlder,
+		removeQueuedPrompt,
+		steerQueuedPrompt,
+		resumeQueue,
 		cancelTurn,
+		stopBackgroundTask,
 		respondToApproval,
 		setMode,
+		setConfigOption,
 	};
 }

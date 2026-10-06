@@ -18,10 +18,10 @@ import {
 	HiOutlineCreditCard,
 	HiOutlineCube,
 	HiOutlineDevicePhoneMobile,
+	HiOutlineDocumentText,
 	HiOutlineFolder,
 	HiOutlineGlobeAlt,
 	HiOutlineKey,
-	HiOutlineLink,
 	HiOutlineLockClosed,
 	HiOutlinePaintBrush,
 	HiOutlinePuzzlePiece,
@@ -56,7 +56,7 @@ type SettingsRoute =
 	| "/settings/git"
 	| "/settings/agents"
 	| "/settings/terminal"
-	| "/settings/links"
+	| "/settings/files"
 	| "/settings/agent-accounts"
 	| "/settings/experimental"
 	| "/settings/integrations"
@@ -185,12 +185,12 @@ const SECTION_GROUPS: SectionGroup[] = [
 				icon: <HiOutlineCommandLine className="h-4 w-4" />,
 			},
 			{
-				id: "/settings/links",
-				section: "links",
+				id: "/settings/files",
+				section: "files",
 				label: msg({
-					message: "Links",
+					message: "Files & Editor",
 				}),
-				icon: <HiOutlineLink className="h-4 w-4" />,
+				icon: <HiOutlineDocumentText className="h-4 w-4" />,
 			},
 			{
 				id: "/settings/browser",

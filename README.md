@@ -14,6 +14,10 @@ Run Claude Code, Codex, or another CLI agent with terminals, code review, and br
 
 </div>
 
+### Documentation for agents
+
+The docs are available as [a Markdown index](https://docs.superset.sh/llms.txt) linking to individual pages, or [one full-text file](https://docs.superset.sh/llms-full.txt).
+
 ## Install
 
 Download the desktop app:
@@ -247,7 +251,7 @@ No Neon account or third-party credentials are needed. `setup.local.sh` brings
 up a local Postgres + neon-proxy + Redis stack via Docker and seeds a dev account.
 Sign in with the **"Sign in as dev"** button (or `admin@local.test` / `supersetdev`).
 
-Prereqs: [Bun](https://bun.sh/) v1.3.14+ (pinned in `.bun-version`), `docker`, `jq`, and [`gh`](https://cli.github.com/) (`brew install jq gh`).
+Prereqs: [Bun](https://bun.sh/) v1.4.2+ (pinned in `.bun-version`), `docker`, `jq`, and [`gh`](https://cli.github.com/) (`brew install jq gh`).
 
 See [**DEVELOPMENT.md**](./DEVELOPMENT.md) for the full guide: what the setup script does, manual setup against real services, common commands, troubleshooting, and how to build the desktop app. Contribution process lives in [**CONTRIBUTING.md**](./CONTRIBUTING.md).
 
