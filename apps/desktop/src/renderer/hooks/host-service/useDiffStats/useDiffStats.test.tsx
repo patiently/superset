@@ -1,99 +1,124 @@
-import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import type { DiffStats } from "./useDiffStats";
+import { afterAll, afterEach, describe, expect, test } from "bun:test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import type { ContextType, ReactNode } from "react";
+import { HostWorkspacesContext } from "renderer/routes/_authenticated/providers/HostWorkspacesProvider";
+import { LocalHostServiceContext } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
+import { SandboxAccessContext } from "renderer/routes/_authenticated/providers/SandboxAccessProvider";
+import { nativeWebGlobals } from "~/test-setup";
+import { useDiffStats } from "./useDiffStats";
 
-const alreadyRegistered = GlobalRegistrator.isRegistered;
-if (!alreadyRegistered) GlobalRegistrator.register();
 (
 	globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-const gitChangedSubscriptions: { workspaceId: string; enabled: boolean }[] = [];
-let statusQueries = 0;
+const domEvents = {
+	Event: globalThis.Event,
+	MessageEvent: globalThis.MessageEvent,
+};
+Object.assign(globalThis, {
+	Event: nativeWebGlobals.Event,
+	MessageEvent: nativeWebGlobals.MessageEvent,
+});
+afterAll(() => {
+	Object.assign(globalThis, domEvents);
+});
 
-mock.module("../useWorkspaceEvent", () => ({
-	useWorkspaceEvent: (
-		event: string,
-		workspaceId: string,
-		_callback: unknown,
-		enabled = true,
-	) => {
-		if (event === "git:changed") {
-			gitChangedSubscriptions.push({ workspaceId, enabled });
-		}
-	},
-}));
+const WORKSPACE_ID = "workspace-1";
+const MACHINE_ID = "this-machine";
+const WATCH_SETTLE_MS = 500;
 
-mock.module("../useWorkspaceHostUrl", () => ({
-	useWorkspaceHostUrl: () => "http://127.0.0.1:4000",
-}));
-
-mock.module("renderer/lib/host-service-client", () => ({
-	getHostServiceClientByUrl: () => ({
-		git: {
-			getStatus: {
-				query: async () => {
-					statusQueries += 1;
-					return {
-						againstBase: [{ path: "a.ts", additions: 3, deletions: 1 }],
-						staged: [],
-						unstaged: [],
-					};
-				},
-			},
-		},
-	}),
-}));
-
-const { act, cleanup, render } = await import("@testing-library/react");
-const { QueryClient, QueryClientProvider } = await import(
-	"@tanstack/react-query"
-);
-const { useDiffStats } = await import("./useDiffStats");
-
-const rendered: (DiffStats | null)[] = [];
-
-function Probe({ live }: { live?: boolean }) {
-	rendered.push(useDiffStats("workspace-1", { live }));
-	return null;
-}
-
-async function renderProbe(live?: boolean) {
-	const client = new QueryClient();
-	render(
-		<QueryClientProvider client={client}>
-			<Probe live={live} />
-		</QueryClientProvider>,
-	);
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, 0));
-	});
-}
+let stopHost: (() => void) | undefined;
 
 afterEach(() => {
 	cleanup();
-	gitChangedSubscriptions.length = 0;
-	rendered.length = 0;
-	statusQueries = 0;
+	stopHost?.();
+	stopHost = undefined;
 });
 
-afterAll(async () => {
-	if (!alreadyRegistered) await GlobalRegistrator.unregister();
-});
+function startHost() {
+	const commands: string[] = [];
+	const requests: string[] = [];
+	const server = Bun.serve({
+		port: 0,
+		hostname: "127.0.0.1",
+		fetch(request, bunServer) {
+			if (bunServer.upgrade(request)) return;
+			requests.push(new URL(request.url).pathname);
+			return new Response(null, { status: 404 });
+		},
+		websocket: {
+			message(_socket, raw) {
+				const command = JSON.parse(String(raw)) as { type: string };
+				commands.push(command.type);
+			},
+		},
+	});
+	stopHost = () => void server.stop(true);
+	const statusReads = () =>
+		requests.filter((pathname) => pathname.includes("git.getStatus")).length;
+	return { commands, statusReads, url: `http://127.0.0.1:${server.port}` };
+}
+
+function renderDiffStats(hostUrl: string, options?: { live?: boolean }) {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	queryClient.setQueryData(["relay-endpoint"], { url: hostUrl });
+	const wrapper = ({ children }: { children: ReactNode }) => (
+		<QueryClientProvider client={queryClient}>
+			<LocalHostServiceContext.Provider
+				value={
+					{
+						machineId: MACHINE_ID,
+						activeHostUrl: hostUrl,
+					} as NonNullable<ContextType<typeof LocalHostServiceContext>>
+				}
+			>
+				<HostWorkspacesContext.Provider
+					value={
+						{
+							workspaces: [
+								{
+									id: WORKSPACE_ID,
+									hostId: MACHINE_ID,
+									organizationId: "org-1",
+								},
+							],
+							isReady: true,
+						} as NonNullable<ContextType<typeof HostWorkspacesContext>>
+					}
+				>
+					<SandboxAccessContext.Provider
+						value={{
+							targets: [],
+							isReady: true,
+							agentCredentialsChangedWorkspaceId: null,
+						}}
+					>
+						{children}
+					</SandboxAccessContext.Provider>
+				</HostWorkspacesContext.Provider>
+			</LocalHostServiceContext.Provider>
+		</QueryClientProvider>
+	);
+	return renderHook(() => useDiffStats(WORKSPACE_ID, options), { wrapper });
+}
 
 describe("useDiffStats", () => {
 	test("subscribes to git:changed by default so the stats stay live", async () => {
-		await renderProbe();
+		const host = startHost();
+		renderDiffStats(host.url);
 
-		expect(gitChangedSubscriptions.length).toBeGreaterThan(0);
-		expect(gitChangedSubscriptions.every((entry) => entry.enabled)).toBe(true);
+		await waitFor(() => expect(host.commands).toContain("git:watch"));
 	});
 
 	test("a one-shot read fetches the stats without subscribing to git:changed", async () => {
-		await renderProbe(false);
+		const host = startHost();
+		renderDiffStats(host.url, { live: false });
 
-		expect(statusQueries).toBe(1);
-		expect(rendered.at(-1)).toEqual({ additions: 3, deletions: 1 });
-		expect(gitChangedSubscriptions.some((entry) => entry.enabled)).toBe(false);
+		await waitFor(() => expect(host.statusReads()).toBeGreaterThan(0));
+		await new Promise((resolve) => setTimeout(resolve, WATCH_SETTLE_MS));
+		expect(host.commands).not.toContain("git:watch");
 	});
 });

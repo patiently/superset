@@ -15,7 +15,15 @@ import {
 	isDevAppProfileDirName,
 	workspaceDevAppProfileDirName,
 } from "@superset/shared/dev-app-profile";
-import { app, dialog, Notification, net, protocol, session } from "electron";
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	Notification,
+	net,
+	protocol,
+	session,
+} from "electron";
 import { makeAppSetup } from "lib/electron-app/factories/app/setup";
 import {
 	authEvents,
@@ -47,15 +55,15 @@ import { resolveAppLocale } from "./lib/language";
 import { localDb } from "./lib/local-db";
 import { requestLocalNetworkAccess } from "./lib/local-network-permission";
 import { menuEmitter } from "./lib/menu-events";
+import { syncInstalledPluginMcpServers } from "./lib/plugin-installs";
 import { portForwardManager } from "./lib/port-forward";
 import { ensureProjectIconsDir, getProjectIconPath } from "./lib/project-icons";
 import { runQuitCleanup } from "./lib/quit-sequence";
 import { startResourceJournal } from "./lib/resource-metrics/resource-journal";
 import { initSentry } from "./lib/sentry";
-import {
-	prewarmTerminalRuntime,
-	reconcileDaemonSessions,
-} from "./lib/terminal";
+import { stopPtyDaemons } from "./lib/stop-pty-daemons";
+import { stopMigratedV1SessionsOnBoot } from "./lib/terminal";
+import { readMigratedV1WorkspaceIds } from "./lib/terminal/stop-v1-sessions/migrated-v1-workspaces";
 import {
 	disposeTerminalHostClient,
 	getTerminalHostClient,
@@ -236,6 +244,7 @@ let skipQuitConfirmation = false;
 // easy to trigger.
 let quitConfirmationOpen = false;
 let forceFullCleanup = false;
+let holdingQuitForCleanup = false;
 
 export function setSkipQuitConfirmation(): void {
 	skipQuitConfirmation = true;
@@ -287,7 +296,10 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", async (event) => {
-	if (isQuitting) return;
+	if (isQuitting) {
+		if (holdingQuitForCleanup) event.preventDefault();
+		return;
+	}
 
 	const isDev = process.env.NODE_ENV === "development";
 	if (!skipQuitConfirmation && !isDev && getConfirmOnQuitSetting()) {
@@ -323,6 +335,11 @@ app.on("before-quit", async (event) => {
 	}
 
 	isQuitting = true;
+	const isUpdateInstalling = isUpdateReadyToInstall();
+	// Stopping the pty-daemons waits for host-services to exit; without this
+	// Electron exits once the windows close and cuts that wait short.
+	holdingQuitForCleanup = forceFullCleanup;
+	if (holdingQuitForCleanup) event.preventDefault();
 	// Local port-forward listeners hold no state worth draining; drop them so
 	// nothing keeps 127.0.0.1:<port> bound after the app is gone.
 	portForwardManager.stopAll();
@@ -331,16 +348,25 @@ app.on("before-quit", async (event) => {
 	// shrinking the set as windows close one-by-one.
 	markAppQuitting();
 	persistOpenWindows();
+	if (holdingQuitForCleanup) {
+		for (const window of BrowserWindow.getAllWindows()) window.hide();
+	}
 	await runQuitCleanup({
 		isDev,
 		forceFullCleanup,
-		isUpdateInstalling: isUpdateReadyToInstall(),
+		isUpdateInstalling,
 		stopHostServices: () => getHostServiceCoordinator().stopAll(),
 		teardownTerminalHost,
+		stopPtyDaemons,
 		disposeTerminalHostClient,
 		disposeTray,
 		forceExit: (code) => app.exit(code),
 	});
+	if (holdingQuitForCleanup) {
+		holdingQuitForCleanup = false;
+		// The updater installs only when Electron finishes its own quit.
+		if (isUpdateInstalling) app.quit();
+	}
 });
 
 /**
@@ -510,9 +536,7 @@ if (!gotTheLock) {
 
 		await loadWebviewBrowserExtension();
 
-		// Must happen before renderer restore runs
-		await reconcileDaemonSessions();
-		prewarmTerminalRuntime();
+		await stopMigratedV1SessionsOnBoot(readMigratedV1WorkspaceIds());
 
 		// Must be listening before any host-service spawns: the child learns the
 		// bridge endpoint/secret from its env, so a late bridge means browser
@@ -588,6 +612,11 @@ if (!gotTheLock) {
 			});
 		} catch (error) {
 			console.error("[main] Failed to set up agent integrations:", error);
+		}
+		try {
+			syncInstalledPluginMcpServers();
+		} catch (error) {
+			console.error("[main] Failed to sync plugin MCP servers:", error);
 		}
 		try {
 			installBundledCliShim();

@@ -47,6 +47,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { isDropHandled, markDropHandled } from "../../../../utils/handledDrops";
 import { useComposerDropZone } from "../../../ComposerDropZone";
 import { useDictation } from "../../hooks/useDictation";
 import {
@@ -62,9 +63,11 @@ import type {
 	PromptInputAttachment,
 	PromptInputProps,
 } from "../../types";
+import { registerDraftEdit } from "../../utils/draftEdit";
 import { registerHistoryNavigation } from "../../utils/historyNavigation";
 import { matchToken } from "../../utils/matchToken";
 import { rankCommands } from "../../utils/rankCommands";
+import { $restoreChips } from "../../utils/restoreChips";
 import {
 	CommandTypeaheadOption,
 	MentionTypeaheadOption,
@@ -75,6 +78,21 @@ import { ComposerPanel } from "../ComposerPanel";
 import { ContextButton } from "../ContextButton";
 import { DictationBar } from "../DictationBar";
 import { MentionMenu } from "../MentionMenu";
+
+const FOOTER_BUTTON_CLASS =
+	"flex size-[26px] shrink-0 items-center justify-center rounded-md transition-colors";
+const GHOST_FOOTER_BUTTON_CLASS = cn(
+	FOOTER_BUTTON_CLASS,
+	"cursor-pointer text-muted-foreground hover:bg-accent hover:text-foreground",
+);
+const FILLED_FOOTER_BUTTON_CLASS = cn(
+	FOOTER_BUTTON_CLASS,
+	"cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80",
+);
+const INACTIVE_SEND_BUTTON_CLASS = cn(
+	FOOTER_BUTTON_CLASS,
+	"cursor-not-allowed bg-secondary text-muted-foreground",
+);
 
 // Slash commands only trigger while the "/token" is the entire message.
 function matchCommandToken(text: string) {
@@ -101,6 +119,7 @@ export type ComposerBodyProps = Required<
 		| "toolbar"
 		| "toolbarEnd"
 		| "defaultValue"
+		| "findChips"
 		| "onChange"
 		| "onSubmit"
 		| "onStop"
@@ -157,6 +176,7 @@ export function ComposerBody({
 	toolbar,
 	toolbarEnd,
 	defaultValue,
+	findChips,
 	onChange,
 	onSubmit,
 	onStop,
@@ -242,10 +262,10 @@ export function ComposerBody({
 
 	// A draft the host had stored. Read once: after mount the editor is the
 	// only writer, and re-applying would fight what is being typed.
-	const seeded = useRef(false);
+	const seededValue = useRef<string | null>(null);
 	useEffect(() => {
-		if (seeded.current) return;
-		seeded.current = true;
+		if (seededValue.current !== null) return;
+		seededValue.current = defaultValue ?? "";
 		if (!defaultValue) return;
 		editor.update(() => {
 			const root = $getRoot();
@@ -255,6 +275,26 @@ export function ComposerBody({
 			if ($isRangeSelection(selection)) selection.insertText(defaultValue);
 		});
 	}, [defaultValue, editor]);
+
+	// Chips come back once the finder can name them, which may be after the
+	// draft was read (a catalog still loading). Only the untouched draft is
+	// rewritten: once edited, even back to the same text, it is the user's.
+	const draftEdited = useRef(false);
+	useEffect(() => {
+		const seededText = seededValue.current;
+		if (!seededText) return;
+		return registerDraftEdit(editor, seededText, () => {
+			draftEdited.current = true;
+		});
+	}, [editor]);
+	useEffect(() => {
+		const seededText = seededValue.current;
+		if (!findChips || !seededText || draftEdited.current) return;
+		editor.update(() => {
+			if ($getRoot().getTextContent() !== seededText) return;
+			$restoreChips(findChips);
+		});
+	}, [editor, findChips]);
 
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
@@ -411,7 +451,8 @@ export function ComposerBody({
 		if (!text && files.length === 0 && !stateRef.current.allowEmptySubmit) {
 			return;
 		}
-		stateRef.current.onSubmit?.({ text, files, mentions, steer });
+		if (stateRef.current.onSubmit?.({ text, files, mentions, steer }) === false)
+			return;
 		historyNavigationRef.current?.reset();
 		if (!stateRef.current.clearOnSubmit) return;
 		editor.update(() => $getRoot().clear());
@@ -482,6 +523,7 @@ export function ComposerBody({
 				const files = event.dataTransfer?.files;
 				if (files && files.length > 0) {
 					event.preventDefault();
+					markDropHandled(event);
 					addFilesRef.current(files);
 					setDragging(false);
 					return true;
@@ -686,15 +728,13 @@ export function ComposerBody({
 					setDragging(false);
 			}}
 			onDrop={(event) => {
-				// The editor's DROP_COMMAND handler may have consumed this already;
-				// preventDefault marks it and the event still bubbles here. Inside a
-				// layout ComposerDropZone the zone owns non-editor drops instead.
 				if (
 					dropZone == null &&
-					!event.defaultPrevented &&
+					!isDropHandled(event.nativeEvent) &&
 					event.dataTransfer.files.length > 0
 				) {
 					event.preventDefault();
+					markDropHandled(event.nativeEvent);
 					addFiles(event.dataTransfer.files);
 				}
 				setDragging(false);
@@ -878,7 +918,7 @@ export function ComposerBody({
 								message: "Retry dictation",
 							})}
 							onClick={() => void dictationSession.retry()}
-							className="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
+							className={FILLED_FOOTER_BUTTON_CLASS}
 						>
 							<RefreshCcwIcon className="size-3.5" />
 						</button>
@@ -888,7 +928,7 @@ export function ComposerBody({
 								message: "Discard recording",
 							})}
 							onClick={dictationSession.cancel}
-							className="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+							className={GHOST_FOOTER_BUTTON_CLASS}
 						>
 							<XIcon className="size-3.5" />
 						</button>
@@ -898,7 +938,7 @@ export function ComposerBody({
 								message: "Send message",
 							})}
 							disabled
-							className="flex size-[26px] shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-secondary text-muted-foreground"
+							className={INACTIVE_SEND_BUTTON_CLASS}
 						>
 							<ArrowUpIcon className="size-4" />
 						</button>
@@ -916,7 +956,10 @@ export function ComposerBody({
 							})}
 							disabled={dictationSession.status === "transcribing"}
 							onClick={() => void dictationSession.finish()}
-							className="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-default disabled:opacity-50"
+							className={cn(
+								FILLED_FOOTER_BUTTON_CLASS,
+								"disabled:cursor-default disabled:opacity-50",
+							)}
 						>
 							<SquareIcon className="size-3 fill-current" />
 						</button>
@@ -926,7 +969,7 @@ export function ComposerBody({
 								message: "Send message",
 							})}
 							disabled
-							className="flex size-[26px] shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-secondary text-muted-foreground"
+							className={INACTIVE_SEND_BUTTON_CLASS}
 						>
 							<ArrowUpIcon className="size-4" />
 						</button>
@@ -946,7 +989,7 @@ export function ComposerBody({
 									setBrowseOpen(false);
 									void dictationSession.start();
 								}}
-								className="flex size-[26px] cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+								className={GHOST_FOOTER_BUTTON_CLASS}
 							>
 								<MicIcon className="size-4" />
 							</button>
@@ -959,7 +1002,7 @@ export function ComposerBody({
 									message: "Stop response",
 								})}
 								onClick={onStop}
-								className="flex size-[26px] cursor-pointer items-center justify-center rounded-md bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80"
+								className={FILLED_FOOTER_BUTTON_CLASS}
 							>
 								<SquareIcon className="size-3 fill-current" />
 							</button>
@@ -971,12 +1014,14 @@ export function ComposerBody({
 								})}
 								disabled={!canSend}
 								onClick={() => submit()}
-								className={cn(
-									"flex size-[26px] items-center justify-center rounded-md transition-colors",
+								className={
 									canSend
-										? "cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-										: "cursor-not-allowed bg-secondary text-muted-foreground",
-								)}
+										? cn(
+												FOOTER_BUTTON_CLASS,
+												"cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90",
+											)
+										: INACTIVE_SEND_BUTTON_CLASS
+								}
 							>
 								<ArrowUpIcon className="size-4" />
 							</button>

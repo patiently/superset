@@ -5,12 +5,13 @@ import { toast } from "@superset/ui/sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
 import { workspaceTrpc } from "@superset/workspace-client";
-import { ArrowLeft, ListTree, Square } from "lucide-react";
+import { ArrowLeft, GitCompareArrows, ListTree, Square } from "lucide-react";
 import {
 	type MouseEvent,
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useId,
 	useMemo,
 	useState,
 	useSyncExternalStore,
@@ -26,9 +27,14 @@ import { electronTrpcClient } from "renderer/lib/trpc-client";
 import { usePageFavorites } from "renderer/routes/_authenticated/_dashboard/hooks/usePageFavorites";
 import { usePagesList } from "renderer/routes/_authenticated/_dashboard/hooks/usePagesList";
 import { pagesListInput } from "renderer/routes/_authenticated/_dashboard/utils/pagesListInput";
+import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
 import type { StoreApi } from "zustand/vanilla";
 import type { CreateNewAgentSession } from "../../hooks/useAgentSessionLauncher";
 import { useChatWiring } from "../../hooks/usePaneRegistry/components/ChatSession/hooks/useSessionClient";
+import { usePRFlowState } from "../../hooks/usePRFlowState";
+import { useShipActions } from "../../hooks/useShipActions";
+import { useRightPaneLinkTarget } from "../../providers/RightPaneLinkTargetProvider";
+import { useWorkspaceGitStatus } from "../../providers/WorkspaceGitStatusProvider";
 import type { PagePaneData, PaneViewerData } from "../../types";
 import {
 	BACKGROUND_TERMINAL_ATTACHMENT_DEBOUNCE_MS,
@@ -37,11 +43,22 @@ import {
 	getBackgroundTerminalSessions,
 	parseAttachedTerminalIdsKey,
 } from "../../utils/backgroundTerminals";
+import { changesPillStats } from "../../utils/changesPillStats";
 import { focusOrAddTerminalPane } from "../../utils/focusTerminalPane";
+import { getShipMenuActions } from "../../utils/getShipMenuActions";
+import { openPagePaneInStore } from "../../utils/openPagePaneInStore";
 import { openSubagentPaneInStore } from "../../utils/openSubagentPaneInStore";
+import { ChangesStats } from "../ChangesStats";
+import { CommitForm } from "../CommitForm";
+import { CreatePrForm } from "../CreatePrForm";
+import { NewPageComposer } from "../NewPageComposer";
+import {
+	ActivityMenuHeader,
+	type ShipView,
+} from "./components/ActivityMenuHeader";
 import { BackgroundWorkRow } from "./components/BackgroundWorkRow";
+import { ChangesMenuRow } from "./components/ChangesMenuRow";
 import { MenuGroup } from "./components/MenuGroup";
-import { NewPageComposer } from "./components/NewPageComposer";
 import { PagesMenuRow } from "./components/PagesMenuRow";
 import {
 	usePagesMenuSeenAt,
@@ -64,6 +81,7 @@ interface WorkspaceActivityMenuProps {
 	onOpenPage: (page: PagePaneData, placement: "split" | "tab") => void;
 	onCreateNewAgentSession: CreateNewAgentSession;
 	onFocusAgentTerminal: (terminalId: string) => void;
+	changes?: { isOpen: boolean; onToggle: () => void };
 }
 
 export function WorkspaceActivityMenu({
@@ -74,15 +92,50 @@ export function WorkspaceActivityMenu({
 	onOpenPage,
 	onCreateNewAgentSession,
 	onFocusAgentTerminal,
+	changes,
 }: WorkspaceActivityMenuProps) {
 	const { t } = useLingui();
-	const pagePolicy = usePagePolicy("4-tier");
-	const utils = cloudTrpc.useUtils();
+	const paneAreaStyle = changes != null;
 	const { favoritePageIds } = usePageFavorites();
+	const gitStatus = useWorkspaceGitStatus();
+	const changesStats = useMemo(
+		() => (gitStatus.data ? changesPillStats(gitStatus.data) : null),
+		[gitStatus.data],
+	);
+	const triggerChangesStats =
+		changes && changesStats && changesStats.fileCount > 0 ? changesStats : null;
+	const { workspace: currentWorkspace } = useWorkspace();
+	const [shipView, setShipView] = useState<ShipView | null>(null);
+	const [open, setOpen] = useState(false);
+	const newPageStatusId = useId();
+	const {
+		flowState,
+		sync: branchSync,
+		onRetry: refreshFlowState,
+	} = usePRFlowState(workspaceId, {
+		enabled: paneAreaStyle && open,
+	});
+	const shipActions = useShipActions({
+		workspaceId,
+		onRefresh: refreshFlowState,
+		isPrFormOpen: shipView === "pr",
+		enabled: paneAreaStyle && open,
+		onCommitted: () => setShipView(null),
+		onPrCreated: () => setShipView(null),
+	});
+	const shipMenu = getShipMenuActions({
+		flowState,
+		sync: branchSync,
+		workspaceCanCreatePr: shipActions.canCreatePr,
+		commitsLoaded: shipActions.commitsLoaded,
+	});
+
+	const pagePolicy = usePagePolicy("4-tier");
+	const rightPane = useRightPaneLinkTarget();
+	const utils = cloudTrpc.useUtils();
 	const seenAt = usePagesMenuSeenAt(workspaceId);
 	const markSeen = usePagesMenuSeenStore((state) => state.markSeen);
 
-	const [open, setOpen] = useState(false);
 	const [composing, setComposing] = useState(false);
 	const [now, setNow] = useState(() => Date.now());
 	const [stopping, setStopping] = useState<ReadonlySet<string>>(new Set());
@@ -146,6 +199,37 @@ export function WorkspaceActivityMenu({
 		() => collectBackgroundWork(bindings.values(), detachedTerminals),
 		[bindings, detachedTerminals],
 	);
+	const getSourceLabelsSnapshot = useCallback(
+		() =>
+			JSON.stringify(
+				[store, ...linkedStores]
+					.flatMap((paneStore) => paneStore.getState().tabs)
+					.flatMap((tab) =>
+						Object.values(tab.panes).flatMap((pane) => {
+							const data = pane.data as {
+								terminalId?: string;
+								chatTitle?: string;
+							};
+							const label =
+								tab.titleOverride ?? pane.titleOverride ?? data.chatTitle;
+							return data.terminalId && label ? [[data.terminalId, label]] : [];
+						}),
+					),
+			),
+		[store, linkedStores],
+	);
+	const sourceLabelsKey = useSyncExternalStore(
+		subscribeAttachedStores,
+		getSourceLabelsSnapshot,
+		getSourceLabelsSnapshot,
+	);
+	const sourceLabels = useMemo(
+		() => new Map<string, string>(JSON.parse(sourceLabelsKey)),
+		[sourceLabelsKey],
+	);
+	const workSourceCount = new Set(
+		[...processes, ...subagents].map((work) => work.terminalId),
+	).size;
 	const stoppableAgentTasks = processes.filter(
 		(work) => work.stop?.type === "chat",
 	);
@@ -178,7 +262,10 @@ export function WorkspaceActivityMenu({
 	// Only the pins, by id — this menu never needed the rest of the org.
 	const pinnedPagesQuery = usePagesList(
 		{ ids: favoritePageIds, limit: MENU_PAGE_LIMIT },
-		{ enabled: open && favoritePageIds.length > 0, staleTime: 60_000 },
+		{
+			enabled: open && !paneAreaStyle && favoritePageIds.length > 0,
+			staleTime: 60_000,
+		},
 	);
 
 	// A publish from this workspace registers its agent as the page's watcher.
@@ -194,14 +281,15 @@ export function WorkspaceActivityMenu({
 		() =>
 			selectMenuPages({
 				workspacePages: workspacePagesQuery.items,
-				orgPages: pinnedPagesQuery.items,
-				favoritePageIds,
+				orgPages: paneAreaStyle ? [] : pinnedPagesQuery.items,
+				favoritePageIds: paneAreaStyle ? [] : favoritePageIds,
 				seenAt,
 			}),
 		[
 			workspacePagesQuery.items,
 			pinnedPagesQuery.items,
 			favoritePageIds,
+			paneAreaStyle,
 			seenAt,
 		],
 	);
@@ -213,6 +301,7 @@ export function WorkspaceActivityMenu({
 			return;
 		}
 		setComposing(false);
+		setShipView(null);
 		markSeen(workspaceId, workspace[0]?.publishedAtMs ?? 0);
 	};
 
@@ -233,10 +322,13 @@ export function WorkspaceActivityMenu({
 			});
 			return;
 		}
-		onOpenPage(
-			{ pageId: page.id, slug: page.slug, title: page.title },
-			action === "newTab" ? "tab" : "split",
-		);
+		const pageData = { pageId: page.id, slug: page.slug, title: page.title };
+		if (action === "rightPane" && rightPane) {
+			rightPane.reveal();
+			openPagePaneInStore(rightPane.store, pageData, "tab");
+			return;
+		}
+		onOpenPage(pageData, action === "newTab" ? "tab" : "split");
 	};
 
 	const handleOpenWork = (work: BackgroundWork) => {
@@ -307,6 +399,9 @@ export function WorkspaceActivityMenu({
 			<BackgroundWorkRow
 				key={work.key}
 				work={work}
+				source={
+					workSourceCount > 1 ? sourceLabels.get(work.terminalId) : undefined
+				}
 				now={now}
 				stopping={stopping.has(work.key)}
 				onOpen={handleOpenWork}
@@ -328,12 +423,11 @@ export function WorkspaceActivityMenu({
 						<button
 							type="button"
 							aria-label={t({ message: "Workspace activity" })}
+							aria-describedby={hasNew ? newPageStatusId : undefined}
 							className={cn(
-								"no-drag flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2 text-xs font-medium text-muted-foreground/80 transition-colors",
+								"no-drag relative flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2 text-xs font-medium text-muted-foreground/80 transition-colors",
 								"hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
 								open && "bg-muted/60 text-foreground",
-								hasNew &&
-									"border-blue-500/40 bg-blue-500/[0.08] text-blue-500 hover:bg-blue-500/[0.12] hover:text-blue-500",
 							)}
 						>
 							<ListTree className="size-3.5 shrink-0" />
@@ -343,16 +437,32 @@ export function WorkspaceActivityMenu({
 									<span className="tabular-nums">{runningCount}</span>
 								</>
 							) : (
+								!paneAreaStyle &&
 								workspace.length > 0 && (
 									<span className="tabular-nums">{workspace.length}</span>
 								)
 							)}
+							{triggerChangesStats && (
+								<>
+									<span className="h-3.5 w-px shrink-0 bg-border" />
+									<GitCompareArrows className="size-3.5 shrink-0" />
+									<span className="flex items-center gap-1">
+										<ChangesStats stats={triggerChangesStats} />
+									</span>
+								</>
+							)}
 							{hasNew && (
-								<span className="text-[10px] font-semibold">
-									<Trans context="badge on a page published since the menu was last opened">
-										New
-									</Trans>
-								</span>
+								<>
+									<span
+										aria-hidden="true"
+										className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-blue-500"
+									/>
+									<span id={newPageStatusId} className="sr-only">
+										<Trans context="badge on a page published since the menu was last opened">
+											New
+										</Trans>
+									</span>
+								</>
 							)}
 						</button>
 					</PopoverTrigger>
@@ -366,7 +476,7 @@ export function WorkspaceActivityMenu({
 				sideOffset={6}
 				className="w-80 p-1"
 				onKeyDown={(event) => {
-					if (composing) return;
+					if (composing || shipView) return;
 					if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
 					const items = [
 						...event.currentTarget.querySelectorAll<HTMLElement>(
@@ -380,6 +490,11 @@ export function WorkspaceActivityMenu({
 					items[(index + step + items.length) % items.length]?.focus();
 				}}
 				onEscapeKeyDown={(event) => {
+					if (shipView) {
+						event.preventDefault();
+						setShipView(null);
+						return;
+					}
 					if (!composing) return;
 					event.preventDefault();
 					setComposing(false);
@@ -402,8 +517,60 @@ export function WorkspaceActivityMenu({
 							onFocusAgentTerminal={onFocusAgentTerminal}
 						/>
 					</>
+				) : shipView ? (
+					<>
+						<button
+							type="button"
+							onClick={() => setShipView(null)}
+							className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent"
+						>
+							<ArrowLeft className="size-3.5 shrink-0" />
+							{shipView === "commit" ? (
+								<Trans>Commit</Trans>
+							) : (
+								<Trans>Create PR</Trans>
+							)}
+						</button>
+						<div className="p-1">
+							{shipView === "commit" ? (
+								<CommitForm actions={shipActions} />
+							) : (
+								<CreatePrForm actions={shipActions} />
+							)}
+						</div>
+					</>
 				) : (
 					<div className="divide-y divide-border">
+						{changes && (
+							<section className="py-1">
+								<ActivityMenuHeader
+									title={currentWorkspace.name}
+									canCommit={shipMenu.canCommit}
+									canPush={shipMenu.canPush}
+									canCreatePr={shipMenu.canCreatePr}
+									hasCommitsAhead={shipActions.hasCommitsAhead}
+									isBusy={shipActions.isShipping || shipActions.isCommitting}
+									onOpenView={(view) => {
+										if (view === "pr") shipActions.seedPrTitle();
+										setShipView(view);
+									}}
+									onPush={shipActions.push}
+									onNoCommitsAhead={() =>
+										toast.info(
+											t({ message: "No commits to open a pull request from" }),
+										)
+									}
+								/>
+								<ChangesMenuRow
+									stats={changesStats}
+									isOpen={changes.isOpen}
+									onToggle={() => {
+										changes.onToggle();
+										handleOpenChange(false);
+									}}
+								/>
+							</section>
+						)}
 						<MenuGroup
 							title={<Trans>Background processes</Trans>}
 							actions={
@@ -418,7 +585,7 @@ export function WorkspaceActivityMenu({
 												onClick={stopAll}
 												className="flex size-6 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent"
 											>
-												<Square className="size-3 fill-current" />
+												<Square className="size-2.5 fill-current" />
 											</button>
 										</TooltipTrigger>
 										<TooltipContent side="top">

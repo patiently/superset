@@ -4,7 +4,13 @@ import { useCollections } from "renderer/routes/_authenticated/providers/Collect
 import type { StoreApi } from "zustand/vanilla";
 import type { PaneViewerData } from "../../types";
 
-const SIDEBAR_PANE_KINDS = new Set(["files", "changes-list", "review"]);
+const SIDEBAR_PANE_KINDS = new Set([
+	"files",
+	"changes-list",
+	"diff",
+	"review",
+	"pages-list",
+]);
 
 export function useRightPaneAreaLifecycle({
 	workspaceId,
@@ -24,45 +30,33 @@ export function useRightPaneAreaLifecycle({
 	const collections = useCollections();
 
 	useEffect(() => {
-		if (!isReady || !hasRow || flag === undefined) return;
-		const row = collections.v2WorkspaceLocalState.get(workspaceId);
-		if (!row) return;
-		if (flag === false) {
-			const sessionTabs = rightStore
-				.getState()
-				.tabs.filter((tab) =>
-					Object.values(tab.panes).some(
-						(pane) => !SIDEBAR_PANE_KINDS.has(pane.kind),
-					),
-				);
-			if (sessionTabs.length === 0) return;
-			const centerActiveTabId = centerStore.getState().activeTabId;
-			for (const tab of sessionTabs) {
-				for (const pane of Object.values(tab.panes)) {
-					if (!SIDEBAR_PANE_KINDS.has(pane.kind)) continue;
-					rightStore
-						.getState()
-						.closePane({ tabId: tab.id, paneId: pane.id, intent: "remove" });
-				}
-				transferTabToIndex({
-					source: rightStore,
-					target: centerStore,
-					tabId: tab.id,
-				});
+		if (!isReady || !hasRow || flag !== false) return;
+		if (!collections.v2WorkspaceLocalState.get(workspaceId)) return;
+		const sessionTabs = rightStore
+			.getState()
+			.tabs.filter((tab) =>
+				Object.values(tab.panes).some(
+					(pane) => !SIDEBAR_PANE_KINDS.has(pane.kind),
+				),
+			);
+		if (sessionTabs.length === 0) return;
+		const centerActiveTabId = centerStore.getState().activeTabId;
+		for (const tab of sessionTabs) {
+			for (const pane of Object.values(tab.panes)) {
+				if (!SIDEBAR_PANE_KINDS.has(pane.kind)) continue;
+				rightStore
+					.getState()
+					.closePane({ tabId: tab.id, paneId: pane.id, intent: "remove" });
 			}
-			if (centerActiveTabId) {
-				centerStore.getState().setActiveTab(centerActiveTabId);
-			}
-			return;
+			transferTabToIndex({
+				source: rightStore,
+				target: centerStore,
+				tabId: tab.id,
+			});
 		}
-		if (row.rightPaneLayout !== undefined) return;
-		const state = rightStore.getState();
-		state.addTab({ panes: [{ kind: "files", data: { kind: "files" } }] });
-		state.addTab({
-			panes: [{ kind: "changes-list", data: { kind: "changes-list" } }],
-		});
-		const [first] = rightStore.getState().tabs;
-		if (first) rightStore.getState().setActiveTab(first.id);
+		if (centerActiveTabId) {
+			centerStore.getState().setActiveTab(centerActiveTabId);
+		}
 	}, [
 		collections,
 		workspaceId,
