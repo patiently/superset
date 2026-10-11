@@ -70,7 +70,7 @@ jobs:
 
       - name: Desktop test suite
         working-directory: apps/desktop
-        run: "$BUN_TEST" test
+        run: '"$BUN_TEST" test'
 
       - name: Gitignored-dir fallback tests fail without the fix
         env:
@@ -150,11 +150,11 @@ jobs:
 
       - name: Workspace-fs test suite
         working-directory: packages/workspace-fs
-        run: "$BUN_TEST" test
+        run: '"$BUN_TEST" test'
 
       - name: Host-service ignored-dir and git-watcher tests
         working-directory: packages/host-service
-        run: "$BUN_TEST" test src/runtime/git/ignored-dirs.test.ts src/runtime/filesystem src/events/git-watcher src/events/git-directory-watcher
+        run: '"$BUN_TEST" test src/runtime/git/ignored-dirs.test.ts src/runtime/filesystem src/events/git-watcher src/events/git-directory-watcher'
 
       - name: Workspace-fs typecheck
         working-directory: packages/workspace-fs
