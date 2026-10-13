@@ -3,6 +3,7 @@ import { cn } from "@superset/ui/utils";
 import { type UseNavigateResult, useNavigate } from "@tanstack/react-router";
 import type { ComponentProps, MouseEvent } from "react";
 import { env } from "renderer/env.renderer";
+import { ChatLinkProvider } from "../../providers/ChatLinkProvider";
 import { useChatPaneActions } from "../../providers/ChatPaneActionsProvider";
 import { unfurlLink } from "../../utils/linkUnfurl";
 import { LOCAL_PATH_PREFIX } from "../../utils/remarkLocalPathLinks";
@@ -14,7 +15,7 @@ import { LinkUnfurlIcon } from "./components/LinkUnfurlIcon";
 
 const MarkdownLink = chatMarkdownComponents.a;
 const UNFURLED_LINK_CLASSNAME =
-	"rounded-md bg-foreground/[0.06] px-1.5 py-0.5 text-foreground no-underline box-decoration-clone transition-colors hover:bg-foreground/[0.12]";
+	"rounded-md bg-foreground/[0.06] px-1.5 py-0.5 text-foreground no-underline box-decoration-clone transition-colors hover:bg-foreground/[0.12] hover:text-foreground hover:no-underline";
 
 function openInApp(
 	link: Exclude<SupersetAppLink, { kind: "page" }>,
@@ -76,6 +77,7 @@ export function ChatLink(props: ComponentProps<typeof MarkdownLink>) {
 	return (
 		<MarkdownLink
 			{...props}
+			title={href}
 			className={cn(
 				typeof props.className === "string" && props.className,
 				unfurl && UNFURLED_LINK_CLASSNAME,
@@ -94,7 +96,7 @@ export function ChatLink(props: ComponentProps<typeof MarkdownLink>) {
 				if (openLink?.(href, event) || isLocalPath) event.preventDefault();
 			}}
 		>
-			{children}
+			<ChatLinkProvider>{children}</ChatLinkProvider>
 		</MarkdownLink>
 	);
 }

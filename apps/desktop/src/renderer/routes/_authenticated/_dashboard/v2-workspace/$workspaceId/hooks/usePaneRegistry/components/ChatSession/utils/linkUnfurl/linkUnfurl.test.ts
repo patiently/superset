@@ -53,6 +53,34 @@ describe("unfurlLink", () => {
 		});
 	});
 
+	test.each([
+		["src/app.ts:12", "app.ts", "app.ts:12"],
+		["app.ts:12:4", "app.ts", "app.ts:12:4"],
+		["/Users/me/x.ts#L3", "x.ts", "x.ts#L3"],
+		["src/app.ts#L12-L20", "app.ts", "app.ts#L12-L20"],
+	])("counts %s as a file and keeps its line position", (href, fileName, label) => {
+		expect(unfurlLink(href, true, WEB)).toEqual({
+			icon: { kind: "file", fileName },
+			label,
+		});
+	});
+
+	test("does not take a dot directory for a file", () => {
+		expect(unfurlLink(".git/", true, WEB)).toBe(null);
+		expect(unfurlLink("repo/.github", true, WEB)).toBe(null);
+	});
+
+	test("does not take a version number for a file extension", () => {
+		expect(unfurlLink("https://example.com/releases/1.34.0", false, WEB)).toBe(
+			null,
+		);
+		expect(unfurlLink("https://example.com/a/clip.mp4", false, WEB)).toEqual({
+			icon: { kind: "file", fileName: "clip.mp4" },
+			label: "clip.mp4",
+		});
+		expect(unfurlLink("/tmp/backup.7z", true, WEB)?.label).toBe("backup.7z");
+	});
+
 	test("leaves plain web pages and other schemes alone", () => {
 		expect(unfurlLink("https://example.com/docs/intro.html", false, WEB)).toBe(
 			null,

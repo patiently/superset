@@ -1,8 +1,8 @@
 import { shellQuote } from "../shell-quote";
 import type { HostTarget } from "./platform";
 
-export const SYSTEMD_UNIT = "superset-host.service";
-export const LAUNCHD_LABEL = "sh.superset.host";
+const SYSTEMD_UNIT = "superset-host.service";
+const LAUNCHD_LABEL = "sh.superset.host";
 
 interface ServiceInput {
 	binPath: string;
@@ -41,7 +41,6 @@ function xmlEscape(value: string): string {
 		.replaceAll(">", "&gt;");
 }
 
-/** A LaunchAgent that starts the host at login and restarts it if it exits. */
 export function launchdPlist({
 	binPath,
 	organizationId,
@@ -132,7 +131,6 @@ fi
 `;
 }
 
-/** Stops and deletes whichever service `installServiceScript` set up. */
 export function uninstallServiceScript(): string {
 	return `systemd=${SYSTEMD_FILE}
 if [ -f "$systemd" ]; then

@@ -4,6 +4,7 @@ import { machineIdProblem } from "./machine-id";
 import { checkPlatform } from "./platform";
 import { parseProbe } from "./probe";
 import { launchdPlist, systemdUnit } from "./service";
+import { sshFailureHint } from "./ssh-failure-hint";
 
 describe("checkPlatform", () => {
 	test("maps uname output to a release target", () => {
@@ -95,4 +96,24 @@ test("the host key name fits better-auth's 32-character limit", () => {
 	);
 	expect(name).toBe("Host a97d7f26 Manageds-Virtual-M");
 	expect(name.length).toBeLessThanOrEqual(32);
+});
+
+describe("sshFailureHint", () => {
+	test("names the cause ssh reported", () => {
+		expect(
+			sshFailureHint("Connection closed by 127.0.0.1 port 2233", "box"),
+		).toContain("2 minutes");
+		expect(
+			sshFailureHint("dev@box: Permission denied (publickey,password).", "box"),
+		).toContain("refused the login");
+		expect(sshFailureHint("Host key verification failed.", "box")).toContain(
+			"ssh-keygen -R",
+		);
+		expect(
+			sshFailureHint("ssh: Could not resolve hostname nobox", "nobox"),
+		).toContain("does not resolve");
+		expect(sshFailureHint("", "box")).toBe(
+			"Check it in a terminal first: ssh box",
+		);
+	});
 });

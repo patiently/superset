@@ -34,15 +34,18 @@ function Link({
 	node: _node,
 	className,
 	children,
+	href,
 	...rest
 }: RendererProps & ComponentProps<"a">) {
 	return (
 		<a
+			href={href}
 			rel="noreferrer"
 			target="_blank"
+			title={href}
 			{...rest}
 			className={cn(
-				"underline underline-offset-2 wrap-anywhere",
+				"text-link underline-offset-2 wrap-anywhere hover:text-link-hover hover:underline",
 				ownClassName(className),
 			)}
 		>

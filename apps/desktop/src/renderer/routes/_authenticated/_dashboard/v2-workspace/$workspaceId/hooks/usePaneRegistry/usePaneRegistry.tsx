@@ -158,7 +158,6 @@ const MOD_KEY = navigator.platform.toLowerCase().includes("mac")
 
 interface UsePaneRegistryOptions {
 	onOpenDiff: OpenReviewDiff;
-	onOpenComment: (comment: CommentPaneData) => void;
 	onOpenFile: OpenFile;
 	onRevealPath: (path: string, options?: { isDirectory?: boolean }) => void;
 	launcher: TerminalLauncher;
@@ -169,7 +168,6 @@ interface UsePaneRegistryOptions {
 
 export function usePaneRegistry({
 	onOpenDiff,
-	onOpenComment,
 	onOpenFile,
 	onRevealPath,
 	launcher,
@@ -903,7 +901,6 @@ export function usePaneRegistry({
 					<PullRequestPane
 						data={ctx.pane.data as PullRequestPaneData}
 						onOpenDiff={onOpenDiff}
-						onOpenComment={onOpenComment}
 						onOpenPage={(page) => openPagePaneInStore(ctx.store, page)}
 					/>
 				),
@@ -1013,7 +1010,6 @@ export function usePaneRegistry({
 			isKillingTerminalSession,
 			launcher,
 			onOpenDiff,
-			onOpenComment,
 			onOpenFile,
 			onRevealPath,
 			onSearch,

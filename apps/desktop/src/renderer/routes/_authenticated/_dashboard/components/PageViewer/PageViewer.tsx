@@ -10,6 +10,7 @@ import {
 	CommentProvider,
 	CommentsPanel,
 	PageCommentsView,
+	type PageToolHost,
 	PageVersionBanner,
 } from "@superset/ui/page-comments";
 import { toast } from "@superset/ui/sonner";
@@ -18,8 +19,9 @@ import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { env } from "renderer/env.renderer";
 import { authClient, ensureFreshJwt, getJwt } from "renderer/lib/auth-client";
-import { cloudTrpc } from "renderer/lib/cloud-trpc";
+import { cloudTrpc, cloudTrpcClient } from "renderer/lib/cloud-trpc";
 import { electronTrpcClient } from "renderer/lib/trpc-client";
+import { usePluginMutations } from "renderer/routes/_authenticated/_dashboard/hooks/usePluginMutations";
 import { CommentDeepLink } from "./components/CommentDeepLink";
 import { MarkCommentsRead } from "./components/MarkCommentsRead";
 import { PageViewerMessage } from "./components/PageViewerMessage";
@@ -91,6 +93,36 @@ export function PageViewer({
 				token: async () => getJwt(),
 			}),
 		[resolvedPageId],
+	);
+	const pluginMutations = usePluginMutations();
+	const toolHost = useMemo<PageToolHost | undefined>(
+		() =>
+			resolvedPageId
+				? {
+						callTool: (request) =>
+							cloudTrpcClient.page.callTool.mutate({
+								pageId: resolvedPageId,
+								...request,
+							}),
+						grant: async (input) => {
+							await cloudTrpcClient.page.grantTool.mutate({
+								pageId: resolvedPageId,
+								...input,
+							});
+						},
+						install: async (plugin) => {
+							if (!(await pluginMutations.install(plugin))) {
+								throw new Error(`${plugin} was not installed`);
+							}
+						},
+						openUrl: (url) => {
+							void electronTrpcClient.external.openUrl
+								.mutate(url)
+								.catch(console.error);
+						},
+					}
+				: undefined,
+		[resolvedPageId, pluginMutations.install],
 	);
 	const presenceUrl = useCallback(async () => {
 		const token = await ensureFreshJwt();
@@ -188,7 +220,7 @@ export function PageViewer({
 							onFramePointerDown={onFramePointerDown}
 							onLinkClick={onLinkClick}
 							{...(resolvedPageId && !previewing
-								? { storageTicket, presenceUrl }
+								? { storageTicket, presenceUrl, toolHost }
 								: {})}
 						/>
 					</div>

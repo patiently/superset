@@ -490,6 +490,26 @@ export const filesystemRouter = router({
 			return await withFsErrorTranslation(() => service.copyPath(serviceInput));
 		}),
 
+	resolveFileReference: queryProcedure
+		.meta({ timeoutMs: 30_000 })
+		.input(
+			z.object({
+				workspaceId: z.string(),
+				reference: z.string(),
+				preferredRelativePaths: z.array(z.string()).optional(),
+			}),
+		)
+		.query(async ({ ctx, input }): Promise<{ resolvedPath: string } | null> => {
+			const service = getFilesystemService(ctx, input.workspaceId);
+			const match = await withFsErrorTranslation(() =>
+				service.resolveFileReference({
+					reference: input.reference,
+					preferredRelativePaths: input.preferredRelativePaths,
+				}),
+			);
+			return match ? { resolvedPath: match.absolutePath } : null;
+		}),
+
 	searchFiles: queryProcedure
 		.meta({ timeoutMs: 30_000 })
 		.input(

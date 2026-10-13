@@ -39,6 +39,25 @@ describe("filesystem router integration", () => {
 		).rejects.toBeInstanceOf(TRPCClientError);
 	});
 
+	test("resolveFileReference finds the file a shortened path means", async () => {
+		const directory = join(scenario.repo.repoPath, "src", "hooks", "useThing");
+		mkdirSync(directory, { recursive: true });
+		writeFileSync(join(directory, "useThing.ts"), "export {};\n");
+
+		const found =
+			await scenario.host.trpc.filesystem.resolveFileReference.query({
+				workspaceId: scenario.workspaceId,
+				reference: "useThing/useThing.ts",
+			});
+		expect(found).toEqual({ resolvedPath: join(directory, "useThing.ts") });
+		expect(
+			await scenario.host.trpc.filesystem.resolveFileReference.query({
+				workspaceId: scenario.workspaceId,
+				reference: "nowhere/missing.ts",
+			}),
+		).toBeNull();
+	});
+
 	test("readFile returns text content", async () => {
 		const filePath = join(scenario.repo.repoPath, "hello.txt");
 		writeFileSync(filePath, "hello world");

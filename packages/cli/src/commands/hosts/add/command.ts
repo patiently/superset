@@ -1,5 +1,11 @@
 import * as p from "@clack/prompts";
-import { boolean, CLIError, positional, string } from "@superset/cli-framework";
+import {
+	boolean,
+	CLIError,
+	positional,
+	string,
+	wrapText,
+} from "@superset/cli-framework";
 import { getHostId, hostIdFromMachineId } from "@superset/shared/host-info";
 import { type ApiClient, createApiClient } from "../../../lib/api-client";
 import { command } from "../../../lib/command";
@@ -10,6 +16,7 @@ import {
 	hostKeyName,
 	revokeKeysNamed,
 } from "../../../lib/ssh-host-setup/host-key";
+import { log } from "../../../lib/ssh-host-setup/log";
 import {
 	MACHINE_ID_FIX,
 	machineIdProblem,
@@ -37,7 +44,9 @@ async function confirmStep(message: string, yes: boolean): Promise<boolean> {
 	if (!process.stdin.isTTY) {
 		throw new CLIError(`${message} Pass --yes to allow it without a prompt.`);
 	}
-	const answer = await p.confirm({ message });
+	const answer = await p.confirm({
+		message: wrapText(message, (process.stdout.columns || 80) - 4),
+	});
 	return !p.isCancel(answer) && answer;
 }
 
@@ -48,7 +57,7 @@ async function install(
 ): Promise<{ bin: string; installed: boolean }> {
 	const wanted = env.VERSION === "0.0.0-dev" ? null : env.VERSION;
 	if (facts.bin && facts.hostRuntime && (!wanted || facts.version === wanted)) {
-		p.log.info(`Superset CLI ${facts.version ?? ""} found at ${facts.bin}`);
+		log.info(`Superset CLI ${facts.version ?? ""} found at ${facts.bin}`);
 		return { bin: facts.bin, installed: false };
 	}
 	const action =
@@ -69,7 +78,7 @@ async function install(
 script=$(mktemp)
 trap 'rm -f "$script"' EXIT
 curl -fsSL ${INSTALL_URL} -o "$script"
-SUPERSET_HOME="$HOME/superset" SUPERSET_VERSION=${tag} sh "$script"`);
+SUPERSET_HOME="$HOME/superset" SUPERSET_VERSION=${tag} sh "$script" --no-next-steps`);
 	if (exitCode !== 0) {
 		throw new CLIError(`Installing the Superset CLI on ${ssh.target} failed`);
 	}
@@ -96,10 +105,10 @@ async function signIn({
 	if (whoami.exitCode === 0) {
 		const remote = parseWhoami(whoami.stdout);
 		if (remote?.userId === me.id && remote.organizationId === organizationId) {
-			p.log.info(`Already signed in on ${ssh.target}`);
+			log.info(`Already signed in on ${ssh.target}`);
 			return "kept";
 		}
-		p.log.info(
+		log.info(
 			`${ssh.target} is signed in as another account or organization; signing it in as you`,
 		);
 	}
@@ -113,10 +122,10 @@ async function signIn({
 		await revokeKeysNamed(api, keyName).catch(() => {});
 		throw new CLIError(
 			`Signing in on ${ssh.target} failed`,
-			login.stderr.trim() || login.stdout.trim(),
+			`${ssh.target} said: ${remoteError(login.stderr || login.stdout)}`,
 		);
 	}
-	p.log.success(`Signed in on ${ssh.target} with the API key "${keyName}"`);
+	log.success(`Signed in on ${ssh.target} with the API key "${keyName}"`);
 	return "signed-in";
 }
 
@@ -130,13 +139,22 @@ function parseWhoami(
 	}
 }
 
+function remoteError(output: string): string {
+	return output
+		.split("\n")
+		.map((line) => line.replace(/^\s*(Error|Hint):\s*/, "").trim())
+		.filter(Boolean)
+		.map((line) => (/[.!?]$/.test(line) ? line : `${line}.`))
+		.join(" ");
+}
+
 async function enableLinger(ssh: SshSession, yes: boolean): Promise<void> {
 	const keep = await confirmStep(
 		`Keep the host running on ${ssh.target} after you log out of it? This enables lingering for your user (loginctl enable-linger), which can ask for sudo.`,
 		yes,
 	).catch(() => false);
 	if (!keep) {
-		p.log.warn(
+		log.warn(
 			"The host stops when your last session on it ends. Enable it later with: loginctl enable-linger",
 		);
 		return;
@@ -146,7 +164,7 @@ async function enableLinger(ssh: SshSession, yes: boolean): Promise<void> {
 		{ tty: true },
 	);
 	if (exitCode !== 0) {
-		p.log.warn("Could not enable lingering; the host stops when you log out.");
+		log.warn("Could not enable lingering; the host stops when you log out.");
 	}
 }
 
@@ -173,7 +191,7 @@ async function startHost({
 	const canService = kind === "launchd" || facts.systemd;
 	if (noService || !canService) {
 		if (!noService) {
-			p.log.warn(
+			log.warn(
 				`No systemd user session on ${ssh.target}, so the host runs as a plain background process and does not survive a reboot.`,
 			);
 		}
@@ -209,7 +227,7 @@ async function startHost({
 		);
 	}
 	const action = result.stdout.match(/action=(\w+)/)?.[1] ?? "started";
-	p.log.success(
+	log.success(
 		`${kind === "systemd" ? "systemd user service" : "LaunchAgent"} ${action}`,
 	);
 	if (kind === "systemd" && facts.linger === false) {
@@ -297,7 +315,7 @@ export default command({
 					"This machine is already a host when the app or `superset start` runs here.",
 				);
 			}
-			p.log.info(`${facts.hostname} (${platform.target}), host id ${hostId}`);
+			log.info(`${facts.hostname} (${platform.target}), host id ${hostId}`);
 
 			const { bin, installed } = await install(ssh, facts, yes);
 
@@ -341,15 +359,15 @@ export default command({
 			}
 
 			if (facts.gh === null) {
-				p.log.warn(
+				log.warn(
 					`GitHub CLI is not installed on ${target}, so private repos will not clone there. Install gh, then run: ssh -t ${target} gh auth login`,
 				);
 			} else if (facts.gh === "signed-out") {
-				p.log.warn(
+				log.warn(
 					`GitHub CLI is not signed in on ${target}, so private repos will not clone there. Run: ssh -t ${target} gh auth login`,
 				);
 			}
-			p.outro(
+			log.outro(
 				`${name} is ready. Pick it as the host when you create a workspace.`,
 			);
 

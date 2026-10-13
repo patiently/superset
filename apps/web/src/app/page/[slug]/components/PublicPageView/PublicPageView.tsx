@@ -7,9 +7,11 @@ import {
 	PageFrame,
 	PageViewers,
 	useJoinPagePresence,
+	usePageToolsUnavailable,
 } from "@superset/ui/page-comments";
 import { Globe } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useRef } from "react";
 import { env } from "@/env";
 import { OpenInSupersetButton } from "../OpenInSupersetButton";
 import { ReportPageDialog } from "./components/ReportPageDialog";
@@ -31,6 +33,9 @@ export function PublicPageView({
 	signedIn,
 }: PublicPageViewProps) {
 	const { t } = useLingui();
+	const frameRef = useRef<HTMLIFrameElement>(null);
+	const frameOrigin = useMemo(() => new URL(viewUrl).origin, [viewUrl]);
+	usePageToolsUnavailable({ frameRef, frameOrigin, signedIn });
 	useJoinPagePresence({
 		pageId,
 		url: async () =>
@@ -70,7 +75,7 @@ export function PublicPageView({
 			</div>
 
 			<main className="min-h-0 flex-1">
-				<PageFrame src={viewUrl} title={title} />
+				<PageFrame ref={frameRef} src={viewUrl} title={title} />
 			</main>
 
 			<footer className="shrink-0 border-t px-3 py-1.5 text-center text-[11px] text-muted-foreground">

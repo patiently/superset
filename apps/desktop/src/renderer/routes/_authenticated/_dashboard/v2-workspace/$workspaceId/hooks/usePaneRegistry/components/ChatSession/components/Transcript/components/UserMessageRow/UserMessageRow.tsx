@@ -1,19 +1,19 @@
 import { Trans } from "@lingui/react/macro";
 import { readBookkeeping, userMessageText } from "@superset/chat/core";
 import type { AvailableCommand, UserMessage } from "@superset/chat/protocol";
-import { Chip } from "@superset/chat-ui/Chip";
 import { Message, MessageContent } from "@superset/ui/ai-elements/message";
 import { Badge } from "@superset/ui/badge";
 import { Button } from "@superset/ui/button";
 import { cn } from "@superset/ui/utils";
 import { useRef } from "react";
 import { parseAttachmentTags } from "../../../../utils/attachmentTags";
-import { commandChip, LEADING_COMMAND } from "../../../../utils/commandChip";
+import { LEADING_COMMAND } from "../../../../utils/commandChip";
 import {
 	type MessageSegment,
 	splitByElements,
 } from "../../../../utils/messageElements";
-import { AttachmentImage } from "./components/AttachmentImage";
+import { AttachmentImage } from "../AttachmentImage";
+import { UserMessageText } from "./components/UserMessageText";
 import { useFitsOneLine } from "./hooks/useFitsOneLine";
 
 function BookkeepingRow({ label }: { label: string }) {
@@ -22,22 +22,6 @@ function BookkeepingRow({ label }: { label: string }) {
 			<span className="min-w-0 truncate first-letter:uppercase">{label}</span>
 		</div>
 	);
-}
-
-function segmentChip(
-	segment: MessageSegment,
-	commands: ReadonlyMap<string, AvailableCommand> | undefined,
-) {
-	const { element, text } = segment;
-	if (!element) return null;
-	if (element.elementKind === "slash_command" && text.startsWith("/")) {
-		const name = text.slice(1);
-		return commandChip(name, commands?.get(name)?.description);
-	}
-	return {
-		label: element.label ?? text.split("/").pop() ?? text,
-		serialized: text,
-	};
 }
 
 export type PendingPrompt = {
@@ -123,20 +107,10 @@ export function UserMessageRow({
 				>
 					<div
 						className="whitespace-pre-wrap break-words text-sm"
+						data-find-item={item.id}
 						ref={textRef}
 					>
-						{segments.map((segment, index) => {
-							const chip = segmentChip(segment, commands);
-							return chip ? (
-								<Chip
-									chip={chip}
-									// biome-ignore lint/suspicious/noArrayIndexKey: segments have no identity beyond their order
-									key={index}
-								/>
-							) : (
-								segment.text
-							);
-						})}
+						<UserMessageText commands={commands} segments={segments} />
 					</div>
 					{files.length > 0 && (
 						<div className="mt-1 flex flex-wrap gap-1">

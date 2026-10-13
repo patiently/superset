@@ -1,8 +1,9 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CLIError } from "@superset/cli-framework";
 import { shellQuote } from "../shell-quote";
+import { sshFailureHint } from "./ssh-failure-hint";
 
 export interface SshResult {
 	exitCode: number;
@@ -26,6 +27,12 @@ export class SshSession {
 	}
 
 	static async open(target: string): Promise<SshSession> {
+		if (target.startsWith("-")) {
+			throw new CLIError(
+				`Not an SSH destination: ${target}`,
+				"Pass user@host or a Host alias from your ssh config.",
+			);
+		}
 		// A short path: a unix socket path is limited to about 100 bytes.
 		const controlDir = mkdtempSync(
 			join(process.platform === "darwin" ? "/tmp" : tmpdir(), "superset-ssh-"),
@@ -44,6 +51,10 @@ export class SshSession {
 				"ServerAliveInterval=15",
 				"-o",
 				"ServerAliveCountMax=4",
+				// ssh's messages go to this file, so a failure can be explained. A
+				// pipe would stay open in the backgrounded master.
+				"-E",
+				join(controlDir, "ssh.log"),
 				target,
 				"true",
 			],
@@ -51,10 +62,15 @@ export class SshSession {
 		);
 		const exitCode = await child.exited;
 		if (exitCode !== 0) {
+			let log = "";
+			try {
+				log = readFileSync(join(controlDir, "ssh.log"), "utf8");
+			} catch {}
+			if (log.trim()) process.stderr.write(log);
 			rmSync(controlDir, { recursive: true, force: true });
 			throw new CLIError(
 				`Could not connect to ${target} over SSH`,
-				`Check access first with: ssh ${target}. If it asks for a key passphrase, load the key with ssh-add.`,
+				sshFailureHint(log, target),
 			);
 		}
 		return session;
@@ -69,13 +85,14 @@ export class SshSession {
 			"ControlMaster=no",
 			"-o",
 			"BatchMode=yes",
+			"-o",
+			"LogLevel=ERROR",
 			...(tty ? ["-t"] : []),
 			this.target,
 			`sh -c ${shellQuote(script)}`,
 		];
 	}
 
-	/** Runs a POSIX sh script on the remote and captures its output. */
 	async run(script: string, stdin?: string): Promise<SshResult> {
 		const child = Bun.spawn(this.args(false, script), {
 			stdin: stdin === undefined ? "ignore" : new TextEncoder().encode(stdin),

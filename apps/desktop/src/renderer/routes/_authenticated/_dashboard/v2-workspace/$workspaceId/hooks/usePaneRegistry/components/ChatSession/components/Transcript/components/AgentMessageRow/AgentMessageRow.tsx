@@ -1,5 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { AgentMessage } from "@superset/chat/protocol";
+import { isImageAttachment } from "@superset/chat/protocol";
 import { useFormat } from "@superset/i18n/react";
 import {
 	DropdownMenu,
@@ -14,6 +15,7 @@ import { useCallback } from "react";
 import { useCopyToClipboard } from "renderer/hooks/useCopyToClipboard";
 import type { ChatForkTarget } from "../../../../types";
 import { MarkdownView } from "../../../MarkdownView";
+import { AttachmentRail } from "../AttachmentRail";
 import { useBlockFading } from "./hooks/useBlockFading";
 import { usePacedText } from "./hooks/usePacedText";
 
@@ -62,6 +64,7 @@ export function AgentMessageRow({
 	}, [copyToClipboard, text]);
 
 	const at = new Date(item.completedAtMs ?? item.startedAtMs);
+	const images = (item.attachments ?? []).filter(isImageAttachment);
 
 	return (
 		// Actions stay out of the way until the message is pointed at, and stay
@@ -71,10 +74,12 @@ export function AgentMessageRow({
 				className="text-foreground"
 				fading={fading}
 				final={!streaming && !paced.revealing}
+				findItemId={item.id}
 				pageCards
 				pagesShownEarlier={pagesShownEarlier}
 				text={paced.text}
 			/>
+			{images.length > 0 && <AttachmentRail className="mt-1" images={images} />}
 			{lastReply && !streaming && (
 				<div className="flex items-center gap-2 text-muted-foreground/60 opacity-0 transition-opacity focus-within:opacity-100 group-hover/message:opacity-100">
 					<Tooltip>

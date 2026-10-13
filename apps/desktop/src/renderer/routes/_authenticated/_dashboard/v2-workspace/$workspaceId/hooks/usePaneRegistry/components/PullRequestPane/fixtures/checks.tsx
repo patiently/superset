@@ -52,8 +52,8 @@ mock.module(
 	`${root}/pull-requests/components/PullRequestSummaryContent`,
 	() => ({ PullRequestSummaryContent: () => null }),
 );
-mock.module(`${pane}/components/PullRequestComments`, () => ({
-	PullRequestComments: () => null,
+mock.module(`${pane}/utils/buildReviewThreadEntries`, () => ({
+	buildReviewThreadEntries: () => [],
 }));
 mock.module(`${root}/components/WorkItemDetailState`, () => ({
 	WorkItemDetailState: ({ message }: { message: string }) => (
@@ -112,7 +112,6 @@ for (const state of ["loading", "error"] as const) {
 			<PullRequestPane
 				data={{ repoFullName: "owner/repo", number: 12 }}
 				onOpenDiff={mock()}
-				onOpenComment={mock()}
 				onOpenPage={mock()}
 			/>,
 		);
@@ -141,7 +140,6 @@ test("matching projects retain project actions even while Summary loads", async 
 		<PullRequestPane
 			data={{ repoFullName: "owner/repo", number: 12 }}
 			onOpenDiff={mock()}
-			onOpenComment={mock()}
 			onOpenPage={mock()}
 		/>,
 	);

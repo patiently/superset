@@ -40,6 +40,12 @@ export class PluginTargetError extends Error {
 	}
 }
 
+export class PluginNotInstalledError extends PluginTargetError {
+	constructor(message: string) {
+		super(message, 404);
+	}
+}
+
 export interface TargetIdentity {
 	plugin: string;
 	version: string;
@@ -196,11 +202,10 @@ export async function resolveTarget(
 		request.marketplace,
 	);
 	if (!install) {
-		throw new PluginTargetError(
+		throw new PluginNotInstalledError(
 			request.marketplace
 				? `"${request.plugin}" is not installed from ${request.marketplace}.`
 				: `"${request.plugin}" is not installed.`,
-			404,
 		);
 	}
 

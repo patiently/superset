@@ -1,4 +1,5 @@
 import { ChatCodeBlock } from "./components/ChatCodeBlock";
+import { ChatInlineCode } from "./components/ChatInlineCode";
 import { ChatLink } from "./components/ChatLink";
 import { remarkLocalPathLinks } from "./utils/remarkLocalPathLinks";
 
@@ -9,6 +10,10 @@ export const CHAT_SCROLLER_GUTTER_CLASSNAME =
 	"px-[max(0px,calc(1.5rem-var(--scrollbar-gutter,0px)))]";
 export const CHAT_COLUMN_CLASSNAME = "mx-auto w-full max-w-3xl";
 
-export const CHAT_MARKDOWN_COMPONENTS = { code: ChatCodeBlock, a: ChatLink };
+export const CHAT_MARKDOWN_COMPONENTS = {
+	code: ChatCodeBlock,
+	inlineCode: ChatInlineCode,
+	a: ChatLink,
+};
 
 export const CHAT_REMARK_PLUGINS = [remarkLocalPathLinks];

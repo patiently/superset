@@ -1,6 +1,6 @@
 # Add a host over SSH
 
-Status: approved 2026-10-10; building phase 1. Decisions are recorded under "Decisions".
+Status: phase 1 shipped in #8386 (API) and #8388 (CLI); phase 2 is the desktop dialog. Decisions are recorded under "Decisions".
 
 ## Goal
 
@@ -72,8 +72,11 @@ Also: `superset hosts remove <host>` stops the service, uninstalls it, and revok
 ## Desktop
 
 Settings → Hosts → "Add host" gets a second option next to the PR #6584 guide: **Set up over
-SSH**. It asks for the SSH target and opens a Superset terminal running
-`superset hosts add <target>`. Running in a real terminal is deliberate: MFA prompts, host-key
+SSH**. It asks for the SSH target and runs `superset hosts add <target>` in a terminal
+embedded in the dialog (the `CommandTerminal` the GitHub sign-in dialog uses). The command
+sets `SUPERSET_ORGANIZATION_ID`, so the bundled CLI acts as the app's account through the
+local host (`host.apiToken`), as in a workspace terminal. Without a local host it runs
+`superset auth login` first. Running in a real terminal is deliberate: MFA prompts, host-key
 questions, Tailscale login links and the install consent all work as in a terminal, with no new
 UI for any of them. The existing live "host appeared" flip on that page then opens the new
 host.

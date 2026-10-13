@@ -2,8 +2,13 @@ import { describe, expect, it } from "bun:test";
 import type { Item } from "@superset/chat/protocol";
 import { AGENT_DEFAULT_MODE } from "@superset/chat/protocol";
 import type { AdapterEvent } from "../types";
-import { AcpAdapter, type AcpAdapterOptions } from "./acpAdapter";
+import {
+	AcpAdapter,
+	type AcpAdapterOptions,
+	type AcpImageStoreContext,
+} from "./acpAdapter";
 import { AIR_CLIENT_META } from "./air";
+import type { AcpImageSource } from "./imageBlocks";
 import type { AcpTransport, AcpTransportHandlers } from "./rpcClient";
 
 /**
@@ -17,12 +22,17 @@ class FakeAcpAgent {
 	/** Answer session/load with "Resource not found", as a never-prompted
 	 * session does. */
 	loadFails = false;
+	/** Answer session/load with this error instead. */
+	loadError: { code: number; message: string } | null = null;
+	/** Answer nothing, as an agent stuck on a login prompt does. */
+	silent = false;
 	/** What the agent answers `initialize` with; older agents answer 1. */
 	protocolVersion = 2;
 	/** Session capabilities advertised at initialize; both shipped agents fork. */
 	sessionCapabilities: Record<string, unknown> | null = { fork: {} };
 	/** Replay history with v2's whole-message variants instead of chunks. */
 	wholeMessageReplay = false;
+	replayUpdates: Record<string, unknown>[] | null = null;
 	foreignUpdateDuringLoad: Record<string, unknown> | null = null;
 	newSessionConfigOptions: Array<Record<string, unknown>> | null = null;
 	/** v1's session/new `modes` block; v2 agents report the mode as a config option. */
@@ -58,6 +68,10 @@ class FakeAcpAgent {
 
 	exit(code: number): void {
 		this.handlers.onExit(code, null);
+	}
+
+	stderr(chunk: string): void {
+		this.handlers.onStderr(chunk);
 	}
 
 	notify(sessionId: string, update: Record<string, unknown>): void {
@@ -131,6 +145,7 @@ class FakeAcpAgent {
 		};
 		this.sent.push(frame as Record<string, unknown>);
 		if (frame.id === undefined || frame.method === undefined) return;
+		if (this.silent) return;
 
 		queueMicrotask(() => {
 			if (frame.method === "initialize") {
@@ -171,12 +186,18 @@ class FakeAcpAgent {
 				}
 			} else if (frame.method === "session/fork") {
 				this.respond(frame.id as number, { sessionId: "sess-forked" });
+			} else if (frame.method === "session/load" && this.loadError) {
+				this.deliver({ jsonrpc: "2.0", id: frame.id, error: this.loadError });
 			} else if (frame.method === "session/load" && this.loadFails) {
 				this.deliver({
 					jsonrpc: "2.0",
 					id: frame.id,
 					error: { code: -32002, message: "Resource not found: sess-1" },
 				});
+			} else if (frame.method === "session/load" && this.replayUpdates) {
+				const sessionId = (frame.params as { sessionId: string }).sessionId;
+				for (const update of this.replayUpdates) this.notify(sessionId, update);
+				this.respond(frame.id as number, null);
 			} else if (frame.method === "session/load" && this.wholeMessageReplay) {
 				const sessionId = (frame.params as { sessionId: string }).sessionId;
 				this.notify(sessionId, {
@@ -266,7 +287,10 @@ function startAdapter(
 	selections: { modelId?: string; modeId?: string } = {},
 	adapterOptions: Pick<
 		AcpAdapterOptions,
-		"defaultModeId" | "selectionWaitMs" | "backgroundDetailIntervalMs"
+		| "defaultModeId"
+		| "selectionWaitMs"
+		| "backgroundDetailIntervalMs"
+		| "startupTimeoutMs"
 	> = {},
 ): { adapter: AcpAdapter; events: AdapterEvent[] } {
 	let counter = 0;
@@ -2550,5 +2574,430 @@ describe("AcpAdapter attachments", () => {
 				/missing\.png/.test(String(e.item.text)),
 		);
 		expect(told).toBe(true);
+	});
+});
+
+describe("AcpAdapter images", () => {
+	const PNG_HEADER = new Uint8Array(24);
+	PNG_HEADER.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+	new DataView(PNG_HEADER.buffer).setUint32(16, 640);
+	new DataView(PNG_HEADER.buffer).setUint32(20, 480);
+	const PNG_BASE64 = Buffer.from(PNG_HEADER).toString("base64");
+
+	const startWithStore = (
+		agent: FakeAcpAgent,
+		storeImage: AcpAdapterOptions["storeImage"],
+		resume?: { harnessSessionId: string },
+	) => {
+		const adapter = new AcpAdapter({
+			command: "fake",
+			createTransport: (_opts, handlers) => agent.transport(handlers),
+			...(storeImage ? { storeImage } : {}),
+			now: () => 1,
+			mintId: () => "id-1",
+		});
+		const events: AdapterEvent[] = [];
+		void collect(
+			adapter.start({ cwd: "/work", ...(resume ? { resume } : {}) }),
+			events,
+		);
+		return { adapter, events };
+	};
+
+	const lastToolCall = (events: AdapterEvent[]) => {
+		const calls = itemsOf(events).filter((item) => item.kind === "tool_call");
+		return calls[calls.length - 1] as
+			| Extract<Item, { kind: "tool_call" }>
+			| undefined;
+	};
+
+	const lastAgentMessage = (events: AdapterEvent[]) => {
+		const messages = itemsOf(events).filter(
+			(item) => item.kind === "agent_message",
+		);
+		return messages[messages.length - 1] as
+			| Extract<Item, { kind: "agent_message" }>
+			| undefined;
+	};
+
+	it("keeps an image block from a tool result as a stored attachment, never its bytes", async () => {
+		const agent = new FakeAcpAgent();
+		const stored: Array<{ source: AcpImageSource; cwd: string }> = [];
+		const { adapter, events } = startWithStore(agent, (source, cwd) => {
+			stored.push({ source, cwd });
+			return { path: ".superset/attachments/shot-abc123.png" };
+		});
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-img",
+			title: "Read shot.png",
+			kind: "read",
+			status: "completed",
+			content: [
+				{ type: "content", content: { type: "text", text: "Read 1 image" } },
+				{
+					type: "content",
+					content: { type: "image", data: PNG_BASE64, mimeType: "image/png" },
+				},
+			],
+		});
+		await flush();
+
+		expect(stored).toHaveLength(1);
+		expect(stored[0]?.cwd).toBe("/work");
+		expect(stored[0]?.source.kind).toBe("bytes");
+		const call = lastToolCall(events);
+		expect(call?.content).toEqual([{ type: "text", text: "Read 1 image" }]);
+		expect(call?.attachments).toEqual([
+			{
+				type: "image",
+				path: ".superset/attachments/shot-abc123.png",
+				mimeType: "image/png",
+				width: 640,
+				height: 480,
+			},
+		]);
+		expect(JSON.stringify(call)).not.toContain(PNG_BASE64);
+
+		await adapter.dispose();
+	});
+
+	it.each([
+		"file:///tmp/shots/home.png",
+		"file://localhost/tmp/shots/home.png",
+		"/tmp/shots/home.png",
+	])("keeps linked image %s across later updates", async (uri) => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startWithStore(agent, (source) =>
+			source.kind === "file"
+				? { path: ".superset/attachments/home-def456.png" }
+				: null,
+		);
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-link",
+			title: "Capture home page",
+			kind: "other",
+			content: [
+				{
+					type: "content",
+					content: {
+						type: "resource_link",
+						uri,
+						name: "home.png",
+						mimeType: "image/png",
+					},
+				},
+			],
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-link",
+			status: "completed",
+		});
+		await flush();
+
+		const call = lastToolCall(events);
+		expect(call?.status).toBe("completed");
+		expect(call?.attachments).toEqual([
+			{
+				type: "image",
+				path: ".superset/attachments/home-def456.png",
+				mimeType: "image/png",
+				alt: "home.png",
+			},
+		]);
+
+		await adapter.dispose();
+	});
+
+	it("gives linked tool and message images stable storage references during session replay", async () => {
+		const content = { type: "resource_link", uri: "file:///tmp/shot.png" };
+		const updates = [
+			{
+				sessionUpdate: "tool_call_update",
+				toolCallId: "read-1",
+				content: [{ type: "content", content }],
+			},
+			{ sessionUpdate: "agent_message_chunk", messageId: "message-1", content },
+			{
+				sessionUpdate: "agent_message",
+				messageId: "message-1",
+				content: [content],
+			},
+			{ sessionUpdate: "agent_message_chunk", content },
+		];
+		const references: AcpImageStoreContext[] = [];
+		const storeImage: NonNullable<AcpAdapterOptions["storeImage"]> = (
+			_source,
+			_cwd,
+			context,
+		) => {
+			if (context) references.push(context);
+			return { path: ".superset/attachments/shot.png" };
+		};
+		const agent = new FakeAcpAgent();
+		const live = startWithStore(agent, storeImage);
+		await flush();
+		for (const update of updates) agent.notify("sess-1", update);
+		await flush();
+		await live.adapter.dispose();
+		const liveReferences = references.splice(0);
+		const resumedAgent = new FakeAcpAgent();
+		resumedAgent.replayUpdates = updates;
+		const resumed = startWithStore(resumedAgent, storeImage, {
+			harnessSessionId: "sess-1",
+		});
+		await flush();
+		expect(liveReferences.map((context) => context?.referenceId)).toEqual([
+			"tool:read-1",
+			"message:message-1",
+			"message:message-1",
+			"image:0",
+		]);
+		expect(references).toEqual(
+			liveReferences.map((context) => ({ ...context, replaying: true })),
+		);
+		expect(references.every((context) => context?.sessionId === "sess-1")).toBe(
+			true,
+		);
+		await resumed.adapter.dispose();
+	});
+
+	it("keeps an image block streamed inside an agent message", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startWithStore(agent, () => ({
+			path: ".superset/attachments/inline-789.png",
+		}));
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "agent_message_chunk",
+			content: { type: "text", text: "Here it is:" },
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "agent_message_chunk",
+			content: { type: "image", data: PNG_BASE64, mimeType: "image/png" },
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-after",
+			title: "Next",
+			kind: "other",
+		});
+		await flush();
+
+		const message = lastAgentMessage(events);
+		expect(message?.text).toBe("Here it is:");
+		expect(message?.completedAtMs).toBeDefined();
+		expect(message?.attachments).toEqual([
+			{
+				type: "image",
+				path: ".superset/attachments/inline-789.png",
+				mimeType: "image/png",
+				width: 640,
+				height: 480,
+			},
+		]);
+
+		await adapter.dispose();
+	});
+
+	it("keeps an image from a whole agent message, which is how a replay delivers one", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startWithStore(agent, () => ({
+			path: ".superset/attachments/whole-012.png",
+		}));
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "agent_message",
+			messageId: "a9",
+			content: [
+				{ type: "text", text: "Done." },
+				{ type: "image", data: PNG_BASE64, mimeType: "image/png" },
+			],
+		});
+		await flush();
+
+		const message = lastAgentMessage(events);
+		expect(message?.text).toBe("Done.");
+		expect(message?.attachments?.map((entry) => entry.type)).toEqual(["image"]);
+
+		await adapter.dispose();
+	});
+
+	it("empties inline image payloads a tool result repeats in its raw output", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startWithStore(agent, () => ({
+			path: ".superset/attachments/raw-345.png",
+		}));
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-raw",
+			title: "Read shot.png",
+			kind: "read",
+			status: "completed",
+			content: [
+				{
+					type: "content",
+					content: { type: "image", data: PNG_BASE64, mimeType: "image/png" },
+				},
+			],
+			rawOutput: [
+				{
+					type: "image",
+					data: PNG_BASE64,
+					source: {
+						type: "base64",
+						media_type: "image/png",
+						data: PNG_BASE64,
+					},
+				},
+			],
+		});
+		await flush();
+
+		const call = lastToolCall(events);
+		expect(call?.rawOutput).toEqual([
+			{
+				type: "image",
+				data: "",
+				source: { type: "base64", media_type: "image/png", data: "" },
+			},
+		]);
+		expect(JSON.stringify(call)).not.toContain(PNG_BASE64);
+
+		await adapter.dispose();
+	});
+
+	it("drops an image when nothing stores it", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startWithStore(agent, undefined);
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-nostore",
+			title: "Read shot.png",
+			kind: "read",
+			status: "completed",
+			content: [
+				{
+					type: "content",
+					content: { type: "image", data: PNG_BASE64, mimeType: "image/png" },
+				},
+			],
+		});
+		await flush();
+
+		const call = lastToolCall(events);
+		expect(call?.content).toEqual([]);
+		expect(call?.attachments).toBeUndefined();
+
+		await adapter.dispose();
+	});
+});
+
+describe("AcpAdapter when the agent fails", () => {
+	it("fails the running turn when the agent exits mid-turn", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "hi" }]);
+		await flush();
+
+		agent.exit(1);
+		await flush();
+
+		const turns = events.flatMap((e) => (e.kind === "turn" ? [e.turn] : []));
+		expect(turns.at(-1)?.status).toBe("failed");
+		expect(sessionsOf(events).at(-1)?.status).toBe("dead");
+
+		await adapter.dispose();
+	});
+
+	it("shows what the agent wrote to stderr when it exits", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+
+		agent.stderr("Error: ANTHROPIC_API_KEY is invalid\n");
+		agent.exit(1);
+		await flush();
+
+		const notice = itemsOf(events).find((i) => i.kind === "notice");
+		expect(textOf(notice)).toContain("ANTHROPIC_API_KEY is invalid");
+
+		await adapter.dispose();
+	});
+
+	it("keeps a resume dead when the load fails for a reason other than a missing session", async () => {
+		const agent = new FakeAcpAgent();
+		agent.loadError = {
+			code: -32603,
+			message: "Internal error: model not found",
+		};
+		const { adapter, events } = startAdapter(agent, "sess-1");
+		await flush(40);
+
+		expect(agent.sent.map((f) => f.method)).toEqual([
+			"initialize",
+			"session/load",
+		]);
+		expect(sessionsOf(events).at(-1)?.status).toBe("dead");
+
+		await adapter.dispose();
+	});
+
+	it("opens a new session when the agent does not know the session id", async () => {
+		const agent = new FakeAcpAgent();
+		agent.loadError = { code: -32602, message: "Unknown sessionId: sess-1" };
+		const { adapter, events } = startAdapter(agent, "sess-1");
+		await flush(40);
+
+		expect(agent.sent.map((f) => f.method)).toContain("session/new");
+		expect(sessionsOf(events).at(-1)?.status).toBe("idle");
+
+		await adapter.dispose();
+	});
+
+	it("gives up on an agent that does not answer at startup", async () => {
+		const agent = new FakeAcpAgent();
+		agent.silent = true;
+		const { adapter, events } = startAdapter(
+			agent,
+			undefined,
+			{},
+			{ startupTimeoutMs: 5 },
+		);
+		await new Promise((resolve) => setTimeout(resolve, 20));
+
+		expect(sessionsOf(events).at(-1)?.status).toBe("dead");
+		const notice = itemsOf(events).find((i) => i.kind === "notice");
+		expect(textOf(notice)).toContain("did not answer");
+
+		await adapter.dispose();
+	});
+
+	it("answers a pending approval as cancelled when the turn is stopped", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "run the tests" }]);
+		await flush();
+		const requestId = agent.requestPermission("sess-1", "tc-1");
+		await flush();
+
+		adapter.cancelTurn();
+
+		expect(agent.sent.map((f) => f.method)).toContain("session/cancel");
+		expect(agent.responseTo(requestId)?.result).toEqual({
+			outcome: { outcome: "cancelled" },
+		});
+
+		await adapter.dispose();
 	});
 });

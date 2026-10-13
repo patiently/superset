@@ -38,6 +38,7 @@ import { elementsForChips } from "../../utils/messageElements";
 import { type AgentSwitcher, ModelPicker } from "./components/ModelPicker";
 import { ModePicker, type SessionMode } from "./components/ModePicker";
 import { QueuedPrompts } from "./components/QueuedPrompts";
+import { useAttachmentPreview } from "./hooks/useAttachmentPreview";
 import {
 	takeRecoveredDraftText,
 	useComposerDraft,
@@ -119,6 +120,7 @@ export const Composer = memo(function Composer({
 	const trpcUtils = workspaceTrpc.useUtils();
 	const cloudUtils = cloudTrpc.useUtils();
 	const uploadAttachments = useUploadAttachments(workspaceId);
+	const attachmentPreview = useAttachmentPreview();
 	const { storedDraft, onChange, clearDraft } = useComposerDraft(draftKey);
 	const promptInputRef = useRef<PromptInputHandle>(null);
 	const queueActions = useQueueActions(promptQueue, promptInputRef);
@@ -351,6 +353,7 @@ export const Composer = memo(function Composer({
 				history={history}
 				key={draftKey}
 				mentionProviders={mentionProviders}
+				onAttachmentClick={attachmentPreview.onAttachmentClick}
 				onChange={onChange}
 				onStop={onCancelTurn ?? undefined}
 				onSubmit={handleSubmit}
@@ -380,6 +383,7 @@ export const Composer = memo(function Composer({
 					) : undefined
 				}
 			/>
+			{attachmentPreview.overlay}
 		</div>
 	);
 });

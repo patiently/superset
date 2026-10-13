@@ -8,6 +8,7 @@ import {
 	hostKeyName,
 	revokeKeysNamed,
 } from "../../../lib/ssh-host-setup/host-key";
+import { log } from "../../../lib/ssh-host-setup/log";
 import { PROBE_SCRIPT, parseProbe } from "../../../lib/ssh-host-setup/probe";
 import { uninstallServiceScript } from "../../../lib/ssh-host-setup/service";
 import { SshSession } from "../../../lib/ssh-host-setup/ssh-session";
@@ -94,7 +95,7 @@ export default command({
 				await ssh.run(`${shellQuote(facts.bin)} auth logout`);
 			}
 
-			p.log.success(
+			log.success(
 				[
 					removed.length > 0
 						? `Removed the ${removed.join(" and ")} service`
@@ -105,7 +106,7 @@ export default command({
 						: "found no API key from hosts add, so left its sign-in alone",
 				].join("; "),
 			);
-			p.outro(
+			log.outro(
 				"The CLI stays installed in ~/superset. The host stays listed, offline, until you delete it in Settings → Hosts.",
 			);
 			return {

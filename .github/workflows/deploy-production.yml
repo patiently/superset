@@ -558,6 +558,7 @@ jobs:
               - 'packages/shared/src/page-storage.ts'
               - 'packages/shared/src/page-storage-hub.ts'
               - 'packages/shared/src/page-storage-access.ts'
+              - 'packages/shared/src/page-storage-records.ts'
               - 'packages/shared/src/page-presence.ts'
               - 'packages/shared/src/usercontent/**'
               - '!packages/shared/src/usercontent/**/*.test.ts'
@@ -604,11 +605,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: bunx wrangler deploy
 
+  # The storage runtime served here needs the realtime hub from the same
+  # commit: never deploy it over a failed realtime deploy.
   deploy-content:
     name: Deploy Usercontent Worker to Cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
+    needs: deploy-realtime
+    if: >-
+      !cancelled() && (
+        needs.deploy-realtime.result == 'success'
+        || needs.deploy-realtime.result == 'skipped'
+      )
 
     steps:
       - name: Checkout repository

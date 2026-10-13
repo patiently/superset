@@ -11,6 +11,7 @@ import { ReasoningRow } from "../../../ReasoningRow";
 import { ToolCallRow } from "../../../ToolCallRow";
 import { UnknownItemRow } from "../../../UnknownItemRow";
 import { type PendingPrompt, UserMessageRow } from "../../../UserMessageRow";
+import { RailStep } from "../RailStep";
 
 export type ItemRowProps = {
 	item: Item;
@@ -68,7 +69,11 @@ export const ItemRow = memo(function ItemRow({
 		case "reasoning":
 			return <ReasoningRow item={item} text={text} />;
 		case "tool_call":
-			return <ToolCallRow item={item} />;
+			return (
+				<RailStep>
+					<ToolCallRow item={item} />
+				</RailStep>
+			);
 		case "plan":
 			return <PlanRow item={item} />;
 		case "approval_request":

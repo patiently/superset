@@ -2059,6 +2059,30 @@ export const workspacePages = pgTable(
 export type InsertWorkspacePage = typeof workspacePages.$inferInsert;
 export type SelectWorkspacePage = typeof workspacePages.$inferSelect;
 
+export const pageToolGrants = pgTable(
+	"page_tool_grants",
+	{
+		pageId: uuid("page_id")
+			.notNull()
+			.references(() => pages.id, { onDelete: "cascade" }),
+		userId: uuid("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		plugin: text().notNull(),
+		connectionId: uuid("connection_id"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		primaryKey({ columns: [table.pageId, table.userId, table.plugin] }),
+		index("page_tool_grants_user_id_idx").on(table.userId),
+	],
+);
+
+export type InsertPageToolGrant = typeof pageToolGrants.$inferInsert;
+export type SelectPageToolGrant = typeof pageToolGrants.$inferSelect;
+
 export const fileStatus = pgEnum("file_status", ["pending", "ready"]);
 
 export const attachmentParentKind = pgEnum("attachment_parent_kind", [

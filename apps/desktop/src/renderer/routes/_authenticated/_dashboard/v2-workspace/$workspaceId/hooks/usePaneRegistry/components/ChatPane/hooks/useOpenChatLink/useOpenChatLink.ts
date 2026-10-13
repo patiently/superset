@@ -10,6 +10,7 @@ import {
 	useUrlLinkAction,
 } from "renderer/lib/clickPolicy";
 import { useOpenInExternalEditor } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useOpenInExternalEditor";
+import { useRecentlyViewedFiles } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useRecentlyViewedFiles";
 import { useRevealInFinder } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useRevealInFinder";
 import { useRightPaneLinkTarget } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/providers/RightPaneLinkTargetProvider";
 import type {
@@ -23,6 +24,7 @@ import {
 	type TerminalLinkActionDeps,
 } from "../../../../utils/runTerminalLinkAction";
 import type { OpenLink } from "../../../ChatSession/providers/ChatPaneActionsProvider";
+import { type LocatedPath, locatePath } from "./utils/locatePath";
 import { parseFileHref } from "./utils/parseFileHref";
 
 const WEB_URL = /^https?:\/\//i;
@@ -51,8 +53,21 @@ export function useOpenChatLink({
 		id: workspaceId,
 	});
 	const statPath = workspaceTrpc.filesystem.statPath.useMutation();
-	const statPathRef = useRef(statPath.mutateAsync);
-	statPathRef.current = statPath.mutateAsync;
+	const hostClient = workspaceTrpc.useUtils().client;
+	const { recentFiles } = useRecentlyViewedFiles(workspaceId);
+	const locateRef = useRef<(path: string) => Promise<LocatedPath | null>>(
+		async () => null,
+	);
+	locateRef.current = (path) =>
+		locatePath(path, {
+			stat: (target) => statPath.mutateAsync({ workspaceId, path: target }),
+			resolveFile: (reference) =>
+				hostClient.filesystem.resolveFileReference.query({
+					workspaceId,
+					reference,
+					preferredRelativePaths: recentFiles.map((file) => file.relativePath),
+				}),
+		});
 
 	const depsRef = useRef<TerminalLinkActionDeps>({
 		store,
@@ -85,7 +100,7 @@ export function useOpenChatLink({
 
 			const file = parseFileHref(href);
 			if (!file) return false;
-			void statPathRef.current({ workspaceId, path: file.path }).then(
+			void locateRef.current(file.path).then(
 				(stat) => {
 					if (!stat) {
 						const { path } = file;
@@ -120,6 +135,6 @@ export function useOpenChatLink({
 			);
 			return true;
 		},
-		[workspaceId, getUrlAction, filePolicy, folderPolicy, showHint, t],
+		[getUrlAction, filePolicy, folderPolicy, showHint, t],
 	);
 }

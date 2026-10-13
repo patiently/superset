@@ -78,6 +78,7 @@ import {
 	writePageManifest,
 } from "./storage";
 import { enqueuePageThumbnail } from "./thumbnail";
+import { pageToolRouter } from "./tools/router";
 import { watchState } from "./watch";
 import {
 	claimPageWatch,
@@ -398,6 +399,7 @@ async function listPageBatch({
 export const pageRouter = {
 	assets: pageAssetRouter,
 	...pageReportRouter,
+	...pageToolRouter,
 
 	/**
 	 * A page with no versions yet. Assets stage against a page id, so a first
