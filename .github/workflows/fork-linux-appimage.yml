@@ -68,6 +68,10 @@ jobs:
           npm install --no-save --prefix "$RUNNER_TEMP/bun-canary" bun@1.4.2-canary.20261007.1
           echo "BUN_TEST=$RUNNER_TEMP/bun-canary/node_modules/.bin/bun" >> "$GITHUB_ENV"
 
+      - name: Generate file icons for the desktop tests
+        working-directory: apps/desktop
+        run: bun run generate:icons
+
       - name: Desktop test suite
         working-directory: apps/desktop
         run: '"$BUN_TEST" test'
