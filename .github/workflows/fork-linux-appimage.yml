@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - build/fswatch-main
+  workflow_dispatch:
 
 permissions:
   contents: write
