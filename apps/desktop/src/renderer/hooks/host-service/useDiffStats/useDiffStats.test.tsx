@@ -94,6 +94,7 @@ function renderDiffStats(hostUrl: string, options?: { live?: boolean }) {
 							targets: [],
 							isReady: true,
 							agentCredentialsChangedWorkspaceId: null,
+							usageRefusal: null,
 						}}
 					>
 						{children}
