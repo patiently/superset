@@ -37,7 +37,7 @@ import { hostServiceMutation } from "../automation/relay-client";
 import { ensureDefaultEnvironment } from "../environment/default-environment";
 import { regionForRequest } from "../environment/region-for-request";
 import {
-	isVisibleTo,
+	canOpenWorkspace,
 	loadVisibleWorkspace,
 	notFound,
 	visibleTo,
@@ -47,6 +47,7 @@ import { queueSettleWorkspace, settleWorkspaceNow } from "./meter";
 import { nextSandboxNameFor } from "./provision";
 import { queueReap } from "./reap";
 import { cloudWorkspaceRecordRouter } from "./record";
+import { cloudWorkspaceSharingRouter } from "./sharing";
 import { queueProvision, startCloudWorkspace } from "./start";
 import { transitionCloudWorkspace } from "./transition";
 import {
@@ -80,7 +81,7 @@ async function loadReadyWorkspace(
 	}
 	await assertCloudAccess(ctx);
 	assertMember(ctx.organizationIds, row.organizationId);
-	if (!isVisibleTo(row, ctx.userId)) throw notFound();
+	if (!(await canOpenWorkspace(row, ctx.userId))) throw notFound();
 	if (row.status !== "ready") {
 		throw new TRPCError({
 			code: "PRECONDITION_FAILED",
@@ -183,6 +184,7 @@ async function loadPresence(organizationId: string, workspaceIds: string[]) {
 
 export const cloudWorkspaceRouter = {
 	...cloudWorkspaceRecordRouter,
+	sharing: cloudWorkspaceSharingRouter,
 
 	/**
 	 * Whether this account may use cloud workspaces. Clients decide their
@@ -651,7 +653,9 @@ export const cloudWorkspaceRouter = {
 			if (!row) return { deleted: false };
 			await assertCloudAccess(ctx);
 			assertMember(ctx.organizationIds, row.organizationId);
-			if (!isVisibleTo(row, ctx.userId)) return { deleted: false };
+			if (!(await canOpenWorkspace(row, ctx.userId))) {
+				return { deleted: false };
+			}
 
 			const archivedAt = new Date();
 			// From any state, provisioning included: the job checks the row

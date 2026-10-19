@@ -1065,6 +1065,13 @@
       "when": 1791943359446,
       "tag": "0151_cloud_workspace_boots",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1792197917616,
+      "tag": "0152_sharing_people_and_teams",
+      "breakpoints": true
     }
   ]
 }

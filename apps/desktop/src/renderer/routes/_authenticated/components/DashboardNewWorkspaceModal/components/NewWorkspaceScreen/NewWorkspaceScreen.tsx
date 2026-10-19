@@ -82,6 +82,7 @@ import {
 	type PromptCardsVariant,
 	useNewWorkspacePromptCardsVariant,
 } from "../../hooks/useNewWorkspacePromptCardsVariant";
+import { resolveRemoteHostPresence } from "../../utils/resolveRemoteHostPresence";
 import { DevicePicker } from "../DashboardNewWorkspaceForm/components/DevicePicker";
 import { useWorkspaceHostOptions } from "../DashboardNewWorkspaceForm/components/DevicePicker/hooks/useWorkspaceHostOptions";
 import { CheckoutPickerPill } from "../DashboardNewWorkspaceForm/PromptGroup/components/CheckoutPickerPill";
@@ -599,10 +600,23 @@ export function NewWorkspaceScreen({
 		modeSupport ? selectedPresetId : null,
 	);
 
+	const { otherHosts, hostsSettled } = useWorkspaceHostOptions();
+	const selectedRemoteHostPresence = useMemo(
+		() =>
+			resolveRemoteHostPresence({
+				selectedHostId: draft.hostId ?? machineId,
+				localHostId: machineId,
+				hosts: otherHosts,
+				hostsSettled,
+			}),
+		[draft.hostId, machineId, otherHosts, hostsSettled],
+	);
+
 	// ── Base branch ──────────────────────────────────────────────────
 	const { pickerProps } = useBranchPickerController({
 		projectId,
 		hostId: draft.hostId,
+		remoteHostPresence: selectedRemoteHostPresence,
 		cloudRepository,
 		baseBranch: draft.baseBranch,
 		typedWorkspaceName: draft.workspaceName,
@@ -657,7 +671,6 @@ export function NewWorkspaceScreen({
 		},
 	);
 
-	const { otherHosts } = useWorkspaceHostOptions();
 	const submitBlocker = useMemo<string | null>(() => {
 		const selectedHostId = draft.hostId ?? machineId;
 		// A cloud workspace is provisioned by the API from its environment: no
@@ -680,9 +693,8 @@ export function NewWorkspaceScreen({
 			return t({
 				message: "No active host",
 			});
-		if (selectedHostId !== machineId) {
-			const remote = otherHosts.find((host) => host.id === selectedHostId);
-			if (!remote?.isOnline)
+		if (selectedRemoteHostPresence !== null) {
+			if (selectedRemoteHostPresence !== "online")
 				return t({
 					message: "Host is offline",
 				});
@@ -699,7 +711,7 @@ export function NewWorkspaceScreen({
 		draft.hostId,
 		machineId,
 		activeHostUrl,
-		otherHosts,
+		selectedRemoteHostPresence,
 		isCloudTargetLoading,
 		defaultHint,
 		projectRepositoryFullName,
@@ -1209,7 +1221,10 @@ export function NewWorkspaceScreen({
 										onSelectCheckout={(checkout) => updateDraft({ checkout })}
 									/>
 									{draft.checkout === "worktree" && (
-										<CompareBaseBranchPicker {...pickerProps} />
+										<CompareBaseBranchPicker
+											{...pickerProps}
+											onChangeProjectLocation={handleGoToSetup}
+										/>
 									)}
 								</>
 							)}

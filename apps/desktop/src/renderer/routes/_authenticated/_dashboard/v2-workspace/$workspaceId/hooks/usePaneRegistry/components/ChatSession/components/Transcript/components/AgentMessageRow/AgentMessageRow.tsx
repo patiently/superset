@@ -51,7 +51,9 @@ export function AgentMessageRow({
 		});
 	}, [copyToClipboard, text]);
 
-	const images = (item.attachments ?? []).filter(isImageAttachment);
+	const images = (item.attachments ?? [])
+		.filter(isImageAttachment)
+		.map((image) => ({ owner: item.id, image }));
 
 	return (
 		// Actions stay out of the way until the message is pointed at, and stay

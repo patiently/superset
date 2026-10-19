@@ -30,7 +30,6 @@ import {
 	Pressable,
 	View,
 } from "react-native";
-import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
@@ -93,7 +92,6 @@ import { PULL_REQUEST_SYMBOL, pullRequestStatus } from "../utils/pullRequest";
 import { WorkspaceCreateFailedState } from "./components/WorkspaceCreateFailedState";
 import { WorkspaceCreatingState } from "./components/WorkspaceCreatingState";
 import { WorkspacePlaceholder } from "./components/WorkspacePlaceholder";
-import { useComposerEdge } from "./hooks/useComposerEdge";
 
 const NOTICE_MS = 1500;
 
@@ -847,10 +845,6 @@ export function WorkspaceScreen() {
 		activeTerminalId !== null &&
 		host !== null &&
 		!hostCompatibility.incompatible;
-	// A chat sits level with the composer as it moves; the terminal resizes
-	// once, when the keyboard or the composer settles.
-	const chatFollowsComposer = showComposer && !voiceActive && activeIsChat;
-	const composerEdge = useComposerEdge(chatFollowsComposer);
 
 	// The host resolves its own worktree; a path here is only the signal that
 	// there is one to write into yet.
@@ -1090,11 +1084,9 @@ export function WorkspaceScreen() {
 				style={{
 					// The terminal has to clear everything stacked at the bottom or its
 					// own prompt hides behind the composer.
-					marginBottom: chatFollowsComposer
-						? 0
-						: showComposer
-							? composerHeight + composerBottom
-							: composerBottom,
+					marginBottom: showComposer
+						? composerHeight + composerBottom
+						: composerBottom,
 				}}
 			>
 				{hostCompatibility.incompatible ? (
@@ -1131,20 +1123,18 @@ export function WorkspaceScreen() {
 						})}
 					/>
 				) : activeIsChat && activeTerminalId && host && hostUrl && id ? (
-					<Animated.View className="flex-1" style={composerEdge.followStyle}>
-						<ChatSessionView
-							host={host}
-							hostUrl={hostUrl}
-							key={activeTerminalId}
-							onOpenSession={openSession}
-							onOpenPullRequests={openPullRequests}
-							onTap={dismissComposer}
-							pullRequestLabel={chatPullRequestLabel}
-							ref={chatRef}
-							sessionId={activeTerminalId}
-							workspaceId={id}
-						/>
-					</Animated.View>
+					<ChatSessionView
+						host={host}
+						hostUrl={hostUrl}
+						key={activeTerminalId}
+						onOpenSession={openSession}
+						onOpenPullRequests={openPullRequests}
+						onTap={dismissComposer}
+						pullRequestLabel={chatPullRequestLabel}
+						ref={chatRef}
+						sessionId={activeTerminalId}
+						workspaceId={id}
+					/>
 				) : activeTerminalId && host && id ? (
 					<>
 						<TerminalWebView
@@ -1283,9 +1273,6 @@ export function WorkspaceScreen() {
 					attachmentTarget={attachmentTarget}
 					onActiveChange={setComposerActive}
 					onHeightChange={setComposerHeight}
-					onEdgeChange={
-						chatFollowsComposer ? composerEdge.onEdgeChange : undefined
-					}
 					onCopySelection={() => terminalRef.current?.copySelection()}
 					onQuickKey={handleQuickKey}
 					onSubmit={handleSubmit}

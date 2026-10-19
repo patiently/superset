@@ -29,6 +29,10 @@ class FakeAcpAgent {
 	silent = false;
 	/** What the agent answers `initialize` with; older agents answer 1. */
 	protocolVersion = 2;
+	/** agentInfo.name reported at initialize, as pdev reports "paradev". */
+	agentName: string | null = null;
+	/** _meta attached to the first scripted agent message chunk. */
+	chunkMeta: Record<string, unknown> | null = null;
 	/** Session capabilities advertised at initialize; both shipped agents fork. */
 	sessionCapabilities: Record<string, unknown> | null = { fork: {} };
 	/** Replay history with v2's whole-message variants instead of chunks. */
@@ -204,6 +208,7 @@ class FakeAcpAgent {
 		queueMicrotask(() => {
 			if (frame.method === "initialize") {
 				this.respond(frame.id as number, {
+					...(this.agentName ? { agentInfo: { name: this.agentName } } : {}),
 					...(this.steeringOutcome
 						? { _meta: { steering: { supported: true } } }
 						: {}),
@@ -305,6 +310,7 @@ class FakeAcpAgent {
 				this.notify("sess-1", {
 					sessionUpdate: "agent_message_chunk",
 					content: { type: "text", text: "Hello" },
+					...(this.chunkMeta ? { _meta: this.chunkMeta } : {}),
 				});
 				this.notify("sess-1", {
 					sessionUpdate: "agent_message_chunk",
@@ -342,9 +348,9 @@ function startAdapter(
 	adapterOptions: Pick<
 		AcpAdapterOptions,
 		| "defaultModeId"
+		| "requestTimeoutMs"
 		| "clientApprovalModes"
 		| "shellPollMs"
-		| "selectionWaitMs"
 		| "backgroundDetailIntervalMs"
 		| "startupTimeoutMs"
 	> = {},
@@ -1694,6 +1700,115 @@ describe("AcpAdapter on protocol v2", () => {
 		await adapter.dispose();
 	});
 
+	it("shows the model pdev resolved, not the alias, on a live message", async () => {
+		const agent = new FakeAcpAgent();
+		agent.agentName = "paradev";
+		agent.chunkMeta = {
+			piAcp: {
+				model: { provider: "vercel-ai-gateway", modelId: "zai/glm-5.3-flash" },
+			},
+		};
+		agent.newSessionConfigOptions = [
+			{
+				configId: "model",
+				name: "Model",
+				type: "select",
+				category: "model",
+				currentValue: "pdev/auto",
+				options: [{ value: "pdev/auto", name: "pdev/Auto" }],
+			},
+		];
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "hi" }]);
+		await flush();
+
+		expect(
+			itemsOf(events)
+				.filter((item) => item.kind === "agent_message")
+				.at(-1),
+		).toMatchObject({ model: "zai/glm-5.3-flash" });
+
+		await adapter.dispose();
+	});
+
+	it("strips the gateway prefix from the model id pdev reports", async () => {
+		const agent = new FakeAcpAgent();
+		agent.chunkMeta = {
+			piAcp: { model: "vercel-ai-gateway/zai/glm-5.3-flash" },
+		};
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "hi" }]);
+		await flush();
+
+		expect(
+			itemsOf(events)
+				.filter((item) => item.kind === "agent_message")
+				.at(-1),
+		).toMatchObject({ model: "zai/glm-5.3-flash" });
+
+		await adapter.dispose();
+	});
+
+	it("drops the pdev/ prefix from pdev's own model option labels", async () => {
+		const agent = new FakeAcpAgent();
+		agent.agentName = "paradev";
+		agent.newSessionConfigOptions = [
+			{
+				configId: "model",
+				name: "Model",
+				type: "select",
+				category: "model",
+				currentValue: "pdev/auto",
+				options: [{ value: "pdev/auto", name: "pdev/Auto" }],
+			},
+		];
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+
+		const session = sessionsOf(events)
+			.filter((s) => s.configOptions)
+			.at(-1);
+		const model = session?.configOptions?.find(
+			(option) => option.category === "model",
+		);
+		expect(model?.options[0]).toMatchObject({ label: "Auto" });
+
+		// A message the agent did not name a model for falls back to that label.
+		adapter.prompt([{ type: "text", text: "hi" }]);
+		await flush();
+		expect(
+			itemsOf(events)
+				.filter((item) => item.kind === "agent_message")
+				.at(-1),
+		).toMatchObject({ model: "Auto" });
+
+		await adapter.dispose();
+	});
+
+	it("keeps the model a replayed v2 message reports", async () => {
+		const agent = new FakeAcpAgent();
+		agent.replayUpdates = [
+			{
+				sessionUpdate: "agent_message",
+				messageId: "a1",
+				content: [{ type: "text", text: "On it." }],
+				_meta: { piAcp: { model: "zai/glm-5.3-flash" } },
+			},
+		];
+		const { adapter, events } = startAdapter(agent, "sess-1");
+		await flush();
+
+		expect(
+			itemsOf(events)
+				.filter((item) => item.kind === "agent_message")
+				.at(-1),
+		).toMatchObject({ model: "zai/glm-5.3-flash" });
+
+		await adapter.dispose();
+	});
+
 	it("lists a pi background shell from its tool result until pi reports it stopped", async () => {
 		const agent = new FakeAcpAgent();
 		const { adapter, events } = startAdapter(agent);
@@ -1939,7 +2054,7 @@ describe("AcpAdapter on protocol v2", () => {
 		await adapter.dispose();
 	});
 
-	it("says so when a prompt goes out before a change is confirmed", async () => {
+	it("keeps an unanswered change selected after it times out, and sends the prompt", async () => {
 		const agent = new FakeAcpAgent();
 		agent.holdSelections = true;
 		agent.newSessionConfigOptions = [
@@ -1959,21 +2074,65 @@ describe("AcpAdapter on protocol v2", () => {
 			agent,
 			undefined,
 			{},
-			{ defaultModeId: "bypassPermissions", selectionWaitMs: 5 },
+			{ defaultModeId: "bypassPermissions", requestTimeoutMs: 5 },
 		);
 		adapter.prompt([{ type: "text", text: "go" }]);
-		await Bun.sleep(20);
-		await flush();
+		await flush(16);
+		expect(agent.sent.map((f) => f.method)).not.toContain("session/prompt");
 
+		await Bun.sleep(20);
+		await flush(16);
 		expect(agent.sent.map((f) => f.method)).toContain("session/prompt");
 		expect(
+			sessionsOf(events)
+				.filter((session) => session.modeId !== undefined)
+				.pop()?.modeId,
+		).toBe("bypassPermissions");
+		expect(
 			itemsOf(events).some(
-				(item) =>
-					item.kind === "notice" &&
-					typeof item.text === "string" &&
-					item.text.includes("did not confirm a mode or model change"),
+				(item) => item.kind === "notice" && item.noticeKind === "error",
 			),
 		).toBe(true);
+
+		await adapter.dispose();
+	});
+
+	it("drops a prompt held for an unanswered change when the turn is cancelled", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdSelections = true;
+		agent.newSessionConfigOptions = [
+			{
+				configId: "mode",
+				name: "Mode",
+				type: "select",
+				category: "mode",
+				currentValue: "default",
+				options: [
+					{ value: "default", name: "Ask for approval" },
+					{ value: "bypassPermissions", name: "Full access" },
+				],
+			},
+		];
+		const { adapter, events } = startAdapter(
+			agent,
+			undefined,
+			{},
+			{ defaultModeId: "bypassPermissions" },
+		);
+		adapter.prompt([{ type: "text", text: "go" }]);
+		await flush(16);
+		const turns = () =>
+			events.flatMap((event) => (event.kind === "turn" ? [event.turn] : []));
+		expect(turns().pop()?.status).toBe("running");
+
+		adapter.cancelTurn();
+		agent.releaseSelections();
+		await flush(16);
+
+		const methods = agent.sent.map((f) => f.method);
+		expect(methods).not.toContain("session/prompt");
+		expect(methods).not.toContain("session/cancel");
+		expect(turns().pop()?.status).toBe("interrupted");
 
 		await adapter.dispose();
 	});

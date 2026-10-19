@@ -389,40 +389,38 @@ export const DashboardSidebarLegacyExpandedWorkspaceRow = forwardRef<
 							</>
 						)}
 
-						<div className="col-start-2 row-start-1 flex items-center gap-1.5">
-							<div className="grid h-5 shrink-0 items-center justify-items-end [&>*]:col-start-1 [&>*]:row-start-1">
-								{creationStatusText ? (
-									<span className="text-[11px] text-muted-foreground">
-										{creationStatusText}
-									</span>
-								) : (
-									<div className="flex items-center gap-1.5">
-										<DashboardSidebarWorkspaceQueuedBadge
-											workspaceId={workspace.id}
-										/>
-										{isActive &&
-											diffStats &&
-											(diffStats.additions > 0 || diffStats.deletions > 0) && (
-												<DashboardSidebarWorkspaceDiffStats
-													additions={diffStats.additions}
-													deletions={diffStats.deletions}
-													isActive={isActive}
-												/>
-											)}
-									</div>
-								)}
-								{!isPending && !isSelected && shortcutLabel && (
-									<span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground group-hover:inline group-focus-within:inline">
-										{shortcutLabel}
-									</span>
-								)}
-							</div>
+						<div className="col-start-2 row-start-1 flex h-5 shrink-0 items-center gap-1.5">
+							{creationStatusText ? (
+								<span className="text-[11px] text-muted-foreground">
+									{creationStatusText}
+								</span>
+							) : (
+								<>
+									<DashboardSidebarWorkspaceQueuedBadge
+										workspaceId={workspace.id}
+									/>
+									{isActive &&
+										diffStats &&
+										(diffStats.additions > 0 || diffStats.deletions > 0) && (
+											<DashboardSidebarWorkspaceDiffStats
+												additions={diffStats.additions}
+												deletions={diffStats.deletions}
+												isActive={isActive}
+											/>
+										)}
+								</>
+							)}
+							{!isPending && !isSelected && shortcutLabel && (
+								<span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground group-hover:inline group-focus-within:inline">
+									{shortcutLabel}
+								</span>
+							)}
 							{ports.length > 0 && (
 								<DashboardSidebarRowEventBoundary>
 									<DashboardSidebarPortsChip ports={ports} />
 								</DashboardSidebarRowEventBoundary>
 							)}
-							{!isPending && !isSelected && (
+							{!isPending && (
 								<Tooltip delayDuration={300}>
 									<TooltipTrigger asChild>
 										<button
@@ -440,7 +438,11 @@ export const DashboardSidebarLegacyExpandedWorkspaceRow = forwardRef<
 													event.stopPropagation();
 												}
 											}}
-											className="hidden shrink-0 items-center justify-center text-muted-foreground hover:text-foreground group-hover:flex group-focus-within:flex"
+											className={cn(
+												"invisible flex items-center justify-center text-muted-foreground hover:text-foreground",
+												!isSelected &&
+													"group-hover:visible group-focus-within:visible",
+											)}
 											aria-label={t({
 												message: "Delete workspace",
 											})}
