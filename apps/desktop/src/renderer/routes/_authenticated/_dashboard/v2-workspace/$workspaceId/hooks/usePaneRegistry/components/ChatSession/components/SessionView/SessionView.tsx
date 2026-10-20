@@ -45,6 +45,7 @@ import { ConnectionNotice } from "../ConnectionNotice";
 import { SessionHeader } from "../SessionHeader";
 import { Transcript } from "../Transcript";
 import { useStableList } from "./hooks/useStableList";
+import { composerAnswer } from "./utils/composerAnswer";
 
 const RESUME_FOLLOW_PX = 24;
 const NO_COMMANDS: AvailableCommand[] = [];
@@ -230,6 +231,8 @@ export function SessionView({
 	);
 
 	const focusComposer = useCallback(() => composerRef.current?.focus(), []);
+	const [revealMessageId, setRevealMessageId] = useState<string | null>(null);
+	const clearRevealMessage = useCallback(() => setRevealMessageId(null), []);
 	const timelineRef = useRef(timeline);
 	timelineRef.current = timeline;
 	const snapshotRef = useRef(session.snapshot);
@@ -273,10 +276,12 @@ export function SessionView({
 		setConfigOption,
 		setMode,
 	} = session;
+	const loaded = session.status === "ready";
 	const onRespond = useCallback(
-		(approvalId: string, decision: Decision) =>
-			void respondToApproval(approvalId, decision),
-		[respondToApproval],
+		(approvalId: string, decision: Decision) => {
+			if (loaded) void respondToApproval(approvalId, decision);
+		},
+		[respondToApproval, loaded],
 	);
 	const onSetConfigOption = useCallback(
 		(configId: string, value: string) => void setConfigOption(configId, value),
@@ -293,23 +298,51 @@ export function SessionView({
 	const onSend = useCallback(
 		(content: UserContent[], { steer }: { steer: boolean }) => {
 			if (holdPrompt) return holdPrompt(content);
-			for (const approval of approvals) {
+			const pending = loaded ? approvals : [];
+			const [question] = pending;
+			const answer =
+				pending.length === 1 && question
+					? composerAnswer(question, content)
+					: null;
+			if (question && answer) {
+				return respondToApproval(question.id, answer).catch(() => {
+					composerRef.current?.appendText(contentText(content));
+					composerRef.current?.focus();
+					toast.error(
+						t({
+							message: "Couldn't send your message. It's back in the composer.",
+						}),
+					);
+				});
+			}
+			for (const approval of pending) {
 				void respondToApproval(approval.id, { type: "cancel" });
 			}
+			const steerTurn = steer || pending.length > 0;
 			return sendPrompt(
 				content,
-				steer && runningTurnId ? { expectedTurnId: runningTurnId } : undefined,
+				steerTurn && runningTurnId
+					? { expectedTurnId: runningTurnId }
+					: undefined,
 			);
 		},
-		[holdPrompt, approvals, respondToApproval, sendPrompt, runningTurnId],
+		[
+			holdPrompt,
+			loaded,
+			approvals,
+			respondToApproval,
+			sendPrompt,
+			runningTurnId,
+			t,
+		],
 	);
 	const awaitingBackground = sessionState?.awaitingBackground === true;
 	const onCancelTurn = useMemo(
 		() =>
-			runningTurnId && !awaitingBackground && !held
+			loaded && runningTurnId && !awaitingBackground && !held
 				? () => void cancelTurn(runningTurnId, { pauseQueue: true })
 				: null,
-		[runningTurnId, awaitingBackground, cancelTurn, held],
+		[loaded, runningTurnId, awaitingBackground, cancelTurn, held],
 	);
 	const promptQueue = useMemo(
 		() => ({
@@ -376,14 +409,18 @@ export function SessionView({
 							onLoadOlder={loadOlder}
 							onRequestItemBodies={session.requestItemBodies}
 							onRespond={onRespond}
+							onMessageRevealed={clearRevealMessage}
 							onRetryPrompt={session.retryPrompt}
 							outbox={session.outbox}
+							revealMessageId={revealMessageId}
+							sessionId={client.sessionId}
 							snapshot={session.snapshot}
 						/>
 						{rail.length > 1 && (
 							<ChatHistorySidebarScroller
 								className="absolute inset-y-0 left-0 my-auto hidden h-fit max-h-full flex-col pl-3 @[56rem]:flex"
 								messages={rail}
+								onMessageSelect={setRevealMessageId}
 							/>
 						)}
 					</div>
