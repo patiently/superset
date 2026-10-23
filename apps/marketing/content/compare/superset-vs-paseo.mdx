@@ -33,7 +33,7 @@ Superset and Paseo both run many coding agents at once on hardware you own, each
 | **Remote** | Remote Access: add any machine as a host through the Superset Relay (Pro); cloud workspaces | SSH tunnel, opt-in end-to-end encrypted relay, or direct/Tailscale |
 | **Automation** | Automations on a cron-style schedule, event triggers (GitHub, Slack, Linear, more), CLI, TypeScript SDK, MCP server, Slack bot | Cron schedules and heartbeats, CLI, TypeScript client SDK, MCP server, Hub triggers from GitHub, Slack, and Discord |
 | **Team** | Pro: unlimited users, Linear and Slack integrations. Enterprise: SAML SSO, SCIM, audit logs, SOC 2 Type II | Hub (beta): self-hosted free, hosted at €15 per seat per month; team provisioning and shared settings not built yet |
-| **License / pricing** | Source-available (ELv2); free tier, Pro $20 per user per month | Open source (Apache-2.0); free, no account, no seat limits |
+| **License / pricing** | Source-available (ELv2); free tier, Pro {{price:pro}}, Team {{price:team}}, Ultra {{price:ultra}} per user per month | Open source (Apache-2.0); free, no account, no seat limits |
 
 ---
 
@@ -71,7 +71,7 @@ Paseo is Apache-2.0, needs no account, and states it sends no analytics, telemet
 
 ## Pricing
 
-Superset offers a free tier for individuals and Pro at $20 per user per month, or $15 per user per month billed yearly, with an enterprise tier on custom annual billing. Paseo's app, daemon, CLI, SDK, and relay are free and open source with no seat limits; the hosted Hub is €15 per seat per month, and self-hosted Hub is free. Both are bring-your-own-agent for model costs.
+Superset offers a free tier for individuals, Pro at {{price:pro}} per user per month ({{price:pro:yearly}} billed yearly), Team at {{price:team}} ({{price:team:yearly}} billed yearly) and Ultra at {{price:ultra}} for cloud workspaces, with an enterprise tier on custom annual billing. Paseo's app, daemon, CLI, SDK, and relay are free and open source with no seat limits; the hosted Hub is €15 per seat per month, and self-hosted Hub is free. Both are bring-your-own-agent for model costs.
 
 ---
 
@@ -111,4 +111,4 @@ Paseo has native harnesses for Claude Code, Codex, OpenCode, and Pi, and runs 30
 
 ### Is Paseo free?
 
-Yes. The Paseo daemon, clients, CLI, SDK, and relay are free and Apache-2.0 with no account required. Its optional hosted Hub for team triggers is €15 per seat per month. Superset has a free tier and Pro at $20 per user per month.
+Yes. The Paseo daemon, clients, CLI, SDK, and relay are free and Apache-2.0 with no account required. Its optional hosted Hub for team triggers is €15 per seat per month. Superset has a free tier, Pro at {{price:pro}} per user per month, and Team ({{price:team}}) and Ultra ({{price:ultra}}) plans with cloud workspaces.

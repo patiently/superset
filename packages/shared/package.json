@@ -217,6 +217,10 @@
 			"types": "./src/desktop-notices.ts",
 			"default": "./src/desktop-notices.ts"
 		},
+		"./mcp-servers": {
+			"types": "./src/mcp-servers.ts",
+			"default": "./src/mcp-servers.ts"
+		},
 		"./media-files": {
 			"types": "./src/media-files.ts",
 			"default": "./src/media-files.ts"
@@ -417,9 +421,9 @@
 			"types": "./src/rrule.ts",
 			"default": "./src/rrule.ts"
 		},
-		"./terminal-session-handoff": {
-			"types": "./src/terminal-session-handoff.ts",
-			"default": "./src/terminal-session-handoff.ts"
+		"./session-handoff": {
+			"types": "./src/session-handoff.ts",
+			"default": "./src/session-handoff.ts"
 		},
 		"./theme-colors": {
 			"types": "./src/themes/types.ts",
@@ -444,6 +448,10 @@
 		"./page-storage-ticket": {
 			"types": "./src/page-storage-ticket.ts",
 			"default": "./src/page-storage-ticket.ts"
+		},
+		"./missing-procedure-error": {
+			"types": "./src/missing-procedure-error.ts",
+			"default": "./src/missing-procedure-error.ts"
 		}
 	},
 	"scripts": {

@@ -7,8 +7,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { Redirect } from "renderer/components/Redirect";
 import { env } from "renderer/env.renderer";
 import { usePluginCatalog } from "renderer/hooks/usePluginCatalog";
+import { useInstallAfterConnect } from "renderer/routes/_authenticated/_dashboard/hooks/useInstallAfterConnect";
 import { PluginDetail } from "./components/PluginDetail";
-import { useInstallAfterConnect } from "./hooks/useInstallAfterConnect";
 
 export type PluginDetailSearch = {
 	connect?: boolean;
@@ -76,10 +76,10 @@ function PluginDetailPage() {
 	const { connect } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
-	const installAfterConnect = useInstallAfterConnect(pluginName);
+	const installAfterConnect = useInstallAfterConnect();
 	const onConnected = useCallback(
-		() => void installAfterConnect(),
-		[installAfterConnect],
+		() => void installAfterConnect(pluginName),
+		[installAfterConnect, pluginName],
 	);
 
 	useConnectOutcome(plugin?.interface.displayName ?? pluginName, onConnected);

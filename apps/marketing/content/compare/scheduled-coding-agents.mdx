@@ -2,7 +2,7 @@
 title: "Scheduled Coding Agents in 2026: Nightly, Weekly, and Team Runs You Review"
 description: "How to run coding agents on a schedule and review their work in the morning: GitHub Actions, Claude Code Routines, Codex, Cursor, and Superset Automations."
 date: 2026-10-07
-lastUpdated: 2026-10-15
+lastUpdated: 2026-10-21
 type: "roundup"
 competitors:
   - github-actions
@@ -45,7 +45,7 @@ For a team that wants the agents on one shared machine, use a tool that runs on 
 
 Review stays human. A teammate with host access opens the run's workspace, reads the diff, and continues the session or opens a PR. The Automations list has **Mine** and **Team** tabs. Team automations are read-only: only the owner can edit, pause, run, or delete one. Run workspaces are tagged `automation` by default, so they collect in one sidebar folder per project instead of mixing with hand-made workspaces. Details: [Automations](https://docs.superset.sh/automations) and [Remote access](https://docs.superset.sh/remote-access).
 
-Honest limits: Automations need a Superset Pro or Enterprise plan. Runs fire on the machine you picked, so if it is offline at fire time the run fails and the schedule moves on. Cloud automations are in early access and not generally available.
+Honest limits: Automations need a Superset Pro or Enterprise plan. Runs fire on the machine you picked, so if it is offline at fire time the run is recorded as missed and the schedule moves on. Cloud automations are in early access and not generally available.
 
 **DIY: cron + worktrees + headless CLI.** A systemd timer or cron job runs a script that calls `git worktree add`, starts `claude -p "..."` or another headless agent, runs tests, and pushes a branch. It costs nothing extra and you control everything. You also own port and database collisions between runs, cleanup of old worktrees, and finding out which run failed.
 
@@ -121,6 +121,14 @@ Do not push to main, merge, or edit CI configuration.
 
 Replace `<path>` and `<test command>` with your own. The "stop if it already ran" line matters because Superset delivers runs at least once, and a rare retry can start the job twice.
 
+## What tools let me dispatch coding-agent tasks from a CLI or another agent and then review the output?
+
+Headless agent CLIs (`claude -p`, `codex exec`) and GitHub Actions with `workflow_dispatch` start runs from a script. In Superset, `superset ws create --local --project <project-id> --name flaky-tests --branch flaky-tests --agent claude --prompt "..."` creates a workspace with its own branch and starts the agent, and the [Superset MCP server](https://docs.superset.sh/mcp-server) lets another agent do the same. An automation with a **Webhook triggered** trigger starts a run when any service sends a POST to its URL. Workspaces from the CLI, the MCP server, and automation runs open like any other task, ready for review. Output from headless CLIs and GitHub Actions stays in their logs and pull requests.
+
+## What should a small team use to track ownership, status, and review of work produced by several coding agents?
+
+Use a tool that ties each run to a task, a branch, and a review state. In Superset, the Workspaces page sorts workspaces by state (**Working**, **Needs attention**, **Needs review**, **Idle**, **Merged**), and the Automations **Team** tab shows who owns each scheduled agent. For the full review workflow, see [How to Review Coding Agent Work as a Team](/compare/review-coding-agent-work-team).
+
 ## Comparison
 
 | Option | Where it runs | Isolation per run | Machine must be on | Shared with team | Review surface |
@@ -142,7 +150,7 @@ Replace `<path>` and `<test command>` with your own. The "stop if it already ran
 
 ## Failure handling in Superset
 
-Each fire records a run under **Run History** with a status: **created**, **creating**, or **failed**. A **failed** run shows its error inline. **Automations → All runs** lists runs across automations, filters to yours or the team's, and lets you select failed runs and retry them together. **Retry all** on the **Mine** tab re-dispatches every automation whose latest run failed.
+Each fire records a run under **Run History** with a status: **created**, **creating**, **missed**, or **failed**. A **missed** run means no target host was online, and it is not retried. A **failed** run shows its error inline. **Automations → All runs** lists runs across automations, filters to yours or the team's, and lets you select failed runs and retry them together. **Retry all** on the **Mine** tab re-dispatches every automation whose latest run failed.
 
 A **created** status means the workspace was created. It does not mean the agent's work passed. Open the workspace and read the output before you trust a run.
 
@@ -162,7 +170,7 @@ Start with a report-only prompt, then allow branches, then draft PRs once the ou
 
 ### What happens if the machine is asleep when a Superset automation fires?
 
-The run is recorded as failed and the schedule moves to the next occurrence. Bring the host back and use **Run now** or **Retry all**.
+The run is recorded as missed and the schedule moves to the next occurrence. Missed runs are not retried on their own. Bring the host back and use **Run now** to fire it again.
 
 ### Do teammates see each other's scheduled agents in Superset?
 

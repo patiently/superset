@@ -1,3 +1,4 @@
+import { userMessageText } from "@superset/chat/core";
 import type {
 	ApprovalRequest,
 	Decision,
@@ -31,10 +32,7 @@ export function composerAnswer(
 	content: UserContent[],
 ): Decision | null {
 	if (!approval.form) return null;
-	const text = content
-		.flatMap((part) => (part.type === "text" ? [part.text] : []))
-		.join("\n")
-		.trim();
+	const text = userMessageText({ content }).trim();
 	if (text === "" || content.some((part) => part.type !== "text")) return null;
 	const [page, ...rest] = questionPages(approval.form.fields);
 	if (!page || rest.length > 0) return null;

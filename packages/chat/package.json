@@ -26,6 +26,7 @@
 		"test": "bun test --pass-with-no-tests"
 	},
 	"dependencies": {
+		"@superset/shared": "workspace:*",
 		"marked": "17.0.6",
 		"zod": "4.6.5"
 	},

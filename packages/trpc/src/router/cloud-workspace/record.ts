@@ -32,6 +32,10 @@ import { primaryRepository } from "../../lib/sandbox";
 import { jwtProcedure } from "../../trpc";
 import { loadVisibleWorkspace, visibleTo } from "./access";
 import { recordCloudWorkspaceActivity } from "./activity";
+import {
+	recordPullRequests,
+	reportedPullRequestsSchema,
+} from "./pull-requests";
 
 const DESCRIPTION_MAX_LENGTH = 20_000;
 
@@ -260,7 +264,7 @@ export const cloudWorkspaceRecordRouter = {
 						: undefined,
 					db.query.environments.findFirst({
 						where: eq(environments.id, row.environmentId),
-						columns: { id: true, name: true, hooksRepositoryId: true },
+						columns: { id: true, name: true, primaryRepositoryId: true },
 					}),
 					db
 						.select({
@@ -288,7 +292,7 @@ export const cloudWorkspaceRecordRouter = {
 				]);
 			const primary = primaryRepository(
 				repositories,
-				environment?.hooksRepositoryId,
+				environment?.primaryRepositoryId,
 			);
 			const orderedRepositories = primary
 				? [primary, ...repositories.filter((repo) => repo.id !== primary.id)]
@@ -521,8 +525,8 @@ export const cloudWorkspaceRecordRouter = {
 	tasks: jwtProcedure
 		.input(z.object({ organizationId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			await assertCloudAccess(ctx);
 			assertMember(ctx.organizationIds, input.organizationId);
+			await assertCloudAccess(ctx, input.organizationId);
 			const visible = await db
 				.select({ id: cloudWorkspaces.id })
 				.from(cloudWorkspaces)
@@ -539,8 +543,8 @@ export const cloudWorkspaceRecordRouter = {
 	labels: jwtProcedure
 		.input(z.object({ organizationId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
-			await assertCloudAccess(ctx);
 			assertMember(ctx.organizationIds, input.organizationId);
+			await assertCloudAccess(ctx, input.organizationId);
 			return db
 				.select({
 					cloudWorkspaceId: cloudWorkspaceLabels.cloudWorkspaceId,
@@ -649,6 +653,30 @@ export const cloudWorkspaceRecordRouter = {
 			);
 			nudge(row.organizationId, "cloud_workspaces");
 			return { description };
+		}),
+
+	reportPullRequests: jwtProcedure
+		.input(
+			z.object({
+				id: z.string().uuid(),
+				pullRequests: reportedPullRequestsSchema,
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (ctx.sandboxCaller && ctx.sandboxCaller.workspaceId !== input.id) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "A cloud workspace can only report its own pull requests",
+				});
+			}
+			const row = await loadVisibleWorkspace(ctx, input.id);
+			if (row.status === "deleted") {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Workspace not found",
+				});
+			}
+			return recordPullRequests(row, input.pullRequests);
 		}),
 
 	setProject: jwtProcedure

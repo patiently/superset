@@ -26,6 +26,12 @@ export const serverErrorMessages: Record<
 				message: "Anthropic rejected this token.",
 			}),
 		),
+	"serverError.agentCredential.chatgptSignInFailed": () =>
+		i18n._(
+			msg({
+				message: "OpenAI did not complete the sign-in. Start again.",
+			}),
+		),
 	"serverError.agentCredential.empty": () =>
 		i18n._(
 			msg({
@@ -262,14 +268,14 @@ export const serverErrorMessages: Record<
 		i18n._({
 			id: "serverError.cloudWorkspace.cloudSandboxesAreInternalOnly",
 			message:
-				"Cloud sandboxes are not enabled for {account}. Ask the Superset team for access.",
+				"Cloud workspaces are not enabled for {account}. They come with the Team and Ultra plans: upgrade in Settings, Billing.",
 			values: params,
 		}),
 	"serverError.cloudWorkspace.cloudNeedsPaidPlan": () =>
 		i18n._(
 			msg({
 				message:
-					"Cloud workspaces need a paid plan. Upgrade in Settings, Billing to start one.",
+					"Cloud workspaces need the Team or Ultra plan. Upgrade in Settings, Billing to start one.",
 			}),
 		),
 	"serverError.cloudWorkspace.usageLimitReached": () =>
@@ -277,6 +283,13 @@ export const serverErrorMessages: Record<
 			msg({
 				message:
 					"Your organization has reached its cloud usage limit. Raise the limit or upgrade in Settings, Billing to start this workspace.",
+			}),
+		),
+	"serverError.cloudWorkspace.machineSizeNotAvailable": () =>
+		i18n._(
+			msg({
+				message:
+					"This machine size is not available for your organization. Pick another size",
 			}),
 		),
 	"serverError.cloudWorkspace.environmentHasNoRepositories": () =>
@@ -293,11 +306,24 @@ export const serverErrorMessages: Record<
 					"A repository is not connected to this organization, or the repositories come from different GitHub installations",
 			}),
 		),
-	"serverError.environment.hooksRepositoryNotIncluded": () =>
+	"serverError.environment.primaryRepositoryNotIncluded": () =>
 		i18n._(
 			msg({
 				message:
-					"The config repository must be one of the environment's repositories",
+					"The primary repository must be one of the environment's repositories",
+			}),
+		),
+	"serverError.environment.limitReached": (params) =>
+		i18n._(
+			msg({
+				message: `Your organization has reached its environment limit (${params?.limit}). Archive an environment, or upgrade in Settings, Billing to add more.`,
+			}),
+		),
+	"serverError.environment.notIncluded": () =>
+		i18n._(
+			msg({
+				message:
+					"Your plan does not include cloud environments. Upgrade in Settings, Billing to create one.",
 			}),
 		),
 	"serverError.githubUser.notConfigured": () =>

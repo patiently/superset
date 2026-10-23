@@ -354,18 +354,6 @@ export const PLUGIN_CATALOG: readonly PluginCatalogEntry[] = [
 		},
 	},
 	{
-		name: "neon-readonly",
-		version: "1.0.1",
-		description: "Read Postgres schemas and run read-only queries",
-		interface: { displayName: "Neon (read-only)", category: "Data & APIs" },
-		mcpServers: {
-			"neon-readonly": {
-				type: "http",
-				url: "https://mcp.neon.tech/mcp?readonly=true",
-			},
-		},
-	},
-	{
 		name: "exa",
 		version: "1.0.1",
 		description: "Search the web, companies, and people",

@@ -8,5 +8,6 @@ export * from "./outbox/outbox";
 export * from "./outline";
 export * from "./pastedText/pastedText";
 export * from "./reducer/reducer";
+export * from "./subagents/subagents";
 export * from "./timeline/deriveTimeline";
 export * from "./transcript/transcript";

@@ -42,7 +42,11 @@ import { sweepDevAppProfiles } from "./dev-app-profile-sweep";
 import { getAppDisplayName } from "./lib/app-display-name";
 import { initAppState } from "./lib/app-state";
 import { requestAppleEventsAccess } from "./lib/apple-events-permission";
-import { isUpdateReadyToInstall, setupAutoUpdater } from "./lib/auto-updater";
+import {
+	isInstallingUpdate,
+	isUpdateReadyToInstall,
+	setupAutoUpdater,
+} from "./lib/auto-updater";
 import { startBrowserBridge } from "./lib/browser/browser-bridge";
 import { browserManager } from "./lib/browser/browser-manager";
 import { downloadManager } from "./lib/browser/download-manager";
@@ -173,7 +177,7 @@ async function processDeepLink(url: string): Promise<void> {
 
 	// Non-auth deep links: extract path and navigate in renderer
 	// e.g. superset://tasks/my-slug -> /tasks/my-slug
-	const path = `/${url.split("://")[1]}`;
+	const path = `/${url.slice(url.indexOf("://") + 3)}`;
 	focusMainWindow();
 
 	const target = getFocusedOrLastWindow();
@@ -348,6 +352,7 @@ app.on("before-quit", async (event) => {
 
 	isQuitting = true;
 	const isUpdateInstalling = isUpdateReadyToInstall();
+	const resumeChats = isInstallingUpdate();
 	// Stopping the pty-daemons waits for host-services to exit; without this
 	// Electron exits once the windows close and cuts that wait short.
 	holdingQuitForCleanup = forceFullCleanup;
@@ -367,7 +372,8 @@ app.on("before-quit", async (event) => {
 		isDev,
 		forceFullCleanup,
 		isUpdateInstalling,
-		stopHostServices: () => getHostServiceCoordinator().stopAll(),
+		stopHostServices: () =>
+			getHostServiceCoordinator().stopAll({ resumeChats }),
 		teardownTerminalHost,
 		stopPtyDaemons,
 		disposeTerminalHostClient,

@@ -1,13 +1,12 @@
-import { FEATURE_FLAGS } from "@superset/shared/constants";
 import { eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
-import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback } from "react";
 import {
 	useV2UserPreferences,
 	type V2UserPreferencesApi,
 } from "renderer/hooks/useV2UserPreferences";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
+import { useRightPaneAreaEnabled } from "renderer/stores/right-pane-area";
 
 export function useWorkspaceRightSidebarOpen(workspaceId: string): {
 	isOpen: boolean;
@@ -15,8 +14,7 @@ export function useWorkspaceRightSidebarOpen(workspaceId: string): {
 } {
 	const collections = useCollections();
 	const { preferences, setRightSidebarOpen } = useV2UserPreferences();
-	const isPerWorkspace =
-		useFeatureFlagEnabled(FEATURE_FLAGS.RIGHT_PANE_AREA) === true;
+	const isPerWorkspace = useRightPaneAreaEnabled() === true;
 	const { data: rows = [] } = useLiveQuery(
 		(query) =>
 			query

@@ -41,6 +41,8 @@ const inter = Inter({
 	variable: "--font-inter",
 	display: "swap",
 	axes: ["opsz"],
+	adjustFontFallback: false,
+	fallback: [],
 });
 
 const siteDescription =

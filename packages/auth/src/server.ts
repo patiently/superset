@@ -803,7 +803,7 @@ export const auth = betterAuth({
 					const subscription = await db.query.subscriptions.findFirst({
 						where: and(
 							eq(subscriptions.referenceId, organization.id),
-							eq(subscriptions.status, "active"),
+							inArray(subscriptions.status, ACTIVE_SUBSCRIPTION_STATUSES),
 						),
 					});
 
@@ -835,7 +835,6 @@ export const auth = betterAuth({
 
 					if (!subscription?.stripeSubscriptionId) return;
 					if (subscription.plan === "enterprise") return;
-
 					const quantity = Math.max(
 						1,
 						await countBillableSeats(organization.id),
@@ -847,10 +846,11 @@ export const auth = betterAuth({
 					const seat = seatItem(stripeSub);
 					const itemId = seat?.id;
 
-					const seatsSetInAutumn =
+					const seatsOwnedByAutumn =
 						billingUsesAutumn &&
 						(await setAutumnSeats(organization.id, quantity));
-					if (!seatsSetInAutumn && itemId) {
+					// TODO(2027-01-31): drop the direct Stripe write once every paid org is imported into Autumn.
+					if (!seatsOwnedByAutumn && itemId) {
 						await stripeClient.subscriptions.update(
 							subscription.stripeSubscriptionId,
 							{
@@ -958,13 +958,12 @@ export const auth = betterAuth({
 					const subscription = await db.query.subscriptions.findFirst({
 						where: and(
 							eq(subscriptions.referenceId, organization.id),
-							eq(subscriptions.status, "active"),
+							inArray(subscriptions.status, ACTIVE_SUBSCRIPTION_STATUSES),
 						),
 					});
 
 					if (!subscription?.stripeSubscriptionId) return;
 					if (subscription.plan === "enterprise") return;
-
 					const quantity = Math.max(
 						1,
 						await countBillableSeats(organization.id),
@@ -976,10 +975,11 @@ export const auth = betterAuth({
 					const seat = seatItem(stripeSub);
 					const itemId = seat?.id;
 
-					const seatsSetInAutumn =
+					const seatsOwnedByAutumn =
 						billingUsesAutumn &&
 						(await setAutumnSeats(organization.id, quantity));
-					if (!seatsSetInAutumn && itemId) {
+					// TODO(2027-01-31): drop the direct Stripe write once every paid org is imported into Autumn.
+					if (!seatsOwnedByAutumn && itemId) {
 						await stripeClient.subscriptions.update(
 							subscription.stripeSubscriptionId,
 							{
@@ -1098,6 +1098,7 @@ export const auth = betterAuth({
 				const data = await loadCustomSessionData({
 					userId,
 					activeOrganizationId: session.activeOrganizationId ?? null,
+					withPlan: !billingUsesAutumn,
 				});
 
 				const { activeOrganizationId, allMemberships, membership } =
@@ -1119,7 +1120,12 @@ export const auth = betterAuth({
 				// reached, so an "active"-only read here would strand trialing
 				// and past_due organizations on a cold start.
 				let plan: string | null = null;
-				if (activeOrganizationId === data.planOrganizationId) {
+				if (billingUsesAutumn) {
+					const tier = activeOrganizationId
+						? await organizationPlanFromAutumn(activeOrganizationId)
+						: "free";
+					plan = tier === "free" ? null : tier;
+				} else if (activeOrganizationId === data.planOrganizationId) {
 					plan = data.plan;
 				} else if (activeOrganizationId) {
 					// A concurrent request moved the session's active organization

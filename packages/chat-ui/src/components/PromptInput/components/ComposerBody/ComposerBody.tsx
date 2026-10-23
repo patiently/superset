@@ -127,6 +127,7 @@ export type ComposerBodyProps = Required<
 		| "collapseLargePastes"
 		| "onSubmit"
 		| "onStop"
+		| "stopOnEscape"
 		| "onMentionHighlight"
 		| "onAttachmentClick"
 		| "onChipClick"
@@ -185,6 +186,7 @@ export function ComposerBody({
 	collapseLargePastes,
 	onSubmit,
 	onStop,
+	stopOnEscape = true,
 	onMentionHighlight,
 	onAttachmentClick,
 	onChipClick,
@@ -255,11 +257,25 @@ export function ComposerBody({
 				});
 				editor.focus();
 			},
+			addFiles(files: File[]) {
+				addFilesRef.current(files);
+				focusAtEnd();
+			},
+			insertChip(chip: ComposerChip) {
+				editor.update(() => $insertChipAtSelection(chip));
+			},
 			openFileDialog() {
 				fileInputRef.current?.click();
 			},
+			openPanel(next: ComposerPanelContent) {
+				setPanel(next);
+			},
 			focus() {
 				focusAtEnd();
+			},
+			recallPreviousPrompt() {
+				editor.focus();
+				historyNavigationRef.current?.recallOlder();
 			},
 		}),
 		[draftText, editor, focusAtEnd, pasted.restore, splitPastes],
@@ -282,6 +298,7 @@ export function ComposerBody({
 		attachments,
 		onChipClick,
 		onStop,
+		stopOnEscape,
 		onSubmit,
 		status,
 		submitWhileStreaming,
@@ -293,6 +310,7 @@ export function ComposerBody({
 		attachments,
 		onChipClick,
 		onStop,
+		stopOnEscape,
 		onSubmit,
 		status,
 		submitWhileStreaming,
@@ -300,7 +318,10 @@ export function ComposerBody({
 		clearOnSubmit,
 		history,
 	};
-	const historyNavigationRef = useRef<{ reset: () => void } | null>(null);
+	const historyNavigationRef = useRef<{
+		recallOlder: () => void;
+		reset: () => void;
+	} | null>(null);
 
 	// A draft the host had stored. Read once: after mount the editor is the
 	// only writer, and re-applying would fight what is being typed.
@@ -375,6 +396,11 @@ export function ComposerBody({
 	useEffect(() => {
 		return dropZone?.register((files) => addFilesRef.current(files));
 	}, [dropZone]);
+
+	const closePanel = useCallback(() => {
+		setPanel(null);
+		editor.focus();
+	}, [editor]);
 
 	const actionContext: ComposerActionContext = {
 		insertChip: (chip) => {
@@ -567,8 +593,8 @@ export function ComposerBody({
 		const unregisterEscape = editor.registerCommand<KeyboardEvent | null>(
 			KEY_ESCAPE_COMMAND,
 			(event) => {
-				const { status, onStop } = stateRef.current;
-				if (status !== "streaming" || !onStop) return false;
+				const { status, onStop, stopOnEscape } = stateRef.current;
+				if (status !== "streaming" || !onStop || !stopOnEscape) return false;
 				event?.preventDefault();
 				onStop();
 				return true;
@@ -763,6 +789,7 @@ export function ComposerBody({
 			setBrowseOpen(false);
 			setTypeaheadDismissed(true);
 			setCommandDismissed(true);
+			setPanel((current) => (current?.bare ? null : current));
 		};
 		document.addEventListener("pointerdown", onPointerDown);
 		return () => document.removeEventListener("pointerdown", onPointerDown);
@@ -826,14 +853,27 @@ export function ComposerBody({
 					/>
 				)}
 			</div>
-			{panel && (
-				<ComposerPanel
-					title={panel.title}
-					placement={placement}
-					onClose={() => setPanel(null)}
+			{panel?.bare ? (
+				<div
+					role="dialog"
+					aria-label={panel.title}
+					className={cn(
+						"absolute inset-x-0 z-30",
+						placement === "bottom" ? "top-full pt-2" : "bottom-full pb-2",
+					)}
 				>
-					{panel.render()}
-				</ComposerPanel>
+					{panel.render({ close: closePanel })}
+				</div>
+			) : (
+				panel && (
+					<ComposerPanel
+						title={panel.title}
+						placement={placement}
+						onClose={() => setPanel(null)}
+					>
+						{panel.render({ close: closePanel })}
+					</ComposerPanel>
+				)
 			)}
 			<div
 				aria-hidden={!dragging}

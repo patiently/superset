@@ -4,6 +4,7 @@ import type {
 	FileDiffMetadata,
 	LineAnnotation,
 } from "@pierre/diffs";
+import { isMissingProcedureError } from "@superset/shared/missing-procedure-error";
 import { workspaceTrpc } from "@superset/workspace-client";
 import { useQueries } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
@@ -19,7 +20,6 @@ import type {
 	DiffPatchScope,
 	GetDiffPatchInput,
 } from "renderer/lib/diffPatchQuery";
-import { isMissingProcedureError } from "renderer/lib/isMissingProcedureError";
 import {
 	type ChangesetFile,
 	getChangesetFileKey,

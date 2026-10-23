@@ -151,3 +151,15 @@ describe("settings search - mobile rollout", () => {
 		).toBe(1);
 	});
 });
+
+describe("settings search - right pane area", () => {
+	it("counts the Right pane area switch only when its flag is on", () => {
+		expect(
+			getVisibleMatchCountBySection("right pane", true, false).experimental,
+		).toBeUndefined();
+		expect(
+			getVisibleMatchCountBySection("right pane", true, false, false, true)
+				.experimental,
+		).toBe(1);
+	});
+});

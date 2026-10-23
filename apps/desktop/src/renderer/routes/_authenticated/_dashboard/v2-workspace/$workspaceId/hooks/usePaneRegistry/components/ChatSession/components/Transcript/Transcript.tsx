@@ -30,7 +30,6 @@ import {
 	useState,
 } from "react";
 import { env } from "renderer/env.renderer";
-import { usePluginMentionOptions } from "renderer/hooks/usePluginMentionOptions";
 import {
 	CHAT_COLUMN_CLASSNAME,
 	CHAT_SCROLLER_GUTTER_CLASSNAME,
@@ -46,9 +45,12 @@ import { useScrollbarGutter } from "./hooks/useScrollbarGutter";
 import { useTranscriptFind } from "./hooks/useTranscriptFind";
 import { useTranscriptWindow } from "./hooks/useTranscriptWindow";
 import { ChatImageGalleryProvider } from "./providers/ChatImageGalleryProvider";
+import { useNestedItems } from "./providers/NestedItemsProvider";
+import { useTranscriptPlugins } from "./providers/TranscriptPluginsProvider";
 import { copySourceText } from "./utils/copySourceText";
 import { galleryImages } from "./utils/galleryImages";
-import { lastReplyKeys } from "./utils/lastReplyKeys";
+import { replyFooters } from "./utils/replyFooters";
+import { subagentLines } from "./utils/subagentLines";
 import {
 	rowMessageId,
 	type TranscriptRow,
@@ -128,7 +130,7 @@ export function Transcript({
 	snapshot,
 }: TranscriptProps) {
 	const { t } = useLingui();
-	const plugins = usePluginMentionOptions();
+	const plugins = useTranscriptPlugins();
 	const installedPluginNames = useMemo(
 		() => new Set(plugins.map((plugin) => plugin.name)),
 		[plugins],
@@ -204,16 +206,26 @@ export function Transcript({
 		return ids;
 	}, [approvals, snapshot.items]);
 
-	const rows = useMemo(
+	const { childrenByParent } = useNestedItems();
+	const { rows, inlineReplyKeys } = useMemo(
 		() =>
-			transcriptRows(
-				groups,
-				outbox,
-				pendingApprovalTargets,
-				findPageLinks,
-				commandsInApprovals,
+			replyFooters(
+				transcriptRows(
+					groups,
+					outbox,
+					pendingApprovalTargets,
+					findPageLinks,
+					commandsInApprovals,
+					(tool) => subagentLines(tool, childrenByParent.get(tool.id)) !== null,
+				),
 			),
-		[groups, outbox, pendingApprovalTargets, commandsInApprovals],
+		[
+			groups,
+			outbox,
+			pendingApprovalTargets,
+			commandsInApprovals,
+			childrenByParent,
+		],
 	);
 
 	useEffect(() => {
@@ -231,7 +243,6 @@ export function Transcript({
 		});
 	}, [rows, entryOverrides]);
 
-	const lastReplies = useMemo(() => lastReplyKeys(rows), [rows]);
 	const gallery = useMemo(() => galleryImages(rows), [rows]);
 	const availableCommands = snapshot.session?.availableCommands;
 	const commands = useMemo(
@@ -248,6 +259,10 @@ export function Transcript({
 		turnRunning: groups.at(-1)?.turn?.status === "running",
 		readerScrolledAway,
 	});
+	useEffect(() => {
+		if (anchorRowKey === null) return;
+		scrollerRef.current.scrollToEnd({ behavior: "smooth" });
+	}, [anchorRowKey]);
 
 	const find = useTranscriptFind({
 		rows,
@@ -319,7 +334,6 @@ export function Transcript({
 		.map((row, offset) => {
 			const index = transcriptWindow.startIndex + offset;
 			const recent = index >= rows.length - RECENT_ROWS_RENDERED_IN_FULL;
-			const scrollAnchor = row.key === anchorRowKey;
 			return (
 				<TranscriptRowItem
 					canForkToWorktree={canForkToWorktree}
@@ -330,9 +344,10 @@ export function Transcript({
 						proseTopPadding(row, rows[index - 1]),
 					)}
 					commands={commands}
+					childrenByParent={childrenByParent}
 					isEntryCollapsed={isEntryCollapsed}
 					key={row.key}
-					lastReply={lastReplies.has(row.key)}
+					lastReply={inlineReplyKeys.has(row.key)}
 					messageId={rowMessageId(row)}
 					onDiscardPrompt={onDiscardPrompt}
 					onFork={onFork}
@@ -341,14 +356,13 @@ export function Transcript({
 					onToggleEntry={onToggleEntry}
 					rendered={
 						recent ||
-						scrollAnchor ||
+						row.key === anchorRowKey ||
 						seenRowKeys.has(row.key) ||
 						row.key === find.currentRowKey ||
 						row.key === revealRowKey
 					}
 					row={row}
 					rowRef={transcriptWindow.rowRef(row.key)}
-					scrollAnchor={scrollAnchor}
 					snapshot={snapshot}
 				/>
 			);

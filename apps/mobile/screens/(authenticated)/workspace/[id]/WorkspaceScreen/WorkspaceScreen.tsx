@@ -88,6 +88,7 @@ import {
 	type TerminalWebViewHandle,
 } from "../components/TerminalWebView";
 import { useHostCompatibility } from "../hooks/useHostCompatibility";
+import { usePullRequestDiffstat } from "../hooks/usePullRequestDiffstat";
 import { usePullRequestIconUri } from "../hooks/usePullRequestIconUri";
 import { useWorkspaceHeaderActions } from "../hooks/useWorkspaceHeaderActions";
 import { useWorkspacePullRequests } from "../hooks/useWorkspacePullRequest";
@@ -906,12 +907,19 @@ export function WorkspaceScreen() {
 	}, [pullRequests, pullRequestIconUri, t]);
 
 	const pullRequestCount = pullRequests.length;
-	const chatPullRequestLabel =
-		pullRequestCount > 0
-			? t({
+	const latestPullRequestDiffstat = usePullRequestDiffstat({
+		hostUrl,
+		pullRequest: pullRequests[0],
+	});
+	const chatPullRequestChip = pullRequestStatusNow
+		? {
+				label: t({
 					message: plural(pullRequestCount, { one: "# PR", other: "# PRs" }),
-				})
-			: undefined;
+				}),
+				status: pullRequestStatusNow,
+				diffstat: latestPullRequestDiffstat,
+			}
+		: undefined;
 
 	// One PR goes straight to it; a history goes to the list. Captured by hand
 	// because the tap lands in SwiftUI, where RN autocapture cannot see it.
@@ -1145,7 +1153,7 @@ export function WorkspaceScreen() {
 						onOpenSession={openSession}
 						onOpenPullRequests={openPullRequests}
 						onTap={dismissComposer}
-						pullRequestLabel={chatPullRequestLabel}
+						pullRequestChip={chatPullRequestChip}
 						ref={chatRef}
 						sessionId={activeTerminalId}
 						workspaceId={id}

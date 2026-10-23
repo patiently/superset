@@ -55,6 +55,7 @@ export function acpHarnessFactory(
 				? { defaultModeId: entry.fullAccessModeId }
 				: {}),
 			...(entry.clientApprovalModes ? { clientApprovalModes: true } : {}),
+			...(entry.forkAtMessage ? { forkAtMessage: true } : {}),
 			onSpawn: (pid) => agents?.spawned(options.sessionId, pid),
 			launch: async () => {
 				const cli = await resolveAgentCli({

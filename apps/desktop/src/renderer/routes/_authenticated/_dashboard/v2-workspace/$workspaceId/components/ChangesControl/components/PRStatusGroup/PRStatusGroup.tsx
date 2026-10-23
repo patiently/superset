@@ -50,7 +50,8 @@ interface PRStatusGroupProps {
 	toggleLabel?: string;
 	/**
 	 * Toggles the Changes pane — the badge's main click, since it replaced
-	 * the diff-stat pill as the control's face once a PR exists.
+	 * the diff-stat pill as the control's face once a PR exists. Without it
+	 * the badge opens the pull request.
 	 */
 	onToggleChanges?: () => void;
 	/** Opens the PR's summary pane in the workspace (the menu's "Open pull request"). */
@@ -63,9 +64,9 @@ interface PRStatusGroupProps {
  * with a dropdown for committing and pushing work the PR doesn't have yet,
  * merge actions (open, non-draft PRs), marking a draft ready for review, the
  * PR summary pane, and a GitHub link.
- * Clicking the badge toggles the Changes pane; the PR pane lives in the
- * menu (hidden for session workspaces, since the PR
- * content query is project-scoped). Hovering surfaces a rich detail popover (title,
+ * Clicking the badge toggles the Changes pane when `onToggleChanges` is
+ * given, and opens the PR pane otherwise; session workspaces open GitHub,
+ * since the PR content query is project-scoped. Hovering surfaces a rich detail popover (title,
  * branch, CI summary, last activity).
  *
  * Indicators are suppressed past `open`/`queued` since post-merge CI/review
@@ -171,6 +172,7 @@ export function PRStatusGroup({
 			},
 		});
 
+	const opensPullRequest = onToggleChanges == null && !isSession;
 	const sync = state.kind === "pr-exists" && !paneAreaStyle ? state.sync : null;
 	const canCommit = sync?.hasUncommitted === true;
 	const canPush = sync != null && (!sync.hasUpstream || sync.pushCount > 0);
@@ -240,7 +242,9 @@ export function PRStatusGroup({
 			<span
 				className={cn(
 					paneAreaStyle ? "text-xs tabular-nums" : "font-mono text-xs",
-					isChangesOpen ? "text-foreground" : "text-muted-foreground",
+					isChangesOpen || opensPullRequest
+						? "text-foreground"
+						: "text-muted-foreground",
 				)}
 			>
 				#{pr.number}
@@ -271,9 +275,6 @@ export function PRStatusGroup({
 				>
 					<HoverCard openDelay={150} closeDelay={120}>
 						<HoverCardTrigger asChild>
-							{/* The face toggles the Changes pane — the badge replaced the
-					    diff-stat pill, so its click keeps that pill's job; the PR
-					    pane is one menu entry (or the hover card) away. */}
 							{onToggleChanges != null ? (
 								<button
 									type="button"
@@ -285,6 +286,23 @@ export function PRStatusGroup({
 										toggleLabel ? `${toggleLabel}, #${pr.number}` : undefined
 									}
 									onClick={onToggleChanges}
+								>
+									{badgeContent}
+								</button>
+							) : opensPullRequest ? (
+								<button
+									type="button"
+									className={badgeClass}
+									aria-label={t({
+										message: `Open pull request #${pr.number}`,
+									})}
+									onClick={(event) =>
+										openPullRequestLink(
+											pr.url,
+											linkPolicy.getAction(event),
+											onOpenPullRequest,
+										)
+									}
 								>
 									{badgeContent}
 								</button>
@@ -427,7 +445,7 @@ export function PRStatusGroup({
 									<DropdownMenuSeparator />
 								</>
 							)}
-							{!isSession && (
+							{!isSession && !opensPullRequest && (
 								<DropdownMenuItem
 									className={menuItemClass}
 									onClick={(event) =>

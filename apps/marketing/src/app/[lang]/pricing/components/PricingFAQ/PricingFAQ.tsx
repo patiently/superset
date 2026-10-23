@@ -1,13 +1,23 @@
 "use client";
 
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { PlanFamily } from "@superset/shared/billing";
 import { FAQDisclosure } from "../../../components/FAQDisclosure";
 import { PRICING_FAQ_ITEMS } from "../../constants";
-import { proSeatPriceValues } from "../../utils/proSeatPriceValues";
+import {
+	faqShown,
+	faqValues,
+	planPriceValues,
+} from "../../utils/planPriceValues";
 
-export function PricingFAQ() {
+interface PricingFAQProps {
+	catalog: PlanFamily[];
+}
+
+export function PricingFAQ({ catalog }: PricingFAQProps) {
 	const { t, i18n } = useLingui();
-	const prices = proSeatPriceValues(i18n.locale);
+	const priceValues = planPriceValues(catalog, i18n);
+	const values = faqValues(priceValues);
 
 	return (
 		<div>
@@ -18,16 +28,18 @@ export function PricingFAQ() {
 				<Trans>Common questions</Trans>
 			</h2>
 			<div>
-				{PRICING_FAQ_ITEMS.map((item) => (
-					<FAQDisclosure
-						key={item.id}
-						name="pricing-faq"
-						compact
-						question={t(item.question)}
-					>
-						<p>{i18n._({ ...item.answer, values: prices })}</p>
-					</FAQDisclosure>
-				))}
+				{PRICING_FAQ_ITEMS.filter((item) => faqShown(item, priceValues)).map(
+					(item) => (
+						<FAQDisclosure
+							key={item.id}
+							name="pricing-faq"
+							compact
+							question={t(item.question)}
+						>
+							<p>{i18n._({ ...item.answer, values })}</p>
+						</FAQDisclosure>
+					),
+				)}
 			</div>
 		</div>
 	);

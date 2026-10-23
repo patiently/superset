@@ -23,9 +23,16 @@ export type ComposerActionContext = {
 	query: string;
 };
 
+export type ComposerPanelControls = {
+	close(): void;
+};
+
 export type ComposerPanelContent = {
 	title: string;
-	render: () => ReactNode;
+	render: (controls: ComposerPanelControls) => ReactNode;
+	// Drawn without the titled frame and closed by a press outside the
+	// composer; the content owns its keyboard, including Escape.
+	bare?: boolean;
 };
 
 export type ComposerMentionEntry = {
@@ -115,8 +122,12 @@ export type PromptInputDictation = {
 
 export type PromptInputHandle = {
 	appendText(text: string): void;
+	addFiles(files: File[]): void;
+	insertChip(chip: ComposerChip): void;
 	openFileDialog(): void;
+	openPanel(panel: ComposerPanelContent): void;
 	focus(): void;
+	recallPreviousPrompt(): void;
 };
 
 export type PromptInputProps = {
@@ -148,6 +159,7 @@ export type PromptInputProps = {
 		payload: PromptInputSubmitPayload,
 	) => false | void | Promise<void>;
 	onStop?: () => void;
+	stopOnEscape?: boolean;
 	header?: ReactNode;
 	onAddFiles?: (files: File[]) => void;
 	allowEmptySubmit?: boolean;

@@ -23,7 +23,7 @@ import { createManualWait } from "../../testing/manualWait";
 import { createMemoryStreamServer } from "../../testing/memoryStream";
 import { registerDom } from "../../testing/registerDom";
 import type { ChatSession, FrameScheduler } from "./useChatSession";
-import { useChatSession } from "./useChatSession";
+import { DEFAULT_DELTAS, useChatSession } from "./useChatSession";
 
 registerDom();
 const {
@@ -837,4 +837,8 @@ describe("useChatSession", () => {
 	test("keeps the cached transcript when the journal cannot be read", async () => {
 		expect(await cacheAndFailLoad("journal_missing")).toBeGreaterThan(0);
 	});
+});
+
+test("a chat subscribes to background steps by default", () => {
+	expect(DEFAULT_DELTAS).toContain("background");
 });

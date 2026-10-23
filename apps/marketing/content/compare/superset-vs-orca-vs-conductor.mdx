@@ -34,10 +34,10 @@ Facts were checked against each product's own site, docs, changelog, and pricing
 | **Review** | Changes pane commits, pushes, and opens PRs, with inline diff comments sent to an agent; Pull Requests view with CI checks and line comments sent back to agents | Inline diff comments sent back to the agent; GitHub and Linear PRs and issues in the app | Diff, checks, pull request, merge, and archive |
 | **Task intake** | Tasks synced with Linear and GitHub Issues; Slack bot | GitHub, Linear, and GitHub Projects in the app | Workspaces from GitHub and Linear issues |
 | **Automation and control** | Scheduled automations on a host you choose; CLI, TypeScript SDK, MCP server | Scheduled automations; CLI; orchestration is experimental | Routines in the cloud (Pro and Teams); API and MCP server |
-| **Mobile** | iPhone and iPad app for your own hosts and cloud workspaces (Pro) | iOS app and Android APK, both beta | iOS app for cloud workspaces (Pro) |
+| **Mobile** | iPhone and iPad app for your own hosts and cloud workspaces (Pro; cloud workspaces need Team or Ultra) | iOS app and Android APK, both beta | iOS app for cloud workspaces (Pro) |
 | **Team and enterprise** | Pro covers unlimited users; Enterprise adds SAML SSO, SCIM, audit logs, SOC 2 Type II | SOC 2 readiness; self-hostable desktop and server | Multiplayer on Pro (up to 5) and Teams; Enterprise adds SAML SSO, SCIM; SOC 2 Type II |
 | **License** | Source-available (ELv2) | Open source (MIT) | Proprietary |
-| **Pricing** | Free; Pro $20 per user/month ($15 billed yearly); Enterprise custom | Free | Free; Pro $50/month; Teams $60 per user/month; Enterprise custom |
+| **Pricing** | Free; Pro {{price:pro}}/user/month or {{price:pro:yearly}} billed yearly; Team {{price:team}} or {{price:team:yearly}} billed yearly; Ultra {{price:ultra}}; Enterprise custom | Free | Free; Pro $50/month; Teams $60 per user/month; Enterprise custom |
 
 ---
 
@@ -120,7 +120,7 @@ Orca. Superset runs on macOS with an experimental Linux build, and Conductor is 
 
 ### Which is free?
 
-Orca is free. Superset and Conductor both have free plans; Superset Pro is $20 per user per month, and Conductor Pro is $50 per month.
+Orca is free. Superset and Conductor both have free plans; Superset Pro is {{price:pro}} per user per month, and Conductor Pro is $50 per month. Superset Team ({{price:team}}) and Ultra ({{price:ultra}}) add cloud workspaces.
 
 ### Can I use my own Claude or Codex subscription?
 

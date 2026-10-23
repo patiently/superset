@@ -138,16 +138,6 @@
 			"version": "1.0.0"
 		},
 		{
-			"name": "neon-readonly",
-			"description": "Read your Neon Postgres without writing to it: inspect projects and branches, read schemas, and run read-only SQL.",
-			"author": {
-				"name": "Superset"
-			},
-			"category": "data & apis",
-			"source": "./plugins/neon-readonly",
-			"version": "1.0.1"
-		},
-		{
 			"name": "exa",
 			"description": "Search the web, companies, and people with Exa.",
 			"author": {

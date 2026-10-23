@@ -805,10 +805,10 @@ export const environments = pgTable(
 		/** The sandbox bundle every workspace of this environment boots on: the newest `sandbox_bundles` row at create, moved by every release. */
 		bundleSha: text("bundle_sha").notNull(),
 		/**
-		 * Which of the environment's repositories carries the `.superset/config.json`
-		 * the box acts on; null means none does and only `hooks` applies.
+		 * The repository a workspace opens on. Its `.superset` config is the one
+		 * the box runs. Null only after the repository is removed from GitHub.
 		 */
-		hooksRepositoryId: uuid("hooks_repository_id").references(
+		primaryRepositoryId: uuid("primary_repository_id").references(
 			() => githubRepositories.id,
 			{ onDelete: "set null" },
 		),
@@ -844,8 +844,8 @@ export const sandboxBundles = pgTable("sandbox_bundles", {
 });
 
 /**
- * The repositories an environment checks out, in order; the first is the
- * primary.
+ * The repositories an environment checks out. Which one is primary is
+ * `environments.primary_repository_id`.
  */
 export const environmentRepositories = pgTable(
 	"environment_repositories",
@@ -944,6 +944,8 @@ export const cloudWorkspaces = pgTable(
 		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 		/** When the box stops because its organization reached its usage limit; null otherwise. */
 		usageStopAt: timestamp("usage_stop_at", { withTimezone: true }),
+		/** Null on workspaces made before sizes existed; they run large. */
+		machineSize: text("machine_size"),
 		createdByUserId: uuid("created_by_user_id").references(() => users.id, {
 			onDelete: "set null",
 		}),
@@ -1022,8 +1024,8 @@ export type SelectCloudWorkspaceShare =
 
 /**
  * What a cloud workspace checked out, fixed at create: each repository on a
- * branch at a path under the workspace root. The first is the primary, the
- * one the workspace opens on.
+ * branch at a path under the workspace root. The primary is the environment's
+ * `primary_repository_id`.
  */
 export const cloudWorkspaceRepositories = pgTable(
 	"cloud_workspace_repositories",
@@ -1045,6 +1047,35 @@ export const cloudWorkspaceRepositories = pgTable(
 		index("cloud_workspace_repositories_cloud_workspace_id_idx").on(
 			table.cloudWorkspaceId,
 		),
+	],
+);
+
+/**
+ * Plain-string tags on cloud workspaces: the sidebar's folder membership,
+ * the same model as host-service `workspace_tags`. They live here rather
+ * than in the sandbox's host.db because the sidebar files a box while it
+ * sleeps. `tag` is stored already-normalized (`@superset/shared/workspace-tags`).
+ * A tag belongs to whoever applied it, so one member's folders never appear
+ * in a teammate's sidebar.
+ */
+export const cloudWorkspaceTags = pgTable(
+	"cloud_workspace_tags",
+	{
+		cloudWorkspaceId: uuid("cloud_workspace_id")
+			.notNull()
+			.references(() => cloudWorkspaces.id, { onDelete: "cascade" }),
+		tag: text().notNull(),
+		createdByUserId: uuid("created_by_user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		primaryKey({
+			columns: [table.cloudWorkspaceId, table.tag, table.createdByUserId],
+		}),
 	],
 );
 
@@ -1084,6 +1115,31 @@ export const cloudWorkspaceBoots = pgTable(
 			.where(
 				sql`${table.stoppedAt} is null or ${table.finalizedThrough} is null or ${table.finalizedThrough} < ${table.stoppedAt}`,
 			),
+	],
+);
+
+export const cloudWorkspacePullRequests = pgTable(
+	"cloud_workspace_pull_requests",
+	{
+		cloudWorkspaceId: uuid("cloud_workspace_id")
+			.notNull()
+			.references(() => cloudWorkspaces.id, { onDelete: "cascade" }),
+		repositoryId: uuid("repository_id")
+			.notNull()
+			.references(() => githubRepositories.id, { onDelete: "cascade" }),
+		prNumber: integer("pr_number").notNull(),
+		linkedAt: timestamp("linked_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		primaryKey({
+			name: "cloud_workspace_pull_requests_pk",
+			columns: [table.cloudWorkspaceId, table.repositoryId, table.prNumber],
+		}),
+		index("cloud_workspace_pull_requests_repository_id_idx").on(
+			table.repositoryId,
+		),
 	],
 );
 
@@ -1646,6 +1702,7 @@ export const automations = pgTable(
 		continueAgentSession: boolean("continue_agent_session")
 			.notNull()
 			.default(false),
+		machineSize: text("machine_size"),
 
 		// The schedule lives in the automation's `schedule` trigger.
 		enabled: boolean().notNull().default(true),

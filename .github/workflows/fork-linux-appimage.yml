@@ -1,6 +1,6 @@
 name: Fork Linux AppImage Release
 
-# Daily build on upstream main ec4cc80cd (everything in 1.39.0 plus 56 later
+# Daily build on upstream main 853e3e8d8 (everything in 1.39.0 plus 122 later
 # commits) with the four fs-watcher fixes. Proves each fix's tests go red
 # without it and green with it, then builds and publishes desktop-v<VERSION>
 # with the upstream asset name.
@@ -238,7 +238,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Daily build: upstream superset-sh/superset main at ec4cc80cd plus the four fs-watcher fixes. That main is everything in desktop-v1.39.0 plus 56 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
+            --notes "Daily build: upstream superset-sh/superset main at 853e3e8d8 plus the four fs-watcher fixes. That main is everything in desktop-v1.39.0 plus 122 later commits; upstream has no 1.39.1, the version only marks this as a newer fork build than 1.39.0-fswatch.1. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 

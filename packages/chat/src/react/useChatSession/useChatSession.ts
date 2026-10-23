@@ -131,6 +131,7 @@ export const DEFAULT_DELTAS: readonly DeltaChannel[] = [
 	"text",
 	"tool_input",
 	"terminal",
+	"background",
 ];
 
 export type UseChatSessionOptions = {
