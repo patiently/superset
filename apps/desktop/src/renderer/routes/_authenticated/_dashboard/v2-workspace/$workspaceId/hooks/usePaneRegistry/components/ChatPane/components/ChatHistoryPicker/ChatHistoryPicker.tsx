@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@superset/ui/popover";
 import { useWorkspaceClient } from "@superset/workspace-client";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Check, History, LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
 	ChatPaneData,
 	PaneViewerData,
@@ -18,6 +18,7 @@ import type {
 import { focusChatSession } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/utils/focusChatSession";
 import type { StoreApi } from "zustand/vanilla";
 import { useChatWiring } from "../../../ChatSession/hooks/useSessionClient";
+import { onOpenChatHistory } from "../../utils/chatHistoryOpen";
 import { type HistoryEntry, historyEntries } from "./utils/historyEntries";
 
 interface ChatHistoryPickerProps {
@@ -35,6 +36,16 @@ export function ChatHistoryPicker({
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const current = context.pane.data as ChatPaneData;
+	const paneId = context.pane.id;
+	// The composer's `/resume` opens this picker from the pane body.
+	useEffect(
+		() =>
+			onOpenChatHistory(paneId, () => {
+				setSearch("");
+				setOpen(true);
+			}),
+		[paneId],
+	);
 	const { hostUrl } = useWorkspaceClient();
 	const { transport } = useChatWiring();
 	const harness = acpHarnessForPreset(current.agent?.id);

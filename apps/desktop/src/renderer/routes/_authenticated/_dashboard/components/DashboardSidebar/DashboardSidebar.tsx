@@ -18,7 +18,6 @@ import {
 	useHiringCard,
 	usePaymentFailedCard,
 	useReleaseNotesCard,
-	useStarNagCard,
 } from "renderer/components/SidebarCardSlot";
 import { UpdatesPill } from "renderer/components/UpdatesPill";
 import { useActiveOrganizationId } from "renderer/hooks/useActiveOrganizationId";
@@ -456,7 +455,6 @@ export const DashboardSidebar = memo(function DashboardSidebar({
 	const isPreviewingReleaseNotes = useReleaseNotesCardStore(
 		(s) => s.isPreviewing,
 	);
-	const starNagCard = useStarNagCard({ isCollapsed });
 	const hiringCard = useHiringCard({ surface: "v2" });
 
 	const handleReorderProjects = useCallback(
@@ -583,7 +581,6 @@ export const DashboardSidebar = memo(function DashboardSidebar({
 											setupScriptCard,
 											gettingStartedCard,
 											releaseNotesCard,
-											starNagCard,
 											hiringCard,
 										]}
 									/>

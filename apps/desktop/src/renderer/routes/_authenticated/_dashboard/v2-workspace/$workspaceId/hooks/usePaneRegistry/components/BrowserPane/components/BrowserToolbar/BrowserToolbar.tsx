@@ -77,18 +77,22 @@ export function BrowserToolbar({
 		}
 	}, [isEditing]);
 
-	const enterEditMode = useCallback(() => {
+	const startEditing = useCallback(() => {
 		setUrlInputValue(url);
 		setIsEditing(true);
-		autocomplete.open();
 		autocomplete.updateQuery(url);
 	}, [url, autocomplete]);
+
+	const enterEditMode = useCallback(() => {
+		startEditing();
+		autocomplete.open();
+	}, [startEditing, autocomplete]);
 
 	usePaneFocus(() => {
 		if (displayUrl(browserRuntimeRegistry.getState(paneId).currentUrl)) {
 			browserRuntimeRegistry.focus(paneId);
 		} else {
-			enterEditMode();
+			startEditing();
 		}
 	});
 
@@ -221,6 +225,9 @@ export function BrowserToolbar({
 							value={urlInputValue}
 							onChange={handleInputChange}
 							onBlur={exitEditMode}
+							onClick={() => {
+								if (!autocomplete.isOpen) autocomplete.open();
+							}}
 							onKeyDown={handleKeyDown}
 							placeholder={t({
 								message: "Enter URL or search...",

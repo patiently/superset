@@ -358,6 +358,7 @@ export function usePaneRegistry({
 					),
 			},
 			diff: {
+				keepAlive: true,
 				getIcon: () => <GitCompareArrows className="size-3.5" />,
 				getTitle: () => t({ message: "Changes" }),
 				// With the right pane area, the pane fills its own header (scope on
@@ -904,6 +905,7 @@ export function usePaneRegistry({
 					),
 			},
 			"pull-request": {
+				keepAlive: true,
 				getIcon: () => <GitPullRequest className="size-3.5" />,
 				getTitle: (pane) => {
 					const data = pane.data as PullRequestPaneData;

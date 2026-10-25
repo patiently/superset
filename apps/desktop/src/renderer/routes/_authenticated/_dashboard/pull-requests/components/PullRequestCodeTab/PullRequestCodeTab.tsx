@@ -8,6 +8,7 @@ import type {
 import { CodeView, type CodeViewHandle } from "@pierre/diffs/react";
 import { FileTree as PierreFileTree, useFileTree } from "@pierre/trees/react";
 import { errorMessage } from "@superset/i18n/errors";
+import { useIsTabVisible } from "@superset/panes";
 import { sanitizePromptForPty } from "@superset/shared/agent-prompt-launch";
 import type { PullRequestDiff } from "@superset/shared/pull-request-diff";
 import { toast } from "@superset/ui/sonner";
@@ -288,6 +289,7 @@ export function PullRequestCodeTab({
 	const organizationId = useActiveOrganizationId();
 	const repoFullName = pullRequestRefFromUrl(prUrl)?.repoFullName ?? null;
 	const canUseProject = !!projectId && !!hostUrl;
+	const isTabVisible = useIsTabVisible();
 
 	const { data, isLoading, error, refetch } = useQuery({
 		queryKey: [
@@ -298,6 +300,7 @@ export function PullRequestCodeTab({
 			hostUrl,
 			prNumber,
 		],
+		enabled: isTabVisible,
 		queryFn: () =>
 			fetchPullRequestDiff({
 				projectId,
@@ -318,7 +321,7 @@ export function PullRequestCodeTab({
 	];
 	const { data: threadsData, dataUpdatedAt: threadsUpdatedAt } = useQuery({
 		queryKey: threadsQueryKey,
-		enabled: canUseProject,
+		enabled: canUseProject && isTabVisible,
 		queryFn: async () => {
 			if (!projectId) return { reviewThreads: [], fetchFailed: false };
 			const client = getHostServiceClientByUrl(hostUrl);

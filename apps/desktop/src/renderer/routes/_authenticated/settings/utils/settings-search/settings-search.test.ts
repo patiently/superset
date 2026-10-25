@@ -152,6 +152,18 @@ describe("settings search - mobile rollout", () => {
 	});
 });
 
+describe("settings search - chat", () => {
+	it("counts the Chat switch only when its flag is on", () => {
+		expect(
+			getVisibleMatchCountBySection("acp", true, false).experimental,
+		).toBeUndefined();
+		expect(
+			getVisibleMatchCountBySection("acp", true, false, false, false, true)
+				.experimental,
+		).toBe(1);
+	});
+});
+
 describe("settings search - right pane area", () => {
 	it("counts the Right pane area switch only when its flag is on", () => {
 		expect(

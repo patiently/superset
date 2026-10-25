@@ -223,6 +223,14 @@ Archiving the box from inside it
 about a minute later: put the box's own id last when archiving several, and
 unarchive from a signed-in client.
 
+**pdev signs in to its router with the box's credential.** On a laptop pdev
+gets a token from `superset auth mcp-headers`, which a box refuses because it
+holds no token. The firewall adds the same `x-superset-sandbox-credential` to
+requests for `router.superset.sh`, and the router passes it to `user.me` and
+`user.myOrganization`, so pdev runs as the workspace's creator in the box's
+organization. The box sets `PDEV_TOKEN` to the placeholder only so pdev skips
+the CLI; the router ignores a key without the `pdev_` prefix.
+
 The same credential also names the box itself, which is what host-service's
 own calls about its workspace need: an automation's workspace has no creator,
 and a box keeps working after its creator leaves the organization. Those calls

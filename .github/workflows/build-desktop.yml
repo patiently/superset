@@ -239,6 +239,10 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           if-no-files-found: error
 
+      - name: Gate update manifest on minimum macOS
+        working-directory: apps/desktop
+        run: bun scripts/gate-mac-update-manifest.ts release
+
       - name: Upload auto-update manifest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

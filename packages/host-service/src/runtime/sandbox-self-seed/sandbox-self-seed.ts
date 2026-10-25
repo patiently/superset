@@ -24,7 +24,7 @@ import {
 } from "../../trpc/router/agents/agents";
 import { importCloudAttachments } from "../../trpc/router/attachments/attachments";
 import { createChatSessionInWorkspace } from "../../trpc/router/sessions/session-service";
-import { seedDefaultsIfEmpty } from "../../trpc/router/settings/agent-configs";
+import { ensurePresetRow } from "../../trpc/router/settings/agent-configs";
 import type { HostServiceContext } from "../../types";
 import {
 	getManagedEnv,
@@ -38,6 +38,7 @@ import {
 	withPendingLaunchReport,
 } from "./launchMarker";
 import { buildStartHookEnv } from "./utils/buildStartHookEnv";
+import { pdevAgentDir, trustPdevWorkspace } from "./utils/trustPdevWorkspace";
 
 /**
  * Makes a sandbox describe its own workspace, instead of being described from
@@ -328,8 +329,10 @@ export async function launchSandboxAgentOnce(
 	try {
 		// Nothing has listed this host's agents yet, so the built-in presets are
 		// not in its table; the launch resolves the agent through that table.
-		seedDefaultsIfEmpty(ctx.db);
+		ensurePresetRow(ctx.db, agent);
 		if (agent === "claude") approveClaudeApiKey();
+		if (agent === "pdev")
+			trustPdevWorkspace(identity.workspaceRoot, pdevAgentDir());
 		// Images the composer sent with the prompt: the bytes live in cloud
 		// storage because this box did not exist when they were uploaded.
 		// A download that fails must not cost the launch its prompt.

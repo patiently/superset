@@ -183,7 +183,7 @@ msgstr "{0, plural, one {# в ожидании} few {# в ожидании} many
 
 #. placeholder {0}: chosenLeads.length
 #. placeholder {0}: chosenPeople.length
-#. placeholder {0}: grantee.memberCount
+#. placeholder {0}: creatorFilters.length
 msgid "{0, plural, one {# person} other {# people}}"
 msgstr "{0, plural, one {# человек} few {# человека} many {# человек} other {# человека}}"
 
@@ -345,6 +345,10 @@ msgstr "{0, plural, one {Следит за комментариями на # с�
 msgid "{0} – {1} · API-rate estimate from local session logs"
 msgstr "{0} – {1} · оценка по тарифам API из локальных логов сессий"
 
+#. placeholder {0}: workspace.hostName
+msgid "{0} — device offline"
+msgstr "{0} — устройство офлайн"
+
 #. placeholder {0}: error.message
 msgid "{0} — try the Superset tray menu > Host Service > Restart."
 msgstr "{0} — попробуйте меню Superset в трее > Host Service > Restart."
@@ -448,14 +452,14 @@ msgid "{0} is offline."
 msgstr "{0} офлайн."
 
 #. placeholder {0}: activeOrganization.name
-msgid "{0} is on the Free plan. Superset Mobile is available for organizations on Pro."
-msgstr "{0} на бесплатном тарифе. Superset Mobile доступен организациям на тарифе Pro."
+msgid "{0} is on the Free plan. {appName} Mobile is available for organizations on Pro."
+msgstr "{0} на бесплатном тарифе. {appName} Mobile доступен организациям на тарифе Pro."
 
 #. placeholder {0}: host?.name ?? t({ message: "This host" })
 #. placeholder {1}: hostCompatibility.hostVersion
 #. placeholder {2}: hostCompatibility.minVersion
-msgid "{0} is running host service {1} — this app needs {2} or newer. Update Superset on that machine."
-msgstr "На {0} служба хоста версии {1} — приложению нужна {2} или новее. Обновите Superset на той машине."
+msgid "{0} is running host service {1} — this app needs {2} or newer. Update {appName} on that machine."
+msgstr "На {0} служба хоста версии {1} — приложению нужна {2} или новее. Обновите {appName} на той машине."
 
 #. placeholder {0}: displayName(name)
 #. placeholder {0}: displayName(variables.name)
@@ -708,6 +712,15 @@ msgstr "Сеансы {agents} возобновятся, когда вы откр
 msgid "{amount} ({hoursLabel} GB-hours)"
 msgstr "{amount} ({hoursLabel} ГБ-часов)"
 
+msgid "{appName} may be closed"
+msgstr "Возможно, {appName} закрыт"
+
+msgid "{appName} Mobile is part of Pro"
+msgstr "{appName} Mobile входит в Pro"
+
+msgid "{appName} Mobile runs agents on the computers you connect."
+msgstr "{appName} Mobile запускает агентов на компьютерах, которые вы подключили."
+
 msgid "{approvalCount, plural, one {# needs approval} other {# need approval}}"
 msgstr "{approvalCount, plural, one {# ждёт подтверждения} few {# ждут подтверждения} many {# ждут подтверждения} other {# ждут подтверждения}}"
 
@@ -893,12 +906,6 @@ msgstr "{gate} · {statusLabel}"
 msgid "{gate}: {statusLabel}"
 msgstr "{gate}: {statusLabel}"
 
-msgid "{gbHours} cloud GB-hours per seat each month"
-msgstr "{gbHours} облачных ГБ-часов на место в месяц"
-
-msgid "{gbHours} on {name}"
-msgstr "{gbHours} на {name}"
-
 msgid "{hidden, plural, one {# hidden line} other {# hidden lines}}"
 msgstr "{hidden, plural, one {# скрытая строка} few {# скрытые строки} many {# скрытых строк} other {# скрытой строки}}"
 
@@ -919,6 +926,9 @@ msgstr "{hostName} офлайн"
 
 msgid "{hotkeyText} to hide"
 msgstr "{hotkeyText} — скрыть"
+
+msgid "{hours} hours per seat each month"
+msgstr "{hours} часов на место в месяц"
 
 msgid "{hours}h"
 msgstr "{hours} ч."
@@ -986,9 +996,6 @@ msgstr "{monthlyPrice} за пользователя в месяц. Мобиль
 msgid "{months}mo ago"
 msgstr "{months} мес. назад"
 
-msgid "{multiple}x the cloud GB-hours of {basePlan}"
-msgstr "В {multiple} раз больше облачных ГБ-часов, чем в {basePlan}"
-
 msgid "{myFailedCount} of your automations failed their last run"
 msgstr "Ваши автоматизации с ошибкой при последнем запуске: {myFailedCount}"
 
@@ -1027,6 +1034,9 @@ msgstr "{name} начал работу"
 
 msgid "{name} stopped"
 msgstr "{name} остановлен"
+
+msgid "{name}: {hours} hours ({gbHours} GB-hours) per seat"
+msgstr "{name}: {hours} часов ({gbHours} ГБ-часов) на место"
 
 msgid "{name}: {monthly} per user/month"
 msgstr "{name}: {monthly} за пользователя в месяц"
@@ -1394,6 +1404,9 @@ msgstr "1 cookie — забыть этот сайт"
 
 msgid "1 hr"
 msgstr "1 ч"
+
+msgid "1 person"
+msgstr "1 человек"
 
 msgid "1 user"
 msgstr "1 пользователь"
@@ -2138,9 +2151,6 @@ msgstr "Все коммиты"
 msgid "All data will be permanently deleted for all {0} members — this cannot be undone."
 msgstr "Все данные будут безвозвратно удалены у всех {0} участников — это нельзя отменить."
 
-msgid "All devices"
-msgstr "Все устройства"
-
 msgid "All features, side by side"
 msgstr "Все возможности рядом"
 
@@ -2475,6 +2485,9 @@ msgstr "что угодно"
 msgid "Anything else? (optional)"
 msgstr "Что-нибудь ещё? (необязательно)"
 
+msgid "Anywhere"
+msgstr "Везде"
+
 msgid "AP"
 msgstr "AP"
 
@@ -2779,9 +2792,6 @@ msgstr "Очередь внимания"
 
 msgid "Audio"
 msgstr "Аудио"
-
-msgid "Audit AGENTS.md / CLAUDE.md against the codebase and fill the gaps."
-msgstr "Сверить AGENTS.md / CLAUDE.md с кодовой базой и закрыть пробелы."
 
 msgid "Audit log"
 msgstr "Журнал аудита"
@@ -4188,9 +4198,6 @@ msgstr "Облачная рабочая область"
 
 msgid "Cloud workspaces"
 msgstr "Облачные рабочие области"
-
-msgid "Cloud workspaces are metered in GB-hours: the memory of the box times the hours it runs. An 8 GB box uses 8 GB-hours per hour. Each seat adds its plan's GB-hours to one pool your team shares: {allowances}. The pool resets every month, and usage past it is billed per GB-hour at the rate shown on each plan."
-msgstr "Облачные рабочие пространства тарифицируются в ГБ-часах: память машины, умноженная на часы её работы. Машина с 8 ГБ расходует 8 ГБ-часов в час. Каждое место добавляет ГБ-часы своего тарифа в общий пул команды: {allowances}. Пул обновляется каждый месяц, а использование сверх него оплачивается за ГБ-час по ставке, указанной в каждом тарифе."
 
 #. js-lingui-explicit-id
 msgid "serverError.cloudWorkspace.cloudSandboxesAreInternalOnly"
@@ -6326,9 +6333,6 @@ msgstr "Обзор изменений diff"
 msgid "diff in new tab"
 msgstr "diff в новой вкладке"
 
-msgid "Diff size"
-msgstr "Размер diff"
-
 msgid "Digital Product Designer"
 msgstr "Дизайнер цифровых продуктов"
 
@@ -6533,6 +6537,10 @@ msgstr "Переход..."
 msgid "Download"
 msgstr "Скачать"
 
+#. placeholder {0}: COMPANY.DOMAIN
+msgid "Download {appName} at <0>{0}/download</0>."
+msgstr "Скачайте {appName} на <0>{0}/download</0>."
+
 msgid "Download {name}"
 msgstr "Скачать {name}"
 
@@ -6568,10 +6576,6 @@ msgstr "Скачать заготовку"
 
 msgid "Download Superset"
 msgstr "Скачать Superset"
-
-#. placeholder {0}: COMPANY.DOMAIN
-msgid "Download Superset at <0>{0}/download</0>."
-msgstr "Скачайте Superset на <0>{0}/download</0>."
 
 msgid "Download the theme file above."
 msgstr "Скачайте файл темы выше."
@@ -6698,6 +6702,9 @@ msgstr "Каждая в своей новой вкладке"
 
 msgid "Each morning at 8am, look at yesterday's failed CI runs, diagnose the most common failure, and open a fix PR."
 msgstr "Каждое утро в 8:00 смотри вчерашние упавшие запуски CI, определяй самую частую причину и открывай PR с исправлением."
+
+msgid "Each seat adds its plan's hours to one pool your team shares:"
+msgstr "Каждое место добавляет часы своего тарифа в общий пул всей команды:"
 
 msgid "Each session resumes where it left off."
 msgstr "Каждая сессия продолжит с того места, где остановилась."
@@ -6877,9 +6884,6 @@ msgstr "Завершено"
 
 msgid "Ending the call"
 msgstr "Завершение звонка"
-
-msgid "Enjoying Superset?"
-msgstr "Нравится Superset?"
 
 msgid "Ensure no regression"
 msgstr "Убедись, что нет регрессии"
@@ -7096,6 +7100,9 @@ msgstr "Развернуть файл"
 msgid "Expand project"
 msgstr "Развернуть проект"
 
+msgid "Expand the right pane to fill the window, or restore it"
+msgstr "Развернуть правую панель на всё окно или восстановить её"
+
 msgid "Expand thread"
 msgstr "Развернуть ветку"
 
@@ -7159,9 +7166,6 @@ msgstr "Дополнительные ГБ-часы"
 
 msgid "Extra GB-hours, bought as needed"
 msgstr "Дополнительные ГБ-часы по мере необходимости"
-
-msgid "Extra GB-hours: {pack}, never expire"
-msgstr "Дополнительные ГБ-часы: {pack}, не сгорают"
 
 msgid "Extra high"
 msgstr "Очень высокий"
@@ -7793,14 +7797,14 @@ msgstr "Фильтр по @{normalizedSearch}"
 msgid "Filter by author: {label}"
 msgstr "Фильтр по автору: {label}"
 
-msgid "Filter by device"
-msgstr "Фильтр по устройству"
-
 msgid "Filter by reviews"
 msgstr "Фильтр по ревью"
 
 msgid "Filter by state"
 msgstr "Фильтр по состоянию"
+
+msgid "Filter by where workspaces run"
+msgstr "Фильтр по месту запуска рабочих областей"
 
 msgid "Filter by workspace: {label}"
 msgstr "Фильтр по рабочей области: {label}"
@@ -7868,12 +7872,6 @@ msgstr "Найти на странице"
 msgid "Find in Terminal"
 msgstr "Найти в терминале"
 
-msgid "Find recently changed code with weak coverage and test it properly."
-msgstr "Найти недавно изменённый код со слабым покрытием и как следует покрыть его тестами."
-
-msgid "Find stale TODO/FIXME comments and resolve the quick ones."
-msgstr "Найти старые комментарии TODO/FIXME и закрыть быстрые."
-
 msgid "Finder"
 msgstr "Finder"
 
@@ -7882,6 +7880,9 @@ msgstr "Завершить ревью"
 
 msgid "Finished"
 msgstr "Завершено"
+
+msgid "Finished · unread"
+msgstr "Завершено · не прочитано"
 
 msgid "finished · worked for 7s"
 msgstr "завершил · работал 7 с"
@@ -8231,9 +8232,6 @@ msgstr "Выбрать {plan}"
 msgid "Get an API key"
 msgstr "Получить ключ API"
 
-msgid "Get an architecture tour: entry points, how to run it, what to read first."
-msgstr "Экскурсия по архитектуре: точки входа, как запустить, что читать первым."
-
 msgid "Get in touch with the {companyName} team."
 msgstr "Свяжитесь с командой {companyName}."
 
@@ -8499,9 +8497,6 @@ msgstr "Генри Форд"
 msgid "Hid \"{0}\" from the sidebar"
 msgstr "«{0}» скрыт с боковой панели"
 
-msgid "Hidden"
-msgstr "Скрытые"
-
 msgid "Hidden folders"
 msgstr "Скрытые папки"
 
@@ -8667,6 +8662,12 @@ msgstr "HotkeyTooltip.tsx"
 msgid "Hourly"
 msgstr "Ежечасно"
 
+msgid "Hours are shared across your team. They assume a standard {vcpus} vCPU / {memoryGb} GB workspace, and bigger machines use them faster."
+msgstr "Часы общие для всей команды. Они рассчитаны на стандартную рабочую область {vcpus} vCPU / {memoryGb} ГБ, а более мощные машины расходуют их быстрее."
+
+msgid "Hours assume a standard {vcpus} vCPU / {memoryGb} GB workspace. We meter GB-hours, the memory of the machine times the hours it runs, so a machine with twice the memory uses hours twice as fast."
+msgstr "Часы рассчитаны на стандартную рабочую область {vcpus} vCPU / {memoryGb} ГБ. Мы считаем ГБ-часы — объём памяти машины, умноженный на часы работы, поэтому машина с вдвое большим объёмом памяти расходует часы вдвое быстрее."
+
 msgid "Hover Card"
 msgstr "Карточка при наведении"
 
@@ -8681,6 +8682,9 @@ msgstr "Как создаются ветки и имена рабочих обл
 
 msgid "How can we help?"
 msgstr "Чем можем помочь?"
+
+msgid "How do cloud hours work?"
+msgstr "Как работают облачные часы?"
 
 msgid "How do I get started?"
 msgstr "Как начать?"
@@ -8963,11 +8967,14 @@ msgstr "В работе"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In review"
+msgstr "На ревью"
+
+msgid "In the {appName} desktop app, open Settings → Remote Access and turn on “Allow remote access to this device via relay”."
+msgstr "В десктопном приложении {appName} откройте Настройки → Удалённый доступ и включите «Разрешить удалённый доступ к этому устройству через реле»."
+
 msgid "In the Superset desktop app, open <0>Settings → Appearance → Theme</0>."
 msgstr "В приложении Superset откройте <0>Настройки → Внешний вид → Тема</0>."
-
-msgid "In the Superset desktop app, open Settings → Remote Access and turn on “Allow remote access to this device via relay”."
-msgstr "В десктопном приложении Superset откройте Настройки → Удалённый доступ и включите «Разрешить удалённый доступ к этому устройству через реле»."
 
 msgid "In under a year, more than 145,000 developers across 180 countries have run Superset and created over 1.85 million agent workspaces."
 msgstr "Меньше чем за год более 145 000 разработчиков из 180 стран запускали Superset и создали более 1,85 млн рабочих областей агентов."
@@ -9519,9 +9526,6 @@ msgstr "Название метки..."
 msgid "Labels"
 msgstr "Метки"
 
-msgid "Lanes"
-msgstr "Дорожки"
-
 msgid "Language"
 msgstr "Язык"
 
@@ -9656,8 +9660,8 @@ msgstr "Обучение"
 msgid "Learn how to use scripts"
 msgstr "Как использовать скрипты"
 
-msgid "Learn the workflow that fits this repo — parallel workspaces and agent setup."
-msgstr "Изучить рабочий процесс, который подходит этому репозиторию: параллельные рабочие области и настройка агентов."
+msgid "Learn more"
+msgstr "Подробнее"
 
 msgid "Leave a comment"
 msgstr "Оставить комментарий"
@@ -10749,12 +10753,6 @@ msgstr "Требует внимания"
 msgid "Needs input"
 msgstr "Нужен ввод"
 
-msgid "Needs permission"
-msgstr "Нужно разрешение"
-
-msgid "Needs review"
-msgstr "Нужно ревью"
-
 msgid "Needs tests"
 msgstr "Нужны тесты"
 
@@ -11273,9 +11271,6 @@ msgstr "Нет совпадений"
 msgid "No matches"
 msgstr "Нет совпадений"
 
-msgid "No matching files"
-msgstr "Нет подходящих файлов"
-
 msgid "No matching MCP servers"
 msgstr "Нет подходящих серверов MCP"
 
@@ -11613,9 +11608,6 @@ msgstr "Из-за этого никто не проверяет код инач�
 msgid "None"
 msgstr "Нет"
 
-msgid "none (session)"
-msgstr "нет (сессия)"
-
 msgid "None. This is the floor."
 msgstr "Нет. Это нижняя граница."
 
@@ -11885,9 +11877,6 @@ msgstr "Один плагин, любой агент для программир
 msgid "One plugin. Every coding agent."
 msgstr "Один плагин. Любой агент для программирования."
 
-msgid "One shared GB-hour pool for the team"
-msgstr "Один общий пул ГБ-часов для команды"
-
 msgid "One step left"
 msgstr "Остался один шаг"
 
@@ -12018,6 +12007,9 @@ msgstr "Открыть {0}"
 msgid "Open {0} website"
 msgstr "Открыть сайт {0}"
 
+msgid "Open {appName} on that computer"
+msgstr "Откройте {appName} на этом компьютере"
+
 msgid "Open {displayName}"
 msgstr "Открыть {displayName}"
 
@@ -12075,11 +12067,17 @@ msgstr "Открыть изменения"
 msgid "Open Changes"
 msgstr "Открыть изменения"
 
+msgid "Open Chat"
+msgstr "Открыть чат"
+
 msgid "Open ChatGPT admin settings"
 msgstr "Открыть настройки администратора ChatGPT"
 
 msgid "Open ChatGPT settings"
 msgstr "Открыть настройки ChatGPT"
+
+msgid "Open Claude and Codex sessions in a chat pane instead of a terminal."
+msgstr "Открывайте сеансы Claude и Codex в панели чата, а не в терминале."
 
 msgid "Open Command Palette"
 msgstr "Открыть палитру команд"
@@ -12353,9 +12351,6 @@ msgstr "Открыть панель"
 
 msgid "Open ship options"
 msgstr "Открыть параметры отправки"
-
-msgid "Open Superset on that computer"
-msgstr "Откройте Superset на этом компьютере"
 
 msgid "Open System Settings"
 msgstr "Открыть Системные настройки"
@@ -12768,12 +12763,6 @@ msgstr "Пароль"
 msgid "Password for {email}"
 msgstr "Пароль для {email}"
 
-msgid "Past month"
-msgstr "За месяц"
-
-msgid "Past week"
-msgstr "За неделю"
-
 msgid "Paste"
 msgstr "Вставить"
 
@@ -12910,9 +12899,6 @@ msgstr "Выберите папку на диске и добавьте её к�
 
 msgid "Pick a folder…"
 msgstr "Выберите папку…"
-
-msgid "Pick a low-risk papercut, fix it, and explain how it was verified."
-msgstr "Выбрать мелкую безопасную недоработку, исправить её и объяснить, как это проверено."
 
 msgid "Pick a model"
 msgstr "Выберите модель"
@@ -13146,9 +13132,6 @@ msgstr "Комментарий в ревью PR"
 
 msgid "PR review submitted…"
 msgstr "Отправлено ревью PR…"
-
-msgid "PR state"
-msgstr "Состояние PR"
 
 msgid "PR URL"
 msgstr "URL PR"
@@ -13415,7 +13398,6 @@ msgid "Project-wide search"
 msgstr "Поиск по всему проекту"
 
 #. placeholder {0}: groupFilter.name
-#. placeholder {0}: workspace.projectName ?? t({ message: "none (session)", })
 msgid "Project: {0}"
 msgstr "Проект: {0}"
 
@@ -13682,11 +13664,11 @@ msgstr "Ранжировать по"
 msgid "Rank your agent usage against other engineers. Token counts and model names only, no repo names, file paths or prompts."
 msgstr "Сравните своё использование агентов с другими инженерами. Только количество токенов и названия моделей — без названий репозиториев, путей к файлам и промптов."
 
+msgid "Rate {appName}"
+msgstr "Оценить {appName}"
+
 msgid "Rate limit exceeded."
 msgstr "Превышен лимит запросов."
-
-msgid "Rate Superset"
-msgstr "Оценить Superset"
 
 msgid "Reach this Mac from anywhere via the Superset relay, or spin up cloud workspaces. Connect from any client."
 msgstr "Достучитесь до этого Mac откуда угодно через реле Superset или поднимите облачные рабочие области. Подключайтесь с любого клиента."
@@ -14450,8 +14432,8 @@ msgstr "Перезапустить демон терминала?"
 msgid "Restart terminals"
 msgstr "Перезапустить терминалы"
 
-msgid "Restart to use the latest version of Superset."
-msgstr "Перезапустите приложение, чтобы использовать последнюю версию Superset."
+msgid "Restart to use the latest version of {appName}."
+msgstr "Перезапустите приложение, чтобы использовать последнюю версию {appName}."
 
 msgid "Restart workspace"
 msgstr "Перезапустить рабочую область"
@@ -14504,6 +14486,9 @@ msgstr "Восстановить эту версию?"
 
 msgid "Restore width"
 msgstr "Восстановить ширину"
+
+msgid "Restore workspace"
+msgstr "Восстановить рабочую область"
 
 msgid "Restored"
 msgstr "Восстановлено"
@@ -15790,6 +15775,9 @@ msgstr "Показать все комментарии"
 msgid "Show all lines"
 msgstr "Показать все строки"
 
+msgid "Show archived"
+msgstr "Показать архивные"
+
 msgid "Show Borders"
 msgstr "Показывать границы"
 
@@ -15918,9 +15906,6 @@ msgstr "Показывать вкладку использования на бо
 
 msgid "showArrow opt-in"
 msgstr "showArrow по желанию"
-
-msgid "Shown"
-msgstr "Показанные"
 
 msgid "Shown in launchers and this list."
 msgstr "Показывается в запускалках и в этом списке."
@@ -16427,8 +16412,8 @@ msgstr "История звёзд"
 msgid "Star history isn't available right now. Check back soon."
 msgstr "История звёзд сейчас недоступна. Загляните позже."
 
-msgid "Star nag reset — eligible again on the empty state, sidebar card, and onboarding toast"
-msgstr "Напоминание о звезде сброшено: снова доступно в пустом состоянии, карточке боковой панели и приветственном уведомлении"
+msgid "Star nag reset — eligible again on the empty state and onboarding toast"
+msgstr "Напоминание о звезде сброшено: снова доступно в пустом состоянии и приветственном уведомлении"
 
 msgid "Star on GitHub"
 msgstr "Поставить звезду на GitHub"
@@ -16864,9 +16849,6 @@ msgstr "Superset рассчитан на работу с вашим текущи
 msgid "Superset is getting a new name soon"
 msgstr "Superset скоро сменит название"
 
-msgid "Superset is open source. If it's helped you today, a GitHub star helps other developers find it."
-msgstr "Superset — проект с открытым исходным кодом. Если он сегодня помог, звезда на GitHub поможет другим разработчикам его найти."
-
 msgid "Superset is source-available: the code is public on GitHub under Elastic License 2.0 (ELv2), which lets you inspect and self-host it subject to the license terms, but is not OSI-approved open source. Superset is unrelated to Apache Superset, the business-intelligence tool."
 msgstr "Superset — source-available: код открыт на GitHub под Elastic License 2.0 (ELv2), которая позволяет изучать его и хостить самостоятельно на условиях лицензии, но не является одобренной OSI открытой лицензией. Superset не связан с Apache Superset — инструментом бизнес-аналитики."
 
@@ -16881,9 +16863,6 @@ msgstr "Superset пользуются инженеры Netflix, Microsoft, NVIDI
 
 msgid "Superset isn't on Windows yet"
 msgstr "Пока Superset работает только на Mac"
-
-msgid "Superset may be closed"
-msgstr "Возможно, Superset закрыт"
 
 msgid "Superset may sign you back in after restart. Please try signing out again."
 msgstr "Superset может снова выполнить вход после перезапуска. Попробуйте выйти ещё раз."
@@ -16900,9 +16879,6 @@ msgstr "Diff кода в Superset Mobile на iPhone"
 msgid "Superset mobile gives me the power of my desktop anywhere I go."
 msgstr "Superset mobile даёт мне мощь моего компьютера, где бы я ни был."
 
-msgid "Superset Mobile is part of Pro"
-msgstr "Superset Mobile входит в Pro"
-
 msgid "Superset Mobile launches on iPhone"
 msgstr "Superset Mobile вышел на iPhone"
 
@@ -16911,9 +16887,6 @@ msgstr "Superset Mobile позволяет разработчикам продо
 
 msgid "Superset Mobile page"
 msgstr "Страница Superset Mobile"
-
-msgid "Superset Mobile runs agents on the computers you connect."
-msgstr "Superset Mobile запускает агентов на компьютерах, которые вы подключили."
 
 msgid "Superset Mobile terminal on iPhone"
 msgstr "Терминал Superset Mobile на iPhone"
@@ -17516,6 +17489,9 @@ msgstr "Десктопное приложение работает на macOS, �
 msgid "The device that hosts this project is unavailable."
 msgstr "Устройство, где размещён этот проект, недоступно."
 
+msgid "The device was offline when this run started. It may have been asleep or shut down."
+msgstr "Устройство было не в сети, когда начался этот запуск. Возможно, оно было в спящем режиме или выключено."
+
 msgid "The diff is still up to date — only comments failed to load."
 msgstr "Diff актуален — не загрузились только комментарии."
 
@@ -17582,9 +17558,6 @@ msgstr "Хост не ответил."
 
 msgid "The host is online. Pick it when you create a workspace."
 msgstr "Хост в сети. Выберите его при создании рабочей области."
-
-msgid "The host isn't connected to the Superset relay. If it's this device, turn on \"Allow remote access to this device via relay\" in Settings > Remote Access, then try again."
-msgstr "Хост не подключён к реле Superset. Если это текущее устройство, включите «Разрешить удалённый доступ к этому устройству через реле» в Настройки > Удалённый доступ и повторите."
 
 msgid "The host reported a failed update."
 msgstr "Хост сообщил о неудачном обновлении."
@@ -17676,6 +17649,9 @@ msgstr "Такой страницы не существует."
 
 msgid "The pane uses your real logins. Agents ask you before they take a consequential action."
 msgstr "Панель использует ваши настоящие входы. Агенты спрашивают вас, прежде чем выполнить важное действие."
+
+msgid "The pool resets every month. Usage past it is billed per GB-hour at the rate shown on each plan."
+msgstr "Пул обновляется каждый месяц. Использование сверх него оплачивается за ГБ-час по ставке, указанной в каждом тарифе."
 
 msgid "The primary repository must be one of the environment's repositories"
 msgstr "Основной репозиторий должен быть одним из репозиториев окружения"
@@ -17798,9 +17774,6 @@ msgstr "Темы"
 
 msgid "Themes and agents"
 msgstr "Темы и агенты"
-
-msgid "Then {overage} per GB-hour past the pool"
-msgstr "Сверх пула: {overage} за ГБ-час"
 
 msgid "These commands run automatically when a workspace is created. <0>Read our docs<1/></0>"
 msgstr "Эти команды выполняются автоматически при создании рабочей области. <0>Читать документацию<1/></0>"
@@ -17998,8 +17971,8 @@ msgstr "Это меняет только отображаемое имя, а н�
 msgid "this organization"
 msgstr "эта организация"
 
-msgid "This organization is on the Free plan. Superset Mobile is available for organizations on Pro."
-msgstr "Эта организация на бесплатном тарифе. Superset Mobile доступен организациям на тарифе Pro."
+msgid "This organization is on the Free plan. {appName} Mobile is available for organizations on Pro."
+msgstr "Эта организация на бесплатном тарифе. {appName} Mobile доступен организациям на тарифе Pro."
 
 msgid "This page could not be loaded"
 msgstr "Не удалось загрузить эту страницу"
@@ -18275,6 +18248,9 @@ msgstr "Переключить левую панель"
 msgid "Toggle plan"
 msgstr "Показать или скрыть план"
 
+msgid "Toggle Right Pane Full Screen"
+msgstr "Переключить полноэкранный режим правой панели"
+
 msgid "Toggle right sidebar"
 msgstr "Переключить правую панель"
 
@@ -18488,8 +18464,8 @@ msgstr "Нам доверяют разработчики из"
 msgid "Try a different search or filter."
 msgstr "Попробуйте другой запрос или фильтр."
 
-msgid "Try a different search term or another device."
-msgstr "Попробуйте другой запрос или другое устройство."
+msgid "Try a different search term or another place."
+msgstr "Попробуйте другой запрос или другое место."
 
 msgid "Try again"
 msgstr "Повторить"
@@ -18739,9 +18715,6 @@ msgstr "Неизвестная рабочая область"
 msgid "Unlimited"
 msgstr "Без ограничений"
 
-msgid "Unlimited users"
-msgstr "Неограниченное число пользователей"
-
 msgid "Unlink task"
 msgstr "Отвязать задачу"
 
@@ -18826,6 +18799,9 @@ msgstr "Актуально"
 msgid "Update"
 msgstr "Обновить"
 
+msgid "Update {appName} on this machine to attach files"
+msgstr "Обновите {appName} на этой машине, чтобы прикреплять файлы"
+
 msgid "Update available"
 msgstr "Доступно обновление"
 
@@ -18868,9 +18844,6 @@ msgstr "Требуется обновление"
 
 msgid "Update Superset on that device. In-app updates require a supported standalone install and a released app version."
 msgstr "Обновите Superset на этом устройстве. Для обновления из приложения нужны поддерживаемая автономная установка и выпущенная версия приложения."
-
-msgid "Update Superset on this machine to attach files"
-msgstr "Обновите Superset на этой машине, чтобы прикреплять файлы"
 
 msgid "update the branch prefix"
 msgstr "обновить префикс ветки"
@@ -19319,8 +19292,8 @@ msgstr "Не удалось списать средства с вашего сп
 msgid "We couldn't detect a package manager or environment config."
 msgstr "Не удалось определить пакетный менеджер или конфигурацию окружения."
 
-msgid "We couldn’t reach Superset to see if it’s online. Check your connection and try again."
-msgstr "Не удалось связаться с Superset, чтобы узнать, в сети ли он. Проверьте подключение и попробуйте снова."
+msgid "We couldn’t reach {appName} to see if it’s online. Check your connection and try again."
+msgstr "Не удалось связаться с {appName}, чтобы узнать, в сети ли он. Проверьте подключение и попробуйте снова."
 
 msgid "We couldn't reach the device. Please try again in a moment."
 msgstr "Не удалось связаться с устройством. Попробуйте ещё раз через минуту."
@@ -19424,14 +19397,14 @@ msgstr "Еженедельные release notes"
 msgid "Welcome back"
 msgstr "С возвращением"
 
+msgid "Welcome to {appName}"
+msgstr "Добро пожаловать в {appName}"
+
 msgid "Welcome to Superset"
 msgstr "Добро пожаловать в Superset"
 
 msgid "Welcome to the new Superset"
 msgstr "Добро пожаловать в новый Superset"
-
-msgid "What are cloud GB-hours?"
-msgstr "Что такое облачные ГБ-часы?"
 
 msgid "What are the benefits?"
 msgstr "Какие у вас льготы?"
@@ -19753,11 +19726,11 @@ msgstr "Рабочие области"
 msgid "Workspaces are isolated task environments backed by git worktrees."
 msgstr "Рабочие области — это изолированные окружения для задач на основе git worktree."
 
-msgid "Workspaces on this device will show up here."
-msgstr "Рабочие области с этого устройства появятся здесь."
-
 msgid "Workspaces started from this environment will stop receiving it."
 msgstr "Рабочие пространства, запущенные из этого окружения, перестанут её получать."
+
+msgid "Workspaces you can open will show up here."
+msgstr "Рабочие области, которые вы можете открыть, появятся здесь."
 
 msgid "worktree"
 msgstr "worktree"
@@ -19818,9 +19791,6 @@ msgstr "Напиши документацию по той части, о кот�
 
 msgid "Write once. Runs in every agent."
 msgstr "Напишите один раз. Работает в любом агенте."
-
-msgid "Write setup and teardown scripts so every new workspace starts ready to run."
-msgstr "Написать скрипты установки и очистки, чтобы каждая новая рабочая область сразу была готова к работе."
 
 msgid "Writing code is no longer where engineer hours go. Reading it is. Teams that adopted parallel agents in 2025 hit the wall first: ten agents can produce more diffs before lunch than a team can honestly review by Friday."
 msgstr "Написание кода больше не там, куда уходят инженерные часы. Туда уходит чтение. Команды, перешедшие на параллельных агентов в 2025 году, упёрлись в стену первыми: десять агентов до обеда выдают больше diff, чем команда способна честно проверить до пятницы."

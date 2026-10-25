@@ -7,11 +7,9 @@ import {
 	type WorkspaceProps,
 	type WorkspaceStore,
 } from "@superset/panes";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useHotkey } from "renderer/hotkeys";
-import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
 import type { V2TerminalPresetRow } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal";
-import { useRightSidebarToggleIntent } from "renderer/stores/right-sidebar-toggle-intent";
 import type { StoreApi } from "zustand";
 import type {
 	BrowserPaneData,
@@ -23,7 +21,6 @@ import type {
 } from "../../types";
 import { useDefaultBrowserUrl } from "../useDefaultBrowserUrl";
 import type { TerminalLauncher } from "../useV2TerminalLauncher";
-import { useWorkspaceRightSidebarOpen } from "../useWorkspaceRightSidebarOpen";
 
 export function useWorkspaceHotkeys({
 	store,
@@ -53,26 +50,10 @@ export function useWorkspaceHotkeys({
 		onBeforeCloseTab?: WorkspaceProps<PaneViewerData>["onBeforeCloseTab"];
 	};
 }) {
-	const { workspace } = useWorkspace();
-	const { setOpen: setRightSidebarOpen } = useWorkspaceRightSidebarOpen(
-		workspace.id,
-	);
 	const defaultBrowserUrl = useDefaultBrowserUrl();
 	const visiblePresets = useMemo(
 		() => matchedPresets.filter((preset) => preset.pinnedToBar !== false),
 		[matchedPresets],
-	);
-
-	useHotkey("TOGGLE_SIDEBAR", () => {
-		setRightSidebarOpen((prev) => !prev);
-	});
-
-	useEffect(
-		() =>
-			useRightSidebarToggleIntent.subscribe((state, prev) => {
-				if (state.tick !== prev.tick) setRightSidebarOpen((open) => !open);
-			}),
-		[setRightSidebarOpen],
 	);
 
 	// --- Tab creation ---

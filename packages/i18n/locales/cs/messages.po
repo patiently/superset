@@ -183,7 +183,7 @@ msgstr "{0, plural, one {# čeká} few {# čekají} many {# čeká} other {# če
 
 #. placeholder {0}: chosenLeads.length
 #. placeholder {0}: chosenPeople.length
-#. placeholder {0}: grantee.memberCount
+#. placeholder {0}: creatorFilters.length
 msgid "{0, plural, one {# person} other {# people}}"
 msgstr "{0, plural, one {# osoba} few {# osoby} many {# osoby} other {# osob}}"
 
@@ -345,6 +345,10 @@ msgstr "{0, plural, one {Sleduje # stránku kvůli komentářům} few {Sleduje #
 msgid "{0} – {1} · API-rate estimate from local session logs"
 msgstr "{0} – {1} · odhad v sazbách API z lokálních logů relací"
 
+#. placeholder {0}: workspace.hostName
+msgid "{0} — device offline"
+msgstr "{0} — zařízení offline"
+
 #. placeholder {0}: error.message
 msgid "{0} — try the Superset tray menu > Host Service > Restart."
 msgstr "{0} — zkuste nabídku Superset v liště > Host Service > Restart."
@@ -448,14 +452,14 @@ msgid "{0} is offline."
 msgstr "{0} je offline."
 
 #. placeholder {0}: activeOrganization.name
-msgid "{0} is on the Free plan. Superset Mobile is available for organizations on Pro."
-msgstr "{0} má tarif Free. Superset Mobile je dostupný pro organizace s tarifem Pro."
+msgid "{0} is on the Free plan. {appName} Mobile is available for organizations on Pro."
+msgstr "{0} má tarif Free. {appName} Mobile je dostupný pro organizace s tarifem Pro."
 
 #. placeholder {0}: host?.name ?? t({ message: "This host" })
 #. placeholder {1}: hostCompatibility.hostVersion
 #. placeholder {2}: hostCompatibility.minVersion
-msgid "{0} is running host service {1} — this app needs {2} or newer. Update Superset on that machine."
-msgstr "{0} běží na host service {1} — tato aplikace potřebuje {2} nebo novější. Aktualizujte na tom počítači Superset."
+msgid "{0} is running host service {1} — this app needs {2} or newer. Update {appName} on that machine."
+msgstr "{0} běží na host service {1} — tato aplikace potřebuje {2} nebo novější. Aktualizujte na tom počítači {appName}."
 
 #. placeholder {0}: displayName(name)
 #. placeholder {0}: displayName(variables.name)
@@ -708,6 +712,15 @@ msgstr "Relace {agents} se obnoví, když otevřete jejich pracovní prostor."
 msgid "{amount} ({hoursLabel} GB-hours)"
 msgstr "{amount} ({hoursLabel} GB-hodin)"
 
+msgid "{appName} may be closed"
+msgstr "{appName} může být zavřený"
+
+msgid "{appName} Mobile is part of Pro"
+msgstr "{appName} Mobile je součástí tarifu Pro"
+
+msgid "{appName} Mobile runs agents on the computers you connect."
+msgstr "{appName} Mobile spouští agenty na počítačích, které připojíte."
+
 msgid "{approvalCount, plural, one {# needs approval} other {# need approval}}"
 msgstr "{approvalCount, plural, one {# čeká na schválení} few {# čekají na schválení} many {# čeká na schválení} other {# čeká na schválení}}"
 
@@ -893,12 +906,6 @@ msgstr "{gate} · {statusLabel}"
 msgid "{gate}: {statusLabel}"
 msgstr "{gate}: {statusLabel}"
 
-msgid "{gbHours} cloud GB-hours per seat each month"
-msgstr "{gbHours} cloudových GB-hodin na místo měsíčně"
-
-msgid "{gbHours} on {name}"
-msgstr "{gbHours} v plánu {name}"
-
 msgid "{hidden, plural, one {# hidden line} other {# hidden lines}}"
 msgstr "{hidden, plural, one {# skrytý řádek} few {# skryté řádky} many {# skrytého řádku} other {# skrytých řádků}}"
 
@@ -919,6 +926,9 @@ msgstr "{hostName} je offline"
 
 msgid "{hotkeyText} to hide"
 msgstr "{hotkeyText} skryje"
+
+msgid "{hours} hours per seat each month"
+msgstr "{hours} hodin na místo měsíčně"
 
 msgid "{hours}h"
 msgstr "{hours} h"
@@ -986,9 +996,6 @@ msgstr "{monthlyPrice} za uživatele/měs. Mobilní aplikace, automatizace, prio
 msgid "{months}mo ago"
 msgstr "před {months} měs."
 
-msgid "{multiple}x the cloud GB-hours of {basePlan}"
-msgstr "{multiple}× více cloudových GB-hodin než {basePlan}"
-
 msgid "{myFailedCount} of your automations failed their last run"
 msgstr "Vaše automatizace s neúspěšným posledním během: {myFailedCount}"
 
@@ -1027,6 +1034,9 @@ msgstr "{name} začal pracovat"
 
 msgid "{name} stopped"
 msgstr "{name} byl zastaven"
+
+msgid "{name}: {hours} hours ({gbHours} GB-hours) per seat"
+msgstr "{name}: {hours} hodin ({gbHours} GB-hodin) na místo"
 
 msgid "{name}: {monthly} per user/month"
 msgstr "{name}: {monthly} za uživatele/měsíc"
@@ -1394,6 +1404,9 @@ msgstr "1 cookie — zapomenout tento web"
 
 msgid "1 hr"
 msgstr "1 h"
+
+msgid "1 person"
+msgstr "1 osoba"
 
 msgid "1 user"
 msgstr "1 uživatel"
@@ -2138,9 +2151,6 @@ msgstr "Všechny commity"
 msgid "All data will be permanently deleted for all {0} members — this cannot be undone."
 msgstr "Všechna data budou trvale smazána pro všechny členy ({0}) — nelze vrátit zpět."
 
-msgid "All devices"
-msgstr "Všechna zařízení"
-
 msgid "All features, side by side"
 msgstr "Všechny funkce vedle sebe"
 
@@ -2475,6 +2485,9 @@ msgstr "cokoli"
 msgid "Anything else? (optional)"
 msgstr "Ještě něco? (nepovinné)"
 
+msgid "Anywhere"
+msgstr "Kdekoli"
+
 msgid "AP"
 msgstr "AP"
 
@@ -2779,9 +2792,6 @@ msgstr "Fronta pozornosti"
 
 msgid "Audio"
 msgstr "Zvuk"
-
-msgid "Audit AGENTS.md / CLAUDE.md against the codebase and fill the gaps."
-msgstr "Porovná AGENTS.md / CLAUDE.md s kódem a doplní mezery."
 
 msgid "Audit log"
 msgstr "Auditní log"
@@ -4188,9 +4198,6 @@ msgstr "Cloudový pracovní prostor"
 
 msgid "Cloud workspaces"
 msgstr "Cloudové pracovní prostory"
-
-msgid "Cloud workspaces are metered in GB-hours: the memory of the box times the hours it runs. An 8 GB box uses 8 GB-hours per hour. Each seat adds its plan's GB-hours to one pool your team shares: {allowances}. The pool resets every month, and usage past it is billed per GB-hour at the rate shown on each plan."
-msgstr "Cloudové pracovní prostory se měří v GB-hodinách: paměť stroje krát počet hodin, kdy běží. Stroj s 8 GB spotřebuje 8 GB-hodin za hodinu. Každé místo přidá GB-hodiny svého plánu do jednoho fondu, který tým sdílí: {allowances}. Fond se každý měsíc obnoví a využití nad jeho rámec se účtuje za GB-hodinu podle sazby uvedené u každého plánu."
 
 #. js-lingui-explicit-id
 msgid "serverError.cloudWorkspace.cloudSandboxesAreInternalOnly"
@@ -6326,9 +6333,6 @@ msgstr "Přehled změn diff"
 msgid "diff in new tab"
 msgstr "rozdíl na nové kartě"
 
-msgid "Diff size"
-msgstr "Velikost rozdílu"
-
 msgid "Digital Product Designer"
 msgstr "Designér digitálních produktů"
 
@@ -6533,6 +6537,10 @@ msgstr "Přecházím níž..."
 msgid "Download"
 msgstr "Stáhnout"
 
+#. placeholder {0}: COMPANY.DOMAIN
+msgid "Download {appName} at <0>{0}/download</0>."
+msgstr "Stáhněte {appName} na <0>{0}/download</0>."
+
 msgid "Download {name}"
 msgstr "Stáhnout {name}"
 
@@ -6568,10 +6576,6 @@ msgstr "Stáhnout základ"
 
 msgid "Download Superset"
 msgstr "Stáhnout Superset"
-
-#. placeholder {0}: COMPANY.DOMAIN
-msgid "Download Superset at <0>{0}/download</0>."
-msgstr "Stáhněte Superset na <0>{0}/download</0>."
 
 msgid "Download the theme file above."
 msgstr "Stáhněte soubor motivu výše."
@@ -6698,6 +6702,9 @@ msgstr "Každý ve vlastní nové kartě"
 
 msgid "Each morning at 8am, look at yesterday's failed CI runs, diagnose the most common failure, and open a fix PR."
 msgstr "Každé ráno v 8:00 se podívej na včerejší neúspěšné běhy CI, urči nejčastější příčinu selhání a otevři PR s opravou."
+
+msgid "Each seat adds its plan's hours to one pool your team shares:"
+msgstr "Každé místo přidá hodiny svého plánu do jednoho fondu, který sdílí celý tým:"
 
 msgid "Each session resumes where it left off."
 msgstr "Každá relace naváže tam, kde skončila."
@@ -6877,9 +6884,6 @@ msgstr "Ukončeno"
 
 msgid "Ending the call"
 msgstr "Ukončuje se hovor"
-
-msgid "Enjoying Superset?"
-msgstr "Líbí se vám Superset?"
 
 msgid "Ensure no regression"
 msgstr "Zajisti žádnou regresi"
@@ -7096,6 +7100,9 @@ msgstr "Rozbalit soubor"
 msgid "Expand project"
 msgstr "Rozbalit projekt"
 
+msgid "Expand the right pane to fill the window, or restore it"
+msgstr "Roztáhnout pravý panel na celé okno, nebo ho obnovit"
+
 msgid "Expand thread"
 msgstr "Rozbalit vlákno"
 
@@ -7159,9 +7166,6 @@ msgstr "Další GB-hodiny"
 
 msgid "Extra GB-hours, bought as needed"
 msgstr "Další GB-hodiny, kupované podle potřeby"
-
-msgid "Extra GB-hours: {pack}, never expire"
-msgstr "Další GB-hodiny: {pack}, nikdy nevyprší"
 
 msgid "Extra high"
 msgstr "Velmi vysoké"
@@ -7793,14 +7797,14 @@ msgstr "Filtrovat podle @{normalizedSearch}"
 msgid "Filter by author: {label}"
 msgstr "Filtrovat podle autora: {label}"
 
-msgid "Filter by device"
-msgstr "Filtrovat podle zařízení"
-
 msgid "Filter by reviews"
 msgstr "Filtrovat podle revizí"
 
 msgid "Filter by state"
 msgstr "Filtrovat podle stavu"
+
+msgid "Filter by where workspaces run"
+msgstr "Filtrovat podle místa běhu pracovních prostorů"
 
 msgid "Filter by workspace: {label}"
 msgstr "Filtrovat podle pracovního prostoru: {label}"
@@ -7868,12 +7872,6 @@ msgstr "Najít na stránce"
 msgid "Find in Terminal"
 msgstr "Najít v terminálu"
 
-msgid "Find recently changed code with weak coverage and test it properly."
-msgstr "Najde nedávno změněný kód se slabým pokrytím a pořádně ho otestuje."
-
-msgid "Find stale TODO/FIXME comments and resolve the quick ones."
-msgstr "Najde zastaralé komentáře TODO/FIXME a ty rychlé vyřeší."
-
 msgid "Finder"
 msgstr "Finder"
 
@@ -7882,6 +7880,9 @@ msgstr "Dokončit revizi"
 
 msgid "Finished"
 msgstr "Dokončeno"
+
+msgid "Finished · unread"
+msgstr "Hotovo · nepřečteno"
 
 msgid "finished · worked for 7s"
 msgstr "hotovo · pracoval 7 s"
@@ -8231,9 +8232,6 @@ msgstr "Získat {plan}"
 msgid "Get an API key"
 msgstr "Získat API klíč"
 
-msgid "Get an architecture tour: entry points, how to run it, what to read first."
-msgstr "Získejte prohlídku architektury: vstupní body, jak to spustit, co si přečíst první."
-
 msgid "Get in touch with the {companyName} team."
 msgstr "Spojte se s týmem {companyName}."
 
@@ -8499,9 +8497,6 @@ msgstr "Henry Ford"
 msgid "Hid \"{0}\" from the sidebar"
 msgstr "„{0}“ skryto z postranního panelu"
 
-msgid "Hidden"
-msgstr "Skryté"
-
 msgid "Hidden folders"
 msgstr "Skryté složky"
 
@@ -8667,6 +8662,12 @@ msgstr "HotkeyTooltip.tsx"
 msgid "Hourly"
 msgstr "Každou hodinu"
 
+msgid "Hours are shared across your team. They assume a standard {vcpus} vCPU / {memoryGb} GB workspace, and bigger machines use them faster."
+msgstr "Hodiny sdílí celý tým. Počítají se standardním pracovním prostorem {vcpus} vCPU / {memoryGb} GB a větší stroje je spotřebují rychleji."
+
+msgid "Hours assume a standard {vcpus} vCPU / {memoryGb} GB workspace. We meter GB-hours, the memory of the machine times the hours it runs, so a machine with twice the memory uses hours twice as fast."
+msgstr "Hodiny počítají se standardním pracovním prostorem {vcpus} vCPU / {memoryGb} GB. Měříme GB-hodiny, tedy paměť stroje krát hodiny jeho běhu, takže stroj s dvojnásobnou pamětí spotřebuje hodiny dvakrát rychleji."
+
 msgid "Hover Card"
 msgstr "Hover Card"
 
@@ -8681,6 +8682,9 @@ msgstr "Jak se u tohoto projektu vytvářejí větve a názvy pracovních prosto
 
 msgid "How can we help?"
 msgstr "S čím vám můžeme pomoct?"
+
+msgid "How do cloud hours work?"
+msgstr "Jak fungují cloudové hodiny?"
 
 msgid "How do I get started?"
 msgstr "Jak začít?"
@@ -8963,11 +8967,14 @@ msgstr "Probíhá"
 msgid "In Progress"
 msgstr "Probíhá"
 
+msgid "In review"
+msgstr "V revizi"
+
+msgid "In the {appName} desktop app, open Settings → Remote Access and turn on “Allow remote access to this device via relay”."
+msgstr "V desktopové aplikaci {appName} otevřete Nastavení → Vzdálený přístup a zapněte „Povolit vzdálený přístup k tomuto zařízení přes relay“."
+
 msgid "In the Superset desktop app, open <0>Settings → Appearance → Theme</0>."
 msgstr "V desktopové aplikaci Superset otevřete <0>Nastavení → Vzhled → Motiv</0>."
-
-msgid "In the Superset desktop app, open Settings → Remote Access and turn on “Allow remote access to this device via relay”."
-msgstr "V desktopové aplikaci Superset otevřete Nastavení → Vzdálený přístup a zapněte „Povolit vzdálený přístup k tomuto zařízení přes relay“."
 
 msgid "In under a year, more than 145,000 developers across 180 countries have run Superset and created over 1.85 million agent workspaces."
 msgstr "Za méně než rok spustilo Superset více než 145 000 vývojářů ze 180 zemí a vytvořilo přes 1,85 milionu pracovních prostorů agentů."
@@ -9519,9 +9526,6 @@ msgstr "Název štítku..."
 msgid "Labels"
 msgstr "Štítky"
 
-msgid "Lanes"
-msgstr "Sloupce"
-
 msgid "Language"
 msgstr "Jazyk"
 
@@ -9656,8 +9660,8 @@ msgstr "Učte se"
 msgid "Learn how to use scripts"
 msgstr "Jak používat skripty"
 
-msgid "Learn the workflow that fits this repo — parallel workspaces and agent setup."
-msgstr "Poznejte postup, který k tomuto repozitáři sedí — paralelní pracovní prostory a nastavení agentů."
+msgid "Learn more"
+msgstr "Další informace"
 
 msgid "Leave a comment"
 msgstr "Napsat komentář"
@@ -10749,12 +10753,6 @@ msgstr "Vyžaduje pozornost"
 msgid "Needs input"
 msgstr "Čeká na vstup"
 
-msgid "Needs permission"
-msgstr "Vyžaduje oprávnění"
-
-msgid "Needs review"
-msgstr "Vyžaduje revizi"
-
 msgid "Needs tests"
 msgstr "Chybí testy"
 
@@ -11273,9 +11271,6 @@ msgstr "Žádná shoda"
 msgid "No matches"
 msgstr "Žádné shody"
 
-msgid "No matching files"
-msgstr "Žádné odpovídající soubory"
-
 msgid "No matching MCP servers"
 msgstr "Žádné odpovídající MCP servery"
 
@@ -11613,9 +11608,6 @@ msgstr "Nikdo kvůli tomu nereviduje jinak."
 msgid "None"
 msgstr "Žádný"
 
-msgid "none (session)"
-msgstr "žádný (relace)"
-
 msgid "None. This is the floor."
 msgstr "Žádná. Tohle je základ."
 
@@ -11885,9 +11877,6 @@ msgstr "Jeden plugin, každý programovací agent: Claude Code, Codex, Cursor, O
 msgid "One plugin. Every coding agent."
 msgstr "Jeden plugin. Každý programovací agent."
 
-msgid "One shared GB-hour pool for the team"
-msgstr "Jeden sdílený fond GB-hodin pro celý tým"
-
 msgid "One step left"
 msgstr "Zbývá jeden krok"
 
@@ -12018,6 +12007,9 @@ msgstr "Otevřít {0}"
 msgid "Open {0} website"
 msgstr "Otevřít web {0}"
 
+msgid "Open {appName} on that computer"
+msgstr "Otevřete {appName} na tomto počítači"
+
 msgid "Open {displayName}"
 msgstr "Otevřít {displayName}"
 
@@ -12075,11 +12067,17 @@ msgstr "Otevřít změny"
 msgid "Open Changes"
 msgstr "Otevřít změny"
 
+msgid "Open Chat"
+msgstr "Otevřít chat"
+
 msgid "Open ChatGPT admin settings"
 msgstr "Otevřít nastavení správce ChatGPT"
 
 msgid "Open ChatGPT settings"
 msgstr "Otevřít nastavení ChatGPT"
+
+msgid "Open Claude and Codex sessions in a chat pane instead of a terminal."
+msgstr "Otevírejte relace Claude a Codex v panelu chatu místo terminálu."
 
 msgid "Open Command Palette"
 msgstr "Otevřít paletu příkazů"
@@ -12353,9 +12351,6 @@ msgstr "Otevřít sheet"
 
 msgid "Open ship options"
 msgstr "Otevřít možnosti odeslání"
-
-msgid "Open Superset on that computer"
-msgstr "Otevřete Superset na tomto počítači"
 
 msgid "Open System Settings"
 msgstr "Otevřít Nastavení systému"
@@ -12768,12 +12763,6 @@ msgstr "Heslo"
 msgid "Password for {email}"
 msgstr "Heslo pro {email}"
 
-msgid "Past month"
-msgstr "Poslední měsíc"
-
-msgid "Past week"
-msgstr "Poslední týden"
-
 msgid "Paste"
 msgstr "Vložit"
 
@@ -12910,9 +12899,6 @@ msgstr "Vyberte složku na disku a přidejte ji jako projekt"
 
 msgid "Pick a folder…"
 msgstr "Vyberte složku…"
-
-msgid "Pick a low-risk papercut, fix it, and explain how it was verified."
-msgstr "Vybere drobnost s nízkým rizikem, opraví ji a vysvětlí, jak to ověřil."
 
 msgid "Pick a model"
 msgstr "Vyberte model"
@@ -13146,9 +13132,6 @@ msgstr "Komentář v revizi PR"
 
 msgid "PR review submitted…"
 msgstr "Odeslána revize PR…"
-
-msgid "PR state"
-msgstr "Stav PR"
 
 msgid "PR URL"
 msgstr "URL PR"
@@ -13415,7 +13398,6 @@ msgid "Project-wide search"
 msgstr "Hledání napříč projektem"
 
 #. placeholder {0}: groupFilter.name
-#. placeholder {0}: workspace.projectName ?? t({ message: "none (session)", })
 msgid "Project: {0}"
 msgstr "Projekt: {0}"
 
@@ -13682,11 +13664,11 @@ msgstr "Řadit podle"
 msgid "Rank your agent usage against other engineers. Token counts and model names only, no repo names, file paths or prompts."
 msgstr "Porovnejte své využití agentů s ostatními inženýry. Jen počty tokenů a názvy modelů, žádné názvy repozitářů, cesty k souborům ani prompty."
 
+msgid "Rate {appName}"
+msgstr "Ohodnotit {appName}"
+
 msgid "Rate limit exceeded."
 msgstr "Překročen limit požadavků."
-
-msgid "Rate Superset"
-msgstr "Ohodnotit Superset"
 
 msgid "Reach this Mac from anywhere via the Superset relay, or spin up cloud workspaces. Connect from any client."
 msgstr "Dosáhněte na tento Mac odkudkoli přes Superset relay nebo spusťte cloudové pracovní prostory. Připojte se z libovolného klienta."
@@ -14450,8 +14432,8 @@ msgstr "Restartovat terminálového démona?"
 msgid "Restart terminals"
 msgstr "Restartovat terminály"
 
-msgid "Restart to use the latest version of Superset."
-msgstr "Restartujte aplikaci, abyste používali nejnovější verzi Supersetu."
+msgid "Restart to use the latest version of {appName}."
+msgstr "Restartujte aplikaci, abyste používali nejnovější verzi {appName}u."
 
 msgid "Restart workspace"
 msgstr "Restartovat pracovní prostor"
@@ -14504,6 +14486,9 @@ msgstr "Obnovit tuto verzi?"
 
 msgid "Restore width"
 msgstr "Obnovit šířku"
+
+msgid "Restore workspace"
+msgstr "Obnovit pracovní prostor"
 
 msgid "Restored"
 msgstr "Obnoveno"
@@ -15790,6 +15775,9 @@ msgstr "Zobrazit všechny komentáře"
 msgid "Show all lines"
 msgstr "Zobrazit všechny řádky"
 
+msgid "Show archived"
+msgstr "Zobrazit archivované"
+
 msgid "Show Borders"
 msgstr "Zobrazit ohraničení"
 
@@ -15918,9 +15906,6 @@ msgstr "Zobrazit kartu využití v postranním panelu"
 
 msgid "showArrow opt-in"
 msgstr "showArrow zapnuto"
-
-msgid "Shown"
-msgstr "Zobrazené"
 
 msgid "Shown in launchers and this list."
 msgstr "Zobrazuje se ve spouštěčích a v tomto seznamu."
@@ -16427,8 +16412,8 @@ msgstr "Historie hvězd"
 msgid "Star history isn't available right now. Check back soon."
 msgstr "Historie hvězd teď není dostupná. Zkuste to za chvíli."
 
-msgid "Star nag reset — eligible again on the empty state, sidebar card, and onboarding toast"
-msgstr "Připomenutí hvězdičky resetováno: znovu se může zobrazit v prázdném stavu, kartě postranního panelu a úvodním oznámení"
+msgid "Star nag reset — eligible again on the empty state and onboarding toast"
+msgstr "Připomenutí hvězdičky resetováno: znovu se může zobrazit v prázdném stavu a úvodním oznámení"
 
 msgid "Star on GitHub"
 msgstr "Dát hvězdu na GitHubu"
@@ -16864,9 +16849,6 @@ msgstr "Superset je navržený tak, aby fungoval s vaším stávajícím nástro
 msgid "Superset is getting a new name soon"
 msgstr "Superset brzy dostane nový název"
 
-msgid "Superset is open source. If it's helped you today, a GitHub star helps other developers find it."
-msgstr "Superset je open source. Pokud vám dnes pomohl, hvězda na GitHubu pomůže dalším vývojářům ho najít."
-
 msgid "Superset is source-available: the code is public on GitHub under Elastic License 2.0 (ELv2), which lets you inspect and self-host it subject to the license terms, but is not OSI-approved open source. Superset is unrelated to Apache Superset, the business-intelligence tool."
 msgstr "Superset je source-available: kód je veřejně na GitHubu pod licencí Elastic License 2.0 (ELv2), která umožňuje si ho prohlédnout a za podmínek licence ho provozovat samostatně, ale nejde o open source schválený OSI. Superset nemá nic společného s Apache Superset, nástrojem pro business intelligence."
 
@@ -16881,9 +16863,6 @@ msgstr "Superset celosvětově používají inženýři ze společností Netflix
 
 msgid "Superset isn't on Windows yet"
 msgstr "Superset je zatím jen pro Mac"
-
-msgid "Superset may be closed"
-msgstr "Superset může být zavřený"
 
 msgid "Superset may sign you back in after restart. Please try signing out again."
 msgstr "Superset vás po restartu možná znovu přihlásí. Zkuste se prosím odhlásit znovu."
@@ -16900,9 +16879,6 @@ msgstr "Diff kódu v Superset Mobile na iPhonu"
 msgid "Superset mobile gives me the power of my desktop anywhere I go."
 msgstr "Superset mobile mi dává výkon mého počítače, ať jsem kdekoli."
 
-msgid "Superset Mobile is part of Pro"
-msgstr "Superset Mobile je součástí tarifu Pro"
-
 msgid "Superset Mobile launches on iPhone"
 msgstr "Superset Mobile přichází na iPhone"
 
@@ -16911,9 +16887,6 @@ msgstr "Superset Mobile umožňuje vývojářům pokračovat z iPhonu v pracovn�
 
 msgid "Superset Mobile page"
 msgstr "Stránka Superset Mobile"
-
-msgid "Superset Mobile runs agents on the computers you connect."
-msgstr "Superset Mobile spouští agenty na počítačích, které připojíte."
 
 msgid "Superset Mobile terminal on iPhone"
 msgstr "Terminál Superset Mobile na iPhonu"
@@ -17516,6 +17489,9 @@ msgstr "Desktopová aplikace běží na macOS, k tomu je experimentální AppIma
 msgid "The device that hosts this project is unavailable."
 msgstr "Zařízení, které hostuje tento projekt, není dostupné."
 
+msgid "The device was offline when this run started. It may have been asleep or shut down."
+msgstr "Zařízení bylo při spuštění tohoto běhu offline. Mohlo být v režimu spánku nebo vypnuté."
+
 msgid "The diff is still up to date — only comments failed to load."
 msgstr "Rozdíly jsou stále aktuální — nenačetly se jen komentáře."
 
@@ -17582,9 +17558,6 @@ msgstr "Host neodpověděl."
 
 msgid "The host is online. Pick it when you create a workspace."
 msgstr "Host je online. Vyberte ho při vytváření pracovního prostoru."
-
-msgid "The host isn't connected to the Superset relay. If it's this device, turn on \"Allow remote access to this device via relay\" in Settings > Remote Access, then try again."
-msgstr "Host není připojený k Superset relay. Pokud jde o toto zařízení, zapněte „Povolit vzdálený přístup k tomuto zařízení přes relay“ v Nastavení > Vzdálený přístup a zkuste to znovu."
 
 msgid "The host reported a failed update."
 msgstr "Hostitel nahlásil neúspěšnou aktualizaci."
@@ -17676,6 +17649,9 @@ msgstr "Stránka, kterou hledáte, neexistuje."
 
 msgid "The pane uses your real logins. Agents ask you before they take a consequential action."
 msgstr "Panel používá vaše skutečná přihlášení. Agenti se před důležitou akcí zeptají."
+
+msgid "The pool resets every month. Usage past it is billed per GB-hour at the rate shown on each plan."
+msgstr "Fond se každý měsíc obnovuje. Využití nad jeho rámec se účtuje za GB-hodinu podle sazby uvedené u každého plánu."
 
 msgid "The primary repository must be one of the environment's repositories"
 msgstr "Primární repozitář musí být jedním z repozitářů prostředí"
@@ -17798,9 +17774,6 @@ msgstr "Motivy"
 
 msgid "Themes and agents"
 msgstr "Motivy a agenti"
-
-msgid "Then {overage} per GB-hour past the pool"
-msgstr "Poté {overage} za GB-hodinu nad fond"
 
 msgid "These commands run automatically when a workspace is created. <0>Read our docs<1/></0>"
 msgstr "Tyto příkazy se spustí automaticky při vytvoření pracovního prostoru. <0>Přečtěte si dokumentaci<1/></0>"
@@ -17998,8 +17971,8 @@ msgstr "Změní se jen zobrazovaný název, ne větev."
 msgid "this organization"
 msgstr "této organizace"
 
-msgid "This organization is on the Free plan. Superset Mobile is available for organizations on Pro."
-msgstr "Tato organizace má tarif Free. Superset Mobile je dostupný pro organizace s tarifem Pro."
+msgid "This organization is on the Free plan. {appName} Mobile is available for organizations on Pro."
+msgstr "Tato organizace má tarif Free. {appName} Mobile je dostupný pro organizace s tarifem Pro."
 
 msgid "This page could not be loaded"
 msgstr "Tuto stránku se nepodařilo načíst"
@@ -18275,6 +18248,9 @@ msgstr "Přepnout levý panel"
 msgid "Toggle plan"
 msgstr "Přepnout plán"
 
+msgid "Toggle Right Pane Full Screen"
+msgstr "Přepnout pravý panel na celou obrazovku"
+
 msgid "Toggle right sidebar"
 msgstr "Přepnout pravý panel"
 
@@ -18488,8 +18464,8 @@ msgstr "Důvěřují nám tvůrci z"
 msgid "Try a different search or filter."
 msgstr "Zkuste jiné hledání nebo filtr."
 
-msgid "Try a different search term or another device."
-msgstr "Zkuste jiný hledaný výraz nebo jiné zařízení."
+msgid "Try a different search term or another place."
+msgstr "Zkuste jiný hledaný výraz nebo jiné místo."
 
 msgid "Try again"
 msgstr "Zkusit znovu"
@@ -18739,9 +18715,6 @@ msgstr "Neznámý pracovní prostor"
 msgid "Unlimited"
 msgstr "Neomezeně"
 
-msgid "Unlimited users"
-msgstr "Neomezeně uživatelů"
-
 msgid "Unlink task"
 msgstr "Odpojit úkol"
 
@@ -18826,6 +18799,9 @@ msgstr "Aktuální"
 msgid "Update"
 msgstr "Aktualizovat"
 
+msgid "Update {appName} on this machine to attach files"
+msgstr "Aktualizujte na tomto počítači {appName}, abyste mohli přikládat soubory"
+
 msgid "Update available"
 msgstr "Dostupná aktualizace"
 
@@ -18868,9 +18844,6 @@ msgstr "Vyžadována aktualizace"
 
 msgid "Update Superset on that device. In-app updates require a supported standalone install and a released app version."
 msgstr "Aktualizujte Superset na daném zařízení. Aktualizace z aplikace vyžadují podporovanou samostatnou instalaci a vydanou verzi aplikace."
-
-msgid "Update Superset on this machine to attach files"
-msgstr "Aktualizujte na tomto počítači Superset, abyste mohli přikládat soubory"
 
 msgid "update the branch prefix"
 msgstr "aktualizovat prefix větve"
@@ -19319,8 +19292,8 @@ msgstr "Nepodařilo se strhnout platbu z vašeho způsobu platby. Aktualizujte h
 msgid "We couldn't detect a package manager or environment config."
 msgstr "Nepodařilo se rozpoznat správce balíčků ani konfiguraci prostředí."
 
-msgid "We couldn’t reach Superset to see if it’s online. Check your connection and try again."
-msgstr "Nepodařilo se spojit se Supersetem a zjistit, jestli je online. Zkontrolujte připojení a zkuste to znovu."
+msgid "We couldn’t reach {appName} to see if it’s online. Check your connection and try again."
+msgstr "Nepodařilo se spojit se {appName}em a zjistit, jestli je online. Zkontrolujte připojení a zkuste to znovu."
 
 msgid "We couldn't reach the device. Please try again in a moment."
 msgstr "K zařízení se nepodařilo připojit. Zkuste to za chvíli znovu."
@@ -19424,14 +19397,14 @@ msgstr "Týdenní poznámky k vydání"
 msgid "Welcome back"
 msgstr "Vítejte zpět"
 
+msgid "Welcome to {appName}"
+msgstr "Vítejte v {appName}"
+
 msgid "Welcome to Superset"
 msgstr "Vítejte v Superset"
 
 msgid "Welcome to the new Superset"
 msgstr "Vítejte v novém Superset"
-
-msgid "What are cloud GB-hours?"
-msgstr "Co jsou cloudové GB-hodiny?"
 
 msgid "What are the benefits?"
 msgstr "Jaké jsou benefity?"
@@ -19753,11 +19726,11 @@ msgstr "Pracovní prostory"
 msgid "Workspaces are isolated task environments backed by git worktrees."
 msgstr "Pracovní prostory jsou izolovaná prostředí pro úkoly postavená na git worktree."
 
-msgid "Workspaces on this device will show up here."
-msgstr "Pracovní prostory na tomto zařízení se objeví tady."
-
 msgid "Workspaces started from this environment will stop receiving it."
 msgstr "Workspacy spuštěné z tohoto prostředí ji přestanou dostávat."
+
+msgid "Workspaces you can open will show up here."
+msgstr "Pracovní prostory, které můžete otevřít, se objeví tady."
 
 msgid "worktree"
 msgstr "worktree"
@@ -19818,9 +19791,6 @@ msgstr "Napiš dokumentaci k části, na kterou se všichni ptají…"
 
 msgid "Write once. Runs in every agent."
 msgstr "Napište jednou. Běží v každém agentovi."
-
-msgid "Write setup and teardown scripts so every new workspace starts ready to run."
-msgstr "Napíše setup a teardown skripty, aby každý nový pracovní prostor rovnou fungoval."
 
 msgid "Writing code is no longer where engineer hours go. Reading it is. Teams that adopted parallel agents in 2025 hit the wall first: ten agents can produce more diffs before lunch than a team can honestly review by Friday."
 msgstr "Psaní kódu už není to, kam jdou hodiny inženýrů. Jde do jeho čtení. Týmy, které v roce 2025 nasadily paralelní agenty, narazily první: deset agentů vyprodukuje do oběda víc diffů, než tým poctivě zreviduje do pátku."

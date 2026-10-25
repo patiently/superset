@@ -1455,6 +1455,11 @@ export class AcpAdapter implements HarnessAdapter {
 				return;
 			}
 		}
+		if (
+			parsed.data.state === "requires_action" &&
+			this.options.clientApprovalModes
+		)
+			return;
 		const status = SESSION_STATUS_BY_ACP_STATE[parsed.data.state];
 		if (status) this.emitSession({ status });
 	}

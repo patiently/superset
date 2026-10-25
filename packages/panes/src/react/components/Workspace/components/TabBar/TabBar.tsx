@@ -263,7 +263,7 @@ export function TabBar<TData>({
 							style={{ left: insertLineLeft }}
 						/>
 					)}
-					<div className="flex h-full w-10 shrink-0 items-center justify-center border-b border-border">
+					<div className="flex h-full w-10 shrink-0 items-center justify-center pt-1">
 						{!hasHorizontalOverflow && (
 							<AddTabButton renderAddTabMenu={renderAddTabMenu} />
 						)}
@@ -274,7 +274,7 @@ export function TabBar<TData>({
 				</div>
 			</OverflowFadeContainer>
 			{hasHorizontalOverflow && (
-				<div className="no-drag flex h-full w-10 shrink-0 items-center justify-center border-b border-border">
+				<div className="no-drag flex h-full w-10 shrink-0 items-center justify-center pt-1">
 					<AddTabButton renderAddTabMenu={renderAddTabMenu} />
 				</div>
 			)}

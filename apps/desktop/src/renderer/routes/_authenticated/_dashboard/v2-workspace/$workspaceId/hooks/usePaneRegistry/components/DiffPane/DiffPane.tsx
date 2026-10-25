@@ -14,7 +14,7 @@ import {
 	EditProvider,
 } from "@pierre/diffs/react";
 import { errorMessage } from "@superset/i18n/errors";
-import type { RendererContext } from "@superset/panes";
+import { type RendererContext, useIsTabVisible } from "@superset/panes";
 import { alert } from "@superset/ui/atoms/Alert";
 import { toast } from "@superset/ui/sonner";
 import { useWorkspaceClient, workspaceTrpc } from "@superset/workspace-client";
@@ -61,6 +61,7 @@ import { useDiffCommentNavigation } from "./hooks/useDiffCommentNavigation";
 import { useDiffPaneHeaderSlot } from "./hooks/useDiffPaneHeaderSlot";
 import { useDiffPaneSearch } from "./hooks/useDiffPaneSearch";
 import { useElementWidth } from "./hooks/useElementWidth";
+import { useHeldWhileTabHidden } from "./hooks/useHeldWhileTabHidden";
 import { createGetDiffInput } from "./utils/createGetDiffInput";
 import {
 	isDiffContentStale,
@@ -134,7 +135,10 @@ export function DiffPane({
 		() => getPaneScrollState(scrollStateKey),
 		[scrollStateKey],
 	);
-	const { files, isLoading } = useChangeset({ workspaceId, ref });
+	const { files: currentFiles, isLoading } = useChangeset({ workspaceId, ref });
+	// Every git change re-lays out the diff; a hidden tab catches up when shown.
+	const files = useHeldWhileTabHidden(currentFiles);
+	const isTabVisible = useIsTabVisible();
 	const { viewedSet, setViewed } = useViewedFiles(workspaceId);
 	const openInExternalEditor = useOpenInExternalEditor(workspaceId);
 	const threadAnnotationsByPath = useDiffAnnotationsByPath({ workspaceId });
@@ -247,6 +251,7 @@ export function DiffPane({
 
 	const { items, fileByItemId, requestDiff } = useDiffCodeViewItems({
 		workspaceId,
+		enabled: isTabVisible,
 		files,
 		collapsedSet,
 		editingSet,

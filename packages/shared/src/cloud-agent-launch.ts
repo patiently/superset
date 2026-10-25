@@ -2,11 +2,11 @@ import { z } from "zod";
 import { HOST_AGENT_PRESETS } from "./host-agent-presets";
 
 /**
- * The presets a sandbox can actually run: the CLIs the image installs
- * (`packages/sandbox/src/image.ts`, AGENT_CLI_VERSIONS). Adding one there is what
- * makes it launchable here.
+ * The presets a sandbox can actually run: the CLIs the bundle installs
+ * (`packages/sandbox/bundle/steps.json`, install-agent-clis). Adding one there
+ * is what makes it launchable here.
  */
-const INSTALLED_IN_SANDBOX = new Set(["claude", "codex"]);
+const INSTALLED_IN_SANDBOX = new Set(["claude", "codex", "pdev"]);
 
 export const CLOUD_AGENT_IDS: readonly string[] = HOST_AGENT_PRESETS.filter(
 	(preset) => INSTALLED_IN_SANDBOX.has(preset.presetId),
