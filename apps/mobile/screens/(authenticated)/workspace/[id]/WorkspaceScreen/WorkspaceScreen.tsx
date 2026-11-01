@@ -8,7 +8,6 @@ import type {
 } from "@superset/composer";
 import { i18n } from "@superset/i18n";
 import { BRAND } from "@superset/shared/brand";
-import { FEATURE_FLAGS } from "@superset/shared/constants";
 import { TitlePress } from "@superset/title-press";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
@@ -24,8 +23,8 @@ import {
 	SquareTerminal,
 	TriangleAlert,
 } from "lucide-react-native";
-import { useFeatureFlag } from "posthog-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ViewInstance } from "react-native";
 import {
 	ActivityIndicator,
 	Alert,
@@ -496,7 +495,6 @@ export function WorkspaceScreen() {
 	);
 	const activeRow = rows.find((row) => row.terminalId === activeTerminalId);
 	const activeIsChat = activeRow?.kind === "chat";
-	const acpChat = Boolean(useFeatureFlag(FEATURE_FLAGS.ACP_CHAT));
 	const { running: chatRunning, stop: stopChat } = useActiveChat(
 		activeIsChat ? activeTerminalId : null,
 	);
@@ -635,7 +633,7 @@ export function WorkspaceScreen() {
 	const [keyboardHeight, setKeyboardHeight] = useState(0);
 	const [composerActive, setComposerActive] = useState(false);
 	const composerRef = useRef<ComposerHandle>(null);
-	const shareAnchorRef = useRef<View>(null);
+	const shareAnchorRef = useRef<ViewInstance>(null);
 	const [select, setSelect] = useState<TerminalSelectState>({
 		active: false,
 		hasSelection: false,
@@ -910,7 +908,6 @@ export function WorkspaceScreen() {
 
 	const pullRequestCount = pullRequests.length;
 	const latestPullRequestDiffstat = usePullRequestDiffstat({
-		hostUrl,
 		pullRequest: pullRequests[0],
 	});
 	const chatPullRequestChip = pullRequestStatusNow
@@ -937,9 +934,16 @@ export function WorkspaceScreen() {
 			});
 			return;
 		}
+		const [pullRequest] = pullRequests;
 		router.push({
 			pathname: "/workspace/[id]/pull-request/[pullRequestId]",
-			params: { id, pullRequestId: String(pullRequests[0]?.prNumber ?? "") },
+			params: {
+				id,
+				pullRequestId: String(pullRequest?.prNumber ?? ""),
+				...(pullRequest
+					? { owner: pullRequest.repoOwner, repo: pullRequest.repoName }
+					: {}),
+			},
 		});
 	}, [id, pullRequests, router]);
 
@@ -1008,13 +1012,11 @@ export function WorkspaceScreen() {
 			{workspace ? <TitlePress onPress={openActions} /> : null}
 			{workspace ? (
 				<Stack.Toolbar placement="right">
-					{acpChat ? (
-						<Stack.Toolbar.Button
-							accessibilityLabel={t({ message: "Manage sessions" })}
-							icon="rectangle.stack"
-							onPress={openSessions}
-						/>
-					) : null}
+					<Stack.Toolbar.Button
+						accessibilityLabel={t({ message: "Manage sessions" })}
+						icon="rectangle.stack"
+						onPress={openSessions}
+					/>
 					<Stack.Toolbar.Menu
 						icon="ellipsis"
 						accessibilityLabel={t({ message: "Workspace actions" })}
@@ -1284,9 +1286,7 @@ export function WorkspaceScreen() {
 					// A cloud workspace exists on screen before its sandbox is
 					// even addressed; the strip would offer sessions on one that
 					// isn't reachable yet.
-					sessionTabs={
-						cloud && !host ? [] : acpChat && activeIsChat ? [] : sessionTabs
-					}
+					sessionTabs={cloud && !host ? [] : activeIsChat ? [] : sessionTabs}
 					onSessionTabPress={pickTerminal}
 					onSessionTabClose={confirmCloseTerminal}
 					onSessionTabRename={promptRenameTerminal}
@@ -1306,7 +1306,7 @@ export function WorkspaceScreen() {
 					selectHasSelection={select.hasSelection}
 					hideQuickKeys={activeIsChat}
 					sendsAttachments={activeIsChat}
-					canStop={acpChat && activeIsChat && chatRunning}
+					canStop={activeIsChat && chatRunning}
 					onStop={stopChat}
 				/>
 			) : null}

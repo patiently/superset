@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { trpcServer } from "@hono/trpc-server";
 import { Octokit } from "@octokit/rest";
@@ -33,6 +35,7 @@ import {
 } from "./projects/project-deletion";
 import type { ApiAuthProvider } from "./providers/auth";
 import type { HostAuthProvider } from "./providers/host-auth";
+import { AgentJobRunner } from "./runtime/agent-jobs";
 import { runArchivedWorkspaceReconcile } from "./runtime/archived-workspace-reconcile";
 import { registerBrowserCdpRoute } from "./runtime/browser-bridge/browser-cdp-route";
 import { WorkspaceFilesystemManager } from "./runtime/filesystem";
@@ -40,6 +43,7 @@ import type { GitCredentialProvider } from "./runtime/git";
 import { createGitEnvResolver, createGitFactory } from "./runtime/git";
 import { runProjectBackfill } from "./runtime/project-backfill";
 import { PullRequestRuntimeManager } from "./runtime/pull-requests";
+import { waitForSandboxManagedEnv } from "./runtime/sandbox-managed-env";
 import {
 	launchSandboxAgentOnce,
 	readSandboxIdentity,
@@ -317,7 +321,16 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 	});
 	pageWatch.subscribeToTerminalEvents(eventBus);
 
+	const agentJobs = new AgentJobRunner({
+		rootDir: join(
+			process.env.SUPERSET_HOME_DIR?.trim() || join(homedir(), ".superset"),
+			"agent-jobs",
+		),
+		onActivity: (workspaceId) => terminalAgentStore.noteActivity(workspaceId),
+	});
+
 	const runtime = {
+		agentJobs,
 		filesystem,
 		pullRequests: pullRequestRuntime,
 		pageWatch,
@@ -545,6 +558,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 
 	const ownsDb = options.db === undefined;
 	const dispose = async (): Promise<void> => {
+		agentJobs.stopAll();
 		if (projectPurgeTimer) clearInterval(projectPurgeTimer);
 		await disposeWorkspaceTitleJobs(db);
 		// Each step is best-effort and isolated: a throw in one cleanup must
@@ -622,6 +636,7 @@ export function createApp(options: CreateAppOptions): CreateAppResult {
 
 	/** Same context the launcher above builds: a resume runs an agent. */
 	const resumeCrashedAgents = async () => {
+		await waitForSandboxManagedEnv();
 		const ctx = {
 			git,
 			credentials: providers.credentials,

@@ -1,6 +1,6 @@
 {
 	"name": "@superset/host-service",
-	"version": "1.40.0",
+	"version": "2.0.2",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -39,6 +39,10 @@
 		"./host-worker": {
 			"types": "./src/workers/host-worker.ts",
 			"default": "./src/workers/host-worker.ts"
+		},
+		"./git-credentials": {
+			"types": "./src/providers/git/LocalGitCredentialProvider/index.ts",
+			"default": "./src/providers/git/LocalGitCredentialProvider/index.ts"
 		},
 		"./terminal-env": {
 			"types": "./src/terminal/env.ts",

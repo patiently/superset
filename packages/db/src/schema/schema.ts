@@ -21,6 +21,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { invitations, organizations, teams, users } from "./auth";
+import { channels } from "./channels";
 import type { PageReportReason } from "./enums";
 import {
 	actorKindValues,
@@ -335,6 +336,12 @@ export const taskActivity = pgTable(
 		toProjectId: uuid("to_project_id").references(() => taskProjects.id, {
 			onDelete: "set null",
 		}),
+		fromChannelId: uuid("from_channel_id").references(() => channels.id, {
+			onDelete: "set null",
+		}),
+		toChannelId: uuid("to_channel_id").references(() => channels.id, {
+			onDelete: "set null",
+		}),
 		descriptionEdited: boolean("description_edited").notNull().default(false),
 		addedLabelIds: uuid("added_label_ids").array(),
 		removedLabelIds: uuid("removed_label_ids").array(),
@@ -351,6 +358,8 @@ export const taskActivity = pgTable(
 		index("task_activity_to_assignee_id_idx").on(table.toAssigneeId),
 		index("task_activity_from_project_id_idx").on(table.fromProjectId),
 		index("task_activity_to_project_id_idx").on(table.toProjectId),
+		index("task_activity_from_channel_id_idx").on(table.fromChannelId),
+		index("task_activity_to_channel_id_idx").on(table.toChannelId),
 	],
 );
 
@@ -472,6 +481,8 @@ export const connections = pgTable(
 
 		issuer: text(),
 		resource: text(),
+		/** The dynamic client the grant was issued to; its refresh token is bound to it. */
+		oauthClientId: text("oauth_client_id"),
 
 		externalAccountId: text("external_account_id").notNull(),
 		externalAccountLabel: text("external_account_label"),
@@ -866,6 +877,32 @@ export const environmentRepositories = pgTable(
 		index("environment_repositories_environment_id_idx").on(
 			table.environmentId,
 		),
+	],
+);
+
+/** Projects an environment is linked to; the new-workspace picker offers linked environments first. */
+export const environmentProjects = pgTable(
+	"environment_projects",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		environmentId: uuid("environment_id")
+			.notNull()
+			.references(() => environments.id, { onDelete: "cascade" }),
+		/** A host project's key; projects live on hosts, so there is no row to reference. */
+		projectId: text("project_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => [
+		unique("environment_projects_environment_id_project_id_unique").on(
+			table.environmentId,
+			table.projectId,
+		),
+		index("environment_projects_project_id_idx").on(table.projectId),
 	],
 );
 
@@ -1693,6 +1730,9 @@ export const automations = pgTable(
 		// clearing the set in the editor is the opt-out.
 		tags: jsonb().$type<string[]>().notNull().default(["automation"]),
 
+		// Groups the automation in the automations list. Null = ungrouped.
+		group: text("group_name"),
+
 		// Deliver each run's prompt into the agent session the previous run
 		// left behind, rather than starting another beside it. Needs a pinned
 		// v2WorkspaceId or cloudWorkspaceId — that is where the session lives.
@@ -2285,6 +2325,8 @@ export const attachmentParentKind = pgEnum("attachment_parent_kind", [
 	"task_comment",
 	// A file in a project's description; the parent id is the project's.
 	"project_description",
+	// A file sent in a channel; the parent id is the channel_messages row's.
+	"channel_message",
 ]);
 
 /**

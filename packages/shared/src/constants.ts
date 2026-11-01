@@ -1,6 +1,7 @@
 import { ROOT_DOMAIN } from "./app-identity";
 import type { TriggerConfigInput } from "./automation-triggers";
 import { BRAND } from "./brand";
+import { OWN_ROOT_DOMAINS } from "./own-domains";
 
 export { CANONICAL_URLS, IOS_APP } from "./app-identity";
 
@@ -26,38 +27,63 @@ const MARKETING_URL =
 	process.env.NEXT_PUBLIC_MARKETING_URL || `https://${ROOT_DOMAIN}`;
 const APP_STORE_ID = "6788926383";
 
+export const SOCIAL = {
+	GITHUB: {
+		handle: "github.com/paradevai/paradev",
+		url: "https://github.com/paradevai/paradev",
+	},
+	X: { handle: "@paradevai", url: "https://x.com/paradevai" },
+	X_FORMER: { handle: "@superset_sh", url: "https://x.com/superset_sh" },
+	LINKEDIN: {
+		handle: "linkedin.com/company/paradevai",
+		url: "https://www.linkedin.com/company/paradevai",
+	},
+	YOUTUBE: { handle: "@paradevai", url: "https://www.youtube.com/@paradevai" },
+	DISCORD: {
+		handle: "discord.gg/cZeD9WYcV7",
+		url: "https://discord.gg/cZeD9WYcV7",
+	},
+} as const;
+
 export const COMPANY = {
 	NAME: BRAND.NAME,
 	LEGAL_NAME: "Superset Inc.",
 	DOMAIN: ROOT_DOMAIN,
 	EMAIL_DOMAIN: `@${ROOT_DOMAIN}`,
-	GITHUB_URL: "https://github.com/superset-sh/superset",
+	GITHUB_URL: SOCIAL.GITHUB.url,
 	DOCS_URL: process.env.NEXT_PUBLIC_DOCS_URL || `https://docs.${ROOT_DOMAIN}`,
 	MARKETING_URL,
 	TERMS_URL: `${MARKETING_URL}/terms`,
 	PRIVACY_URL: `${MARKETING_URL}/privacy`,
 	CHANGELOG_URL: `${MARKETING_URL}/changelog`,
-	X_URL: "https://x.com/superset_sh",
-	LINKEDIN_URL: "https://www.linkedin.com/company/superset-sh",
-	YOUTUBE_URL: "https://www.youtube.com/@superset-sh",
+	X_URL: SOCIAL.X.url,
+	LINKEDIN_URL: SOCIAL.LINKEDIN.url,
+	YOUTUBE_URL: SOCIAL.YOUTUBE.url,
 	SUPPORT_EMAIL,
 	MAIL_TO: `mailto:${SUPPORT_EMAIL}`,
 	TEAM_EMAIL: `team@${ROOT_DOMAIN}`,
 	TEAM_MAIL_TO: `mailto:team@${ROOT_DOMAIN}`,
-	REPORT_ISSUE_URL: "https://github.com/superset-sh/superset/issues/new",
-	DISCORD_URL: "https://discord.gg/cZeD9WYcV7",
+	SALES_EMAIL: `sales@${ROOT_DOMAIN}`,
+	/** The founders' inbox, used as the press contact. Fixed rather than built from ROOT_DOMAIN. */
+	FOUNDERS_EMAIL: "founders@paradev.com",
+	FOUNDERS_MAIL_TO: "mailto:founders@paradev.com",
+	REPORT_ISSUE_URL: `${SOCIAL.GITHUB.url}/issues/new`,
+	DISCORD_URL: SOCIAL.DISCORD.url,
 	APP_STORE_ID,
 	APP_STORE_URL: `https://apps.apple.com/app/id${APP_STORE_ID}`,
 	STATUS_URL: `https://status.${ROOT_DOMAIN}`,
 	TRUST_URL: `https://trust.${ROOT_DOMAIN}`,
 	JOIN_US_URL: `${MARKETING_URL}/careers`,
 	/** The formal YC listing; product surfaces link here. `JOIN_US_URL` is our own marketing page. */
-	CAREERS_URL: "https://www.ycombinator.com/companies/superset/jobs",
+	CAREERS_URL: "https://www.ycombinator.com/companies/paradev/jobs",
 } as const;
 
 // Staff keep their @superset.sh accounts after the root domain changes.
 export const STAFF_EMAIL_DOMAINS = [
-	...new Set([COMPANY.EMAIL_DOMAIN, "@superset.sh"]),
+	...new Set([
+		COMPANY.EMAIL_DOMAIN,
+		...OWN_ROOT_DOMAINS.map((domain) => `@${domain}`),
+	]),
 ];
 
 export function isStaffEmail(email: string): boolean {
@@ -68,7 +94,7 @@ export const OPEN_ROLES = [
 	{
 		title: "Founding Engineer",
 		location: "San Francisco, CA",
-		url: "https://www.ycombinator.com/companies/superset/jobs/Nd9luiP-founding-engineer",
+		url: "https://www.ycombinator.com/companies/paradev/jobs/Nd9luiP-founding-engineer",
 	},
 ] as const;
 
@@ -128,6 +154,14 @@ export const FEATURE_FLAGS = {
 	 * hash the site's single distinct id to one side.
 	 */
 	MOBILE_LAUNCH: "mobile-launch",
+	/**
+	 * Shows the `.superset/config.toml` editor in project settings in place of
+	 * the config.json form. host-service reads a config.toml wherever one
+	 * exists; this gates only where people are led to write one.
+	 */
+	WORKSPACE_CONFIG_TOML: "workspace-config-toml",
+	/** In-app channels in the desktop sidebar. */
+	CHANNELS: "channels",
 	/** Allowlist for mobile voice mode: shows the entry and authorizes `voice.createSession`. */
 	MOBILE_VOICE_MODE: "mobile-voice-mode",
 	/**
@@ -164,7 +198,6 @@ export const FEATURE_FLAGS = {
 	 * Replaces the v2 workspace's right sidebar with a second pane area that
 	 * holds Files, Changes, Review, Browser and Chat panes.
 	 */
-	RIGHT_PANE_AREA: "right-pane-area",
 	/**
 	 * Who may use cloud sandboxes: shows the option in the create picker, and
 	 * gates the cloud procedures server-side (`assertCloudAccess`). The release
@@ -192,17 +225,22 @@ export const FEATURE_FLAGS = {
 	 */
 	MOBILE_LIVE_ACTIVITY: "mobile-live-activity",
 	/**
-	 * Shows the ACP chat pane: a chat UI that attaches to a Claude/Codex
-	 * session in the workspace over the Agent Client Protocol. UI-only: the
-	 * flag decides who sees the pane, not what the host can do. Off, unloaded,
-	 * or offline all mean "no pane" — flips take effect live. Audience is a
-	 * release condition on the flag, so widening never needs a release.
+	 * Legacy gate for the ACP chat pane, replaced by the account's Chat
+	 * experimental setting (`user_settings.experimental_chat`). Read only by released
+	 * desktop and mobile builds; remove it once no live build reads it.
 	 */
 	ACP_CHAT: "acp-chat",
+	/**
+	 * Shows Fork into chat on agent terminal headers and Fork into CLI on chat
+	 * headers: a native fork of the session, opened in the other surface beside
+	 * it. Off, unloaded or offline hide them. Audience is a release condition on
+	 * the flag, in both the Production and Local Development projects.
+	 */
+	AGENT_SURFACE_FORK: "agent-surface-fork",
 	MOBILE_PANE: "mobile-pane",
 	/**
 	 * Shows the `pdev` agent: in the agent catalog, agent pickers
-	 * and, with ACP_CHAT, as a chat harness (`pdev acp`). Off, unloaded or
+	 * and, with the Chat setting on, as a chat harness (`pdev acp`). Off, unloaded or
 	 * offline all hide it. Hosts never seed it, so a user only gets it by
 	 * adding it while the flag is on.
 	 */

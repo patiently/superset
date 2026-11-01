@@ -42,6 +42,8 @@ import {
 } from "./components/DashboardSidebarActiveWorkspaceSwitcher";
 import { DashboardSidebarBulkActions } from "./components/DashboardSidebarBulkActions";
 import { DashboardSidebarBulkDeleteMount } from "./components/DashboardSidebarBulkDeleteMount";
+import { DashboardSidebarChannelsSection } from "./components/DashboardSidebarChannelsSection";
+import { DashboardSidebarDevsSection } from "./components/DashboardSidebarDevsSection";
 import { DashboardSidebarGithubNotice } from "./components/DashboardSidebarGithubNotice";
 import { DashboardSidebarHeader } from "./components/DashboardSidebarHeader";
 import { DashboardSidebarHiddenProjects } from "./components/DashboardSidebarHiddenProjects";
@@ -61,6 +63,7 @@ import { useDashboardSidebarData } from "./hooks/useDashboardSidebarData";
 import { useDashboardSidebarShortcuts } from "./hooks/useDashboardSidebarShortcuts";
 import { useMigrateLegacySidebarFolders } from "./hooks/useMigrateLegacySidebarFolders";
 import { useDashboardSidebarDnd } from "./hooks/useSidebarDnd";
+import { DashboardSidebarActionsProvider } from "./providers/DashboardSidebarActionsProvider";
 import { DashboardSidebarDndProvider } from "./providers/DashboardSidebarDndProvider";
 import { DashboardSidebarHoverProvider } from "./providers/DashboardSidebarHoverProvider";
 import { DashboardSidebarSelectionProvider } from "./providers/DashboardSidebarSelectionProvider";
@@ -155,12 +158,14 @@ const SortableProjectWrapper = memo(function SortableProjectWrapper({
 	);
 });
 
-export const DashboardSidebar = memo(function DashboardSidebar({
+const DashboardSidebarContent = memo(function DashboardSidebarContent({
 	isCollapsed = false,
 }: DashboardSidebarProps) {
 	const { t } = useLingui();
 	const isCloudEnabled =
 		useFeatureFlagEnabled(FEATURE_FLAGS.CLOUD_WORKSPACES) === true;
+	const isChannelsEnabled =
+		useFeatureFlagEnabled(FEATURE_FLAGS.CHANNELS) === true;
 	const {
 		groups,
 		hiddenProjects,
@@ -505,6 +510,12 @@ export const DashboardSidebar = memo(function DashboardSidebar({
 											status={githubStatus}
 											isCollapsed={isCollapsed}
 										/>
+										{isChannelsEnabled && !isCollapsed && (
+											<>
+												<DashboardSidebarChannelsSection />
+												<DashboardSidebarDevsSection />
+											</>
+										)}
 										{(isCollapsed || !workspacesListCollapsed) && (
 											<DashboardSidebarPinnedSection
 												pinnedWorkspaces={displayedPinnedWorkspaces}
@@ -636,5 +647,15 @@ export const DashboardSidebar = memo(function DashboardSidebar({
 				</DashboardSidebarHoverProvider>
 			</DashboardSidebarSectionRenameProvider>
 		</DashboardSidebarSelectionProvider>
+	);
+});
+
+export const DashboardSidebar = memo(function DashboardSidebar(
+	props: DashboardSidebarProps,
+) {
+	return (
+		<DashboardSidebarActionsProvider>
+			<DashboardSidebarContent {...props} />
+		</DashboardSidebarActionsProvider>
 	);
 });

@@ -11,6 +11,7 @@ import {
 import { AIR_CLIENT_META } from "./air";
 import type { AcpImageSource } from "./imageBlocks";
 import type { AcpTransport, AcpTransportHandlers } from "./rpcClient";
+import { acpUsageUpdateSchema } from "./wire";
 
 /**
  * A scripted ACP agent: auto-responds to initialize/session_new, and for
@@ -55,6 +56,12 @@ class FakeAcpAgent {
 	steeringOutcome: string | null = null;
 	/** Leave session/prompt unanswered, as a turn still running does. */
 	holdPrompts = false;
+	/** Refuse session/prompt with this error after these updates, as a
+	 * rate-limited Claude does. */
+	promptFailure: {
+		updates: Record<string, unknown>[];
+		error: { code: number; message: string };
+	} | null = null;
 	/** Answer session/prompt once the message is inserted, as a v2 agent does. */
 	insertOnPrompt = false;
 	/** Report `idle` with this stop reason right behind the insertion response. */
@@ -272,9 +279,18 @@ class FakeAcpAgent {
 			});
 	}
 
-	releasePrompts(stopReason: string): void {
+	releasePrompts(
+		stopReason: string,
+		extra: Record<string, unknown> = {},
+	): void {
 		for (const id of this.heldPrompts.splice(0)) {
-			this.respond(id, { stopReason });
+			this.respond(id, { stopReason, ...extra });
+		}
+	}
+
+	failHeldPrompts(code: number, message: string): void {
+		for (const id of this.heldPrompts.splice(0)) {
+			this.deliver({ jsonrpc: "2.0", id, error: { code, message } });
 		}
 	}
 
@@ -477,6 +493,15 @@ class FakeAcpAgent {
 				}
 			} else if (frame.method === "session/prompt" && this.holdPrompts) {
 				this.heldPrompts.push(frame.id as number);
+			} else if (frame.method === "session/prompt" && this.promptFailure) {
+				for (const update of this.promptFailure.updates) {
+					this.notify("sess-1", update);
+				}
+				this.deliver({
+					jsonrpc: "2.0",
+					id: frame.id,
+					error: this.promptFailure.error,
+				});
 			} else if (frame.method === "session/prompt") {
 				this.notify("sess-1", {
 					sessionUpdate: "agent_message_chunk",
@@ -524,6 +549,7 @@ function startAdapter(
 		| "shellPollMs"
 		| "backgroundDetailIntervalMs"
 		| "startupTimeoutMs"
+		| "launch"
 	> = {},
 ): { adapter: AcpAdapter; events: AdapterEvent[] } {
 	let counter = 0;
@@ -567,6 +593,123 @@ function textOf(item: Item | undefined): string {
 }
 
 describe("AcpAdapter", () => {
+	it("a refused turn reports the usage limit with the reset the agent forwarded", async () => {
+		const agent = new FakeAcpAgent();
+		agent.promptFailure = {
+			updates: [
+				{
+					sessionUpdate: "usage_update",
+					used: 100,
+					size: 200000,
+					_meta: {
+						"_claude/rateLimit": {
+							status: "rejected",
+							resetsAt: 1785958200,
+							rateLimitType: "five_hour",
+							isUsingOverage: false,
+						},
+						"_claude/model": "claude-sonnet-5-5",
+					},
+				},
+			],
+			error: { code: -32603, message: "error_during_execution" },
+		};
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "go" }]);
+		await flush(20);
+		const limits = sessionsOf(events).flatMap((session) =>
+			session.usageLimit ? [session.usageLimit] : [],
+		);
+		expect(limits).toEqual([
+			{
+				hitAtMs: 1,
+				resetsAtMs: 1785958200_000,
+				window: "five_hour",
+				model: "claude-sonnet-5-5",
+			},
+		]);
+		const turns = events.flatMap((e) => (e.kind === "turn" ? [e.turn] : []));
+		expect(turns.at(-1)?.status).toBe("failed");
+		expect(turns.at(-1)?.error?.message).toBe("error_during_execution");
+		expect(turns.at(-1)?.error?.kind).toBe("usage_limit");
+		expect(
+			events.findIndex(
+				(event) =>
+					event.kind === "session" && event.session.usageLimit !== undefined,
+			),
+		).toBeLessThan(
+			events.findIndex(
+				(event) => event.kind === "turn" && event.turn.status === "failed",
+			),
+		);
+	});
+
+	it("a v2 turn that ends in an error after a rejected window reports the limit", async () => {
+		const agent = new FakeAcpAgent();
+		agent.insertOnPrompt = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "go" }]);
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 100,
+			size: 200000,
+			_meta: {
+				"_claude/rateLimit": {
+					status: "rejected",
+					resetsAt: 1785958200,
+					rateLimitType: "five_hour",
+					isUsingOverage: false,
+				},
+			},
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "state_update",
+			state: "idle",
+			stopReason: "error",
+			error: { message: "You've hit your usage limit" },
+		});
+		await flush(20);
+		const limits = sessionsOf(events).flatMap((session) =>
+			session.usageLimit ? [session.usageLimit] : [],
+		);
+		expect(limits.at(-1)?.resetsAtMs).toBe(1785958200_000);
+		const turns = events.flatMap((e) => (e.kind === "turn" ? [e.turn] : []));
+		expect(turns.at(-1)?.status).toBe("failed");
+		expect(turns.at(-1)?.error?.kind).toBe("usage_limit");
+		await adapter.dispose();
+	});
+
+	it("a usage update with a null _meta still parses", () => {
+		expect(
+			acpUsageUpdateSchema.safeParse({ used: 1, size: 2, _meta: null }).success,
+		).toBe(true);
+	});
+
+	it("a refusal the turn survived, or an allowed window, is not a limit", async () => {
+		const agent = new FakeAcpAgent();
+		agent.promptFailure = {
+			updates: [
+				{
+					sessionUpdate: "usage_update",
+					used: 100,
+					size: 200000,
+					_meta: { "_claude/rateLimit": { status: "allowed", resetsAt: 1 } },
+				},
+			],
+			error: { code: -32603, message: "The model provider reported an error." },
+		};
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "go" }]);
+		await flush(20);
+		expect(sessionsOf(events).some((session) => session.usageLimit)).toBe(
+			false,
+		);
+	});
+
 	it("bootstraps, streams a turn, and maps items", async () => {
 		const agent = new FakeAcpAgent();
 		let counter = 0;
@@ -1748,6 +1891,51 @@ describe("AcpAdapter on protocol v2", () => {
 		await adapter.dispose();
 	});
 
+	it("keeps the agent's mark that a diff deletes its file", async () => {
+		const agent = new FakeAcpAgent();
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "tool_call_update",
+			toolCallId: "tc-patch",
+			title: "Edit files",
+			kind: "edit",
+			status: "completed",
+			content: [
+				{
+					type: "diff",
+					path: "/repo/old.ts",
+					oldText: "gone\n",
+					newText: "",
+					_meta: { kind: "delete" },
+				},
+				{
+					type: "diff",
+					path: "/repo/kept.ts",
+					oldText: "a\n",
+					newText: "",
+					_meta: { kind: "update" },
+				},
+			],
+		});
+		await flush();
+
+		const toolCall = itemsOf(events).find((i) => i.kind === "tool_call");
+		expect(toolCall && "content" in toolCall ? toolCall.content : []).toEqual([
+			{
+				type: "diff",
+				path: "/repo/old.ts",
+				oldText: "gone\n",
+				newText: "",
+				deleted: true,
+			},
+			{ type: "diff", path: "/repo/kept.ts", oldText: "a\n", newText: "" },
+		]);
+
+		await adapter.dispose();
+	});
+
 	it("names the MCP server and tool of a Claude MCP call, and keeps them across updates", async () => {
 		const agent = new FakeAcpAgent();
 		const { adapter, events } = startAdapter(agent);
@@ -2821,6 +3009,39 @@ describe("AcpAdapter on protocol v2", () => {
 		await adapter.dispose();
 	});
 
+	it("tells the caller whether the agent took a setting", async () => {
+		const agent = new FakeAcpAgent();
+		agent.newSessionConfigOptions = [
+			{
+				configId: "model",
+				name: "Model",
+				type: "select",
+				category: "model",
+				currentValue: "sonnet",
+				options: [
+					{ value: "sonnet", name: "Sonnet" },
+					{ value: "opus", name: "Opus" },
+				],
+			},
+		];
+		const { adapter } = startAdapter(
+			agent,
+			undefined,
+			{},
+			{ requestTimeoutMs: 20 },
+		);
+		await flush();
+
+		expect(await adapter.setConfigOption("model", "opus")).toBe(true);
+		agent.holdSelections = true;
+		expect(await adapter.setConfigOption("model", "sonnet")).toBe(false);
+		agent.holdSelections = false;
+		agent.rejectSelections = true;
+		expect(await adapter.setConfigOption("model", "sonnet")).toBe(false);
+
+		await adapter.dispose();
+	});
+
 	it("holds a prompt for a change made while it waits", async () => {
 		const agent = new FakeAcpAgent();
 		agent.holdSelections = true;
@@ -3191,6 +3412,191 @@ describe("AcpAdapter on protocol v2", () => {
 				: [],
 		);
 		expect(recorded.at(-1)).toBe("Hello there.");
+		await adapter.dispose();
+	});
+
+	it("reports context usage on the running turn as the agent streams it", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "read the readme" }]);
+		await flush();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 12_000,
+			size: 200_000,
+		});
+		await flush();
+
+		const turns = events.flatMap((event) =>
+			event.kind === "turn" ? [event.turn] : [],
+		);
+		expect(turns.at(-1)).toMatchObject({
+			status: "running",
+			sessionUsage: { contextUsed: 12_000, contextSize: 200_000 },
+		});
+		await adapter.dispose();
+	});
+
+	it("ends a turn with its token usage and the session's cost so far", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "read the readme" }]);
+		await flush();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 30_000,
+			size: 200_000,
+			cost: { amount: 0.42, currency: "USD" },
+		});
+		agent.releasePrompts("end_turn", {
+			usage: { inputTokens: 900, outputTokens: 120, cachedReadTokens: 28_000 },
+		});
+		await flush();
+
+		const turns = events.flatMap((event) =>
+			event.kind === "turn" ? [event.turn] : [],
+		);
+		expect(turns.at(-1)).toMatchObject({
+			status: "completed",
+			usage: {
+				inputTokens: 900,
+				cachedInputTokens: 28_000,
+				outputTokens: 120,
+				contextUsed: 30_000,
+				contextSize: 200_000,
+			},
+			sessionUsage: {
+				contextUsed: 30_000,
+				contextSize: 200_000,
+				costUsd: 0.42,
+			},
+		});
+		await adapter.dispose();
+	});
+
+	it("keeps the session cost current when the agent reports it after the turn", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "read the readme" }]);
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 30_000,
+			size: 200_000,
+		});
+		agent.releasePrompts("end_turn");
+		await flush();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			cost: { amount: 0.5, currency: "USD" },
+		});
+		await flush();
+
+		const turns = events.flatMap((event) =>
+			event.kind === "turn" ? [event.turn] : [],
+		);
+		expect(turns.at(-1)).toMatchObject({
+			status: "completed",
+			sessionUsage: { contextUsed: 30_000, contextSize: 200_000, costUsd: 0.5 },
+		});
+		await adapter.dispose();
+	});
+
+	it("keeps a cost the agent reported before any context usage", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "read the readme" }]);
+		await flush();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			cost: { amount: 0.2, currency: "USD" },
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 9_000,
+			size: 200_000,
+		});
+		await flush();
+
+		const turns = events.flatMap((event) =>
+			event.kind === "turn" ? [event.turn] : [],
+		);
+		expect(turns.at(-1)?.sessionUsage).toEqual({
+			contextUsed: 9_000,
+			contextSize: 200_000,
+			costUsd: 0.2,
+		});
+		await adapter.dispose();
+	});
+
+	it("sends usage again only when it changed", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "read the readme" }]);
+		await flush();
+		const turnEvents = () =>
+			events.filter((event) => event.kind === "turn").length;
+		const before = turnEvents();
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 12_000,
+			size: 200_000,
+		});
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			used: 12_000,
+			size: 200_000,
+		});
+		await flush();
+
+		expect(turnEvents()).toBe(before + 1);
+		await adapter.dispose();
+	});
+
+	it("ends the agent's cycle on a cost-only usage update without reporting usage", async () => {
+		const agent = new FakeAcpAgent();
+		agent.steeringOutcome = "injected";
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(agent);
+		await flush();
+		adapter.prompt([{ type: "text", text: "spawn a helper" }]);
+		await flush();
+		agent.notify("sess-1", {
+			sessionUpdate: "subagent_spawned",
+			subagentSessionId: "child-1",
+			name: "Helper",
+			task: "Help",
+		});
+		await flush();
+		const turnsBefore = events.filter((event) => event.kind === "turn").length;
+
+		agent.notify("sess-1", {
+			sessionUpdate: "usage_update",
+			cost: { amount: 0.01, currency: "USD" },
+		});
+		await flush();
+
+		expect(
+			sessionsOf(events).some((session) => session.awaitingBackground),
+		).toBe(true);
+		expect(events.filter((event) => event.kind === "turn")).toHaveLength(
+			turnsBefore,
+		);
 		await adapter.dispose();
 	});
 
@@ -5162,6 +5568,34 @@ describe("AcpAdapter config options", () => {
 		await adapter.dispose();
 	});
 
+	it("applies a start model the agent lists under another spelling", async () => {
+		const agent = new FakeAcpAgent();
+		agent.protocolVersion = 1;
+		agent.newSessionConfigOptions = [
+			{
+				...MODEL_OPTION,
+				options: [
+					{ value: "claude-opus-5-5", name: "Opus 5.5" },
+					{ value: "claude-haiku-4-5", name: "Haiku 4.5" },
+				],
+				currentValue: "claude-opus-5-5",
+			},
+		];
+		const { adapter } = startAdapter(agent, undefined, { modelId: "haiku" });
+		await flush();
+
+		const sent = agent.sent.find(
+			(f) => f.method === "session/set_config_option",
+		);
+		expect(sent?.params).toEqual({
+			sessionId: "sess-1",
+			configId: "model",
+			value: "claude-haiku-4-5",
+		});
+
+		await adapter.dispose();
+	});
+
 	it("leaves the model alone when the start model is not offered", async () => {
 		const agent = new FakeAcpAgent();
 		agent.protocolVersion = 1;
@@ -5638,15 +6072,61 @@ describe("AcpAdapter when the agent fails", () => {
 		agent.holdPrompts = true;
 		const { adapter, events } = startAdapter(agent);
 		await flush();
+		agent.stderr("warning: config uses a deprecated key\n");
 		adapter.prompt([{ type: "text", text: "hi" }]);
 		await flush();
 
+		agent.stderr("Segmentation fault\n");
 		agent.exit(1);
 		await flush();
 
-		const turns = events.flatMap((e) => (e.kind === "turn" ? [e.turn] : []));
-		expect(turns.at(-1)?.status).toBe("failed");
+		const failed = events.flatMap((e) =>
+			e.kind === "turn" && e.turn.status === "failed" ? [e.turn] : [],
+		);
+		expect(failed.map((turn) => turn.error)).toEqual([
+			{
+				message: "acp agent exited (code 1)",
+				kind: "crashed",
+				detail: "Segmentation fault",
+			},
+		]);
 		expect(sessionsOf(events).at(-1)?.status).toBe("dead");
+
+		await adapter.dispose();
+	});
+
+	it("names a failed prompt, with what the agent printed during the turn and how to sign in", async () => {
+		const agent = new FakeAcpAgent();
+		agent.holdPrompts = true;
+		const { adapter, events } = startAdapter(
+			agent,
+			undefined,
+			{},
+			{
+				launch: async () => ({
+					command: "fake",
+					loginCommand: "claude auth login",
+				}),
+			},
+		);
+		await flush();
+		agent.stderr("started\n");
+		adapter.prompt([{ type: "text", text: "hi" }]);
+		await flush();
+
+		agent.stderr("POST /v1/messages 401\n");
+		agent.failHeldPrompts(-32000, "Authentication required");
+		await flush();
+
+		const turn = events
+			.flatMap((e) => (e.kind === "turn" ? [e.turn] : []))
+			.at(-1);
+		expect(turn?.error).toEqual({
+			message: "Authentication required",
+			kind: "auth",
+			detail: "POST /v1/messages 401",
+			loginCommand: "claude auth login",
+		});
 
 		await adapter.dispose();
 	});

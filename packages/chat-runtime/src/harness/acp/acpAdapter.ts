@@ -9,20 +9,29 @@ import type {
 	ItemAttachment,
 	SessionConfigOption,
 	SessionState,
+	SessionUsage,
 	SubagentStatus,
 	ToolCall,
 	Turn,
+	TurnError,
+	UsageLimit,
 	UserContent,
 } from "@superset/chat/protocol";
 import { AGENT_DEFAULT_MODE, isHiddenText } from "@superset/chat/protocol";
 import { z } from "zod";
 import { BackgroundTasks } from "../backgroundTasks";
 import { EventQueue } from "../eventQueue";
+import { classifyTurnFailure } from "../turnFailure";
 import type {
 	AdapterEvent,
 	HarnessAdapter,
 	HarnessStartOptions,
 } from "../types";
+import {
+	type RefusedWindow,
+	refusedWindow,
+	USAGE_LIMIT_TEXT,
+} from "../usageLimit";
 import {
 	AIR_ASYNC_TASK_STOP_METHOD,
 	AIR_CLIENT_META,
@@ -51,7 +60,13 @@ import {
 	spawnAcpTransport,
 } from "./rpcClient";
 import { messageIdOf, SessionStream } from "./sessionStream";
-import type { AcpConfigSelectOption, AcpElicitationProperty } from "./wire";
+import { startOptionId } from "./startOption";
+import type {
+	AcpConfigSelectOption,
+	AcpElicitationProperty,
+	AcpPromptUsage,
+	AcpUsageUpdate,
+} from "./wire";
 import {
 	ACP_STEERING_METHOD,
 	type AcpContentBlock,
@@ -75,6 +90,7 @@ import {
 	acpSubagentUpdateSchema,
 	acpToolCallUpdateSchema,
 	acpUsageUpdateSchema,
+	acpUsdCostSchema,
 	SUBAGENT_BACKGROUND_METHOD,
 } from "./wire";
 
@@ -205,7 +221,11 @@ function sessionMissing(error: unknown): boolean {
 }
 
 export type AcpAdapterOptions = SpawnAcpOptions & {
-	launch?: () => Promise<Pick<SpawnAcpOptions, "command" | "args" | "env">>;
+	launch?: () => Promise<
+		Pick<SpawnAcpOptions, "command" | "args" | "env"> & {
+			loginCommand?: string;
+		}
+	>;
 	/** Selected for a new session that asks for no mode, when the agent offers it. */
 	defaultModeId?: string;
 	clientApprovalModes?: boolean;
@@ -407,6 +427,8 @@ export class AcpAdapter implements HarnessAdapter {
 	/** Shared by `start` and native discovery so a list never spawns a second agent. */
 	private connection: Promise<void> | null = null;
 	private sessionId: string | null = null;
+	private refused: RefusedWindow = null;
+	private lastModel: string | null = null;
 	private loadingSessionId: string | null = null;
 	private cwd = process.cwd();
 	private currentTurn: Turn | null = null;
@@ -422,6 +444,8 @@ export class AcpAdapter implements HarnessAdapter {
 	private supportsSteering = false;
 	private cycleEnded = false;
 	private steeredCyclePending = false;
+	private sessionUsage: SessionUsage | undefined;
+	private reportedCostUsd: number | undefined;
 	private readonly backgroundTaskTurns = new Map<string, string | undefined>();
 	private awaitingBackground = false;
 	/** The v2 config option that stands in for v1's session mode, once seen. */
@@ -437,6 +461,8 @@ export class AcpAdapter implements HarnessAdapter {
 	private disposed = false;
 	private dead = false;
 	private stderrTail = "";
+	private turnStderr = "";
+	private loginCommand: string | undefined;
 	private customAnswer: string | null = null;
 	private heldTurnId: string | null = null;
 	private readonly shellPids = new Map<string, number>();
@@ -652,10 +678,10 @@ export class AcpAdapter implements HarnessAdapter {
 		}
 	}
 
-	setConfigOption(configId: string, value: string): void {
+	setConfigOption(configId: string, value: string): Promise<boolean> {
 		const client = this.client;
 		const sessionId = this.sessionId;
-		if (!client || !sessionId) return;
+		if (!client || !sessionId) return Promise.resolve(false);
 		const previous = this.configOptions;
 		const previousModeId =
 			configId === this.modeConfigId ? this.modeId : undefined;
@@ -691,6 +717,10 @@ export class AcpAdapter implements HarnessAdapter {
 				});
 				this.emitNotice("error", error.message);
 			});
+		return request.then(
+			() => true,
+			() => false,
+		);
 	}
 
 	async stopBackgroundTask(taskId: string): Promise<boolean> {
@@ -869,6 +899,7 @@ export class AcpAdapter implements HarnessAdapter {
 	private async initializeAgent(cwd: string): Promise<void> {
 		const launch = await this.options.launch?.();
 		if (this.disposed) return;
+		this.loginCommand = launch?.loginCommand;
 		const client = new AcpRpcClient({
 			createTransport: (handlers) => {
 				const transport = (this.options.createTransport ?? spawnAcpTransport)(
@@ -887,6 +918,7 @@ export class AcpAdapter implements HarnessAdapter {
 			onServerRequest: (request) => this.handleServerRequest(request),
 			onStderr: (chunk) => {
 				this.stderrTail = (this.stderrTail + chunk).slice(-STDERR_TAIL_CHARS);
+				this.turnStderr = (this.turnStderr + chunk).slice(-STDERR_TAIL_CHARS);
 			},
 			onDispatchError: (error, method) =>
 				this.emitNotice(
@@ -1065,6 +1097,7 @@ export class AcpAdapter implements HarnessAdapter {
 
 	private async runTurn(content: UserContent[]): Promise<void> {
 		if (!this.client || !this.sessionId) return;
+		this.refused = null;
 		const turnId = this.mintId();
 		this.emitTurn({
 			id: turnId,
@@ -1080,6 +1113,7 @@ export class AcpAdapter implements HarnessAdapter {
 		if (!client || !this.sessionId || this.currentTurn?.id !== turnId) return;
 		const v2 = this.negotiatedVersion >= 2;
 		if (v2) this.v2Turn = { id: turnId, inserted: false };
+		this.turnStderr = "";
 		try {
 			const response = await client.request("session/prompt", {
 				sessionId: this.sessionId,
@@ -1095,10 +1129,11 @@ export class AcpAdapter implements HarnessAdapter {
 				return;
 			}
 			if (this.v2Turn?.id === turnId) this.v2Turn = null;
-			this.finishTurn(turnId, parsed?.stopReason);
+			this.finishTurn(turnId, parsed?.stopReason, parsed?.usage);
 		} catch (error) {
 			if (this.v2Turn?.id === turnId) this.v2Turn = null;
-			this.failTurn(turnId, (error as Error).message);
+			if (this.dead) return;
+			this.failRefusedTurn(turnId, this.turnError(error));
 		}
 	}
 
@@ -1130,6 +1165,7 @@ export class AcpAdapter implements HarnessAdapter {
 		if (this.v2Turn?.id === turnId || this.currentTurn?.id !== turnId) return;
 		if (this.currentTurn.status === "running" || !insertedAfterLastIdle) return;
 		const id = this.mintId();
+		this.turnStderr = "";
 		this.emitTurn({ id, status: "running", startedAtMs: this.now() });
 		this.emitSession({ status: "running" });
 		this.v2Turn = { id, inserted: true };
@@ -1138,20 +1174,27 @@ export class AcpAdapter implements HarnessAdapter {
 	private endV2Turn(turnId: string, idle: AcpStateUpdate): void {
 		this.v2Turn = null;
 		if (idle.stopReason === "error")
-			this.failTurn(
+			this.failRefusedTurn(
 				turnId,
-				idle.error?.message ?? "The agent stopped with an error.",
+				this.turnError(
+					idle.error?.message ?? "The agent stopped with an error.",
+				),
 			);
 		else this.finishTurn(turnId, idle.stopReason ?? undefined);
 	}
 
-	private finishTurn(turnId: string, stopReason: string | undefined): void {
+	private finishTurn(
+		turnId: string,
+		stopReason: string | undefined,
+		usage?: AcpPromptUsage,
+	): void {
 		this.main.flush();
 		this.emitTurn({
 			id: turnId,
 			status: stopReason === "cancelled" ? "interrupted" : "completed",
 			startedAtMs: this.currentTurn?.startedAtMs ?? this.now(),
 			completedAtMs: this.now(),
+			...(usage ? { usage: this.turnUsage(usage) } : {}),
 		});
 		if (stopReason === "refusal")
 			this.emitNotice("info", "The agent declined to continue.");
@@ -1160,18 +1203,28 @@ export class AcpAdapter implements HarnessAdapter {
 		this.sendCustomAnswer();
 	}
 
-	private failTurn(turnId: string, message: string): void {
+	/** A failed turn, reported as a usage limit when the agent refused for usage. */
+	private failRefusedTurn(turnId: string, failure: TurnError): void {
+		const limit = this.usageLimitFrom(failure.message);
+		if (limit) this.emitSession({ usageLimit: limit });
+		this.failTurn(
+			turnId,
+			limit ? { ...failure, kind: "usage_limit" } : failure,
+		);
+	}
+
+	private failTurn(turnId: string, error: TurnError): void {
 		this.customAnswer = null;
 		this.main.flush();
 		this.cancelPendingApprovals(turnId);
 		this.emitTurn({
 			id: turnId,
 			status: "failed",
-			error: { message },
+			error,
 			startedAtMs: this.currentTurn?.startedAtMs ?? this.now(),
 			completedAtMs: this.now(),
 		});
-		this.emitNotice("error", message);
+		this.emitNotice("error", error.message);
 		this.emitSession({ status: this.statusAfterApprovals() });
 	}
 
@@ -1262,6 +1315,12 @@ export class AcpAdapter implements HarnessAdapter {
 
 		if (variant === "usage_update") {
 			const usage = acpUsageUpdateSchema.safeParse(outer.data.update);
+			if (usage.success && usage.data._meta?.["_claude/rateLimit"]) {
+				this.refused = refusedWindow(usage.data._meta["_claude/rateLimit"]);
+			}
+			if (typeof usage.data?._meta?.["_claude/model"] === "string") {
+				this.lastModel = usage.data._meta["_claude/model"];
+			}
 			if (usage.success && usage.data.cost !== undefined) this.main.flush();
 			if (
 				usage.success &&
@@ -1271,6 +1330,7 @@ export class AcpAdapter implements HarnessAdapter {
 				this.cycleEnded = true;
 				this.syncAwaitingBackground();
 			}
+			if (usage.success) this.recordSessionUsage(usage.data);
 			return;
 		}
 		if (MAIN_AGENT_ACTIVITY.has(variant)) {
@@ -1881,19 +1941,21 @@ export class AcpAdapter implements HarnessAdapter {
 		resumed: boolean,
 	): void {
 		const modeId = this.startModeId(startOptions, resumed);
-		for (const [category, value] of [
+		for (const [category, wanted] of [
 			["model", startOptions.modelId],
 			["mode", this.options.clientApprovalModes ? undefined : modeId],
 		] as const) {
 			const option = this.configOptions.find(
 				(entry) => entry.category === category,
 			);
-			if (
-				value &&
-				option &&
-				option.currentValue !== value &&
-				option.options.some((entry) => entry.id === value)
-			) {
+			if (!wanted || !option) continue;
+			const value =
+				category === "model"
+					? startOptionId(option.options, wanted)
+					: option.options.some((entry) => entry.id === wanted)
+						? wanted
+						: undefined;
+			if (value && option.currentValue !== value) {
 				this.setConfigOption(option.id, value);
 			}
 		}
@@ -2209,10 +2271,11 @@ export class AcpAdapter implements HarnessAdapter {
 		if (this.stderrTail) console.warn(`[acp] ${message}\n${this.stderrTail}`);
 		if (this.currentTurn?.status === "running") {
 			this.main.flush();
+			const detail = this.turnStderr.trim();
 			this.emitTurn({
 				...this.currentTurn,
 				status: "failed",
-				error: { message },
+				error: { message, kind: "crashed", ...(detail ? { detail } : {}) },
 				completedAtMs: this.now(),
 			});
 		}
@@ -2225,6 +2288,29 @@ export class AcpAdapter implements HarnessAdapter {
 		this.client
 			?.close()
 			.catch((error) => console.warn("[acp] could not close the agent", error));
+	}
+
+	private turnError(error: unknown): TurnError {
+		const message =
+			error instanceof AcpRpcError
+				? error.detail
+				: error instanceof Error
+					? error.message
+					: String(error);
+		const kind = classifyTurnFailure({
+			message,
+			...(error instanceof AcpTimeoutError ? { timedOut: true } : {}),
+			...(error instanceof AcpRpcError ? { code: error.code } : {}),
+		});
+		const detail = this.turnStderr.trim();
+		return {
+			message,
+			kind,
+			...(detail ? { detail } : {}),
+			...(kind === "auth" && this.loginCommand
+				? { loginCommand: this.loginCommand }
+				: {}),
+		};
 	}
 
 	private withStderr(message: string): string {
@@ -2370,9 +2456,48 @@ export class AcpAdapter implements HarnessAdapter {
 			this.cycleEnded = false;
 			this.steeredCyclePending = false;
 		}
-		this.currentTurn = turn;
-		this.emit({ kind: "turn", turn });
+		const next = this.sessionUsage
+			? { ...turn, sessionUsage: this.sessionUsage }
+			: turn;
+		this.currentTurn = next;
+		this.emit({ kind: "turn", turn: next });
 		this.syncAwaitingBackground();
+	}
+
+	private recordSessionUsage({ used, size, cost }: AcpUsageUpdate): void {
+		this.reportedCostUsd =
+			acpUsdCostSchema.safeParse(cost).data?.amount ?? this.reportedCostUsd;
+		const previous = this.sessionUsage;
+		const contextUsed = used ?? previous?.contextUsed;
+		const contextSize = size ?? previous?.contextSize;
+		if (contextUsed === undefined || contextSize === undefined) return;
+		const costUsd = this.reportedCostUsd;
+		if (
+			previous?.contextUsed === contextUsed &&
+			previous.contextSize === contextSize &&
+			previous.costUsd === costUsd
+		)
+			return;
+		this.sessionUsage = {
+			contextUsed,
+			contextSize,
+			...(costUsd === undefined ? {} : { costUsd }),
+		};
+		if (this.currentTurn) this.emitTurn(this.currentTurn);
+	}
+
+	private turnUsage(usage: AcpPromptUsage): NonNullable<Turn["usage"]> {
+		return {
+			inputTokens: usage.inputTokens,
+			cachedInputTokens: usage.cachedReadTokens ?? 0,
+			outputTokens: usage.outputTokens,
+			...(this.sessionUsage
+				? {
+						contextUsed: this.sessionUsage.contextUsed,
+						contextSize: this.sessionUsage.contextSize,
+					}
+				: {}),
+		};
 	}
 
 	private syncAwaitingBackground(): void {
@@ -2421,6 +2546,23 @@ export class AcpAdapter implements HarnessAdapter {
 			},
 			this.resolveTurnId(),
 		);
+	}
+
+	/**
+	 * The agent forwards Claude's `rate_limit_event` on its usage updates and
+	 * ends a refused turn with the CLI's own words. A refusal paid for by extra
+	 * usage reports nothing, and a turn that survives one is not a limit.
+	 */
+	private usageLimitFrom(message: string): UsageLimit | null {
+		const refused = this.refused;
+		this.refused = null;
+		if (!refused && !USAGE_LIMIT_TEXT.test(message)) return null;
+		return {
+			hitAtMs: this.now(),
+			...(refused?.resetsAtMs ? { resetsAtMs: refused.resetsAtMs } : {}),
+			...(refused?.window ? { window: refused.window } : {}),
+			...(this.lastModel ? { model: this.lastModel } : {}),
+		};
 	}
 
 	private emitSession(session: Partial<SessionState>): void {
