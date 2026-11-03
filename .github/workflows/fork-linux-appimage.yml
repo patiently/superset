@@ -1,6 +1,6 @@
 name: Fork Linux AppImage Release
 
-# Daily build on upstream main 8b523240c (everything in 2.0.2 plus 83 later
+# Daily build on upstream main 142df446d (everything in 2.0.3 plus 58 later
 # commits) with the four fs-watcher fixes. Proves each fix's tests go red
 # without it and green with it, then builds and publishes desktop-v<VERSION>
 # with the upstream asset name.
@@ -238,7 +238,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at 8b523240c plus the four fs-watcher fixes. That main is everything in desktop-v2.0.2 plus 83 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
+            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at 142df446d plus the four fs-watcher fixes. That main is everything in desktop-v2.0.3 plus 58 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 

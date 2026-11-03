@@ -67,11 +67,26 @@ msgstr "「{0}」は{2}で{1}にマージされます。ここからは元に戻
 msgid "\"{0}\" will stop firing and its run history will be removed. This can't be undone."
 msgstr "「{0}」は発火しなくなり、実行履歴も削除されます。この操作は元に戻せません。"
 
+msgid "\"{name}\" is {size} — files over {limit} can't be attached"
+msgstr "「{name}」は {size} です — {limit} を超えるファイルは添付できません"
+
+msgid "\"{name}\" is {size} — files over {limit} can't be attached to this workspace. If the file is on the workspace's machine, mention its path instead."
+msgstr "「{name}」は {size} です — このワークスペースには {limit} を超えるファイルを添付できません。ファイルがワークスペースのマシン上にある場合は、代わりにそのパスを記載してください。"
+
+msgid "\"{name}\" is a folder. Attach the files inside it instead."
+msgstr "「{name}」はフォルダです。代わりにフォルダ内のファイルを添付してください。"
+
+msgid "\"{name}\" is over {limit}, the most a workspace outside the cloud can take"
+msgstr "「{name}」は {limit} を超えています。クラウド外のワークスペースが受け取れるのは {limit} までです"
+
 msgid "\"{name}\" paused"
 msgstr "「{name}」を一時停止しました"
 
 msgid "\"{name}\" resumed"
 msgstr "「{name}」を再開しました"
+
+msgid "\"{name}\" was moved or deleted. Attach it again."
+msgstr "「{name}」は移動または削除されました。もう一度添付してください。"
 
 msgid "\"{title}\" has finished its task"
 msgstr "「{title}」がタスクを完了しました"
@@ -905,6 +920,12 @@ msgstr "{count, plural, one {#件のソースを使用} other {#件のソース�
 msgid "{count, plural, one {used # tool} other {used # tools}}"
 msgstr "{count, plural, one {#件のツールを使用} other {#件のツールを使用}}"
 
+msgid "{count} files are over {limit} and were not added"
+msgstr "{count} 件のファイルが {limit} を超えているため追加されませんでした"
+
+msgid "{count} files attached — a message carries at most {max}"
+msgstr "{count} 件のファイルが添付されています — 1 つのメッセージに添付できるのは最大 {max} 件です"
+
 msgid "{count} GitHub stars"
 msgstr "GitHubスター{count}件"
 
@@ -1116,6 +1137,9 @@ msgstr "{name} が作業を開始しました"
 msgid "{name} stopped"
 msgstr "{name} が停止しました"
 
+msgid "{name} wants more access"
+msgstr "{name} がより多くのアクセスを求めています"
+
 msgid "{name}: {hours} hours ({gbHours} GB-hours) per seat"
 msgstr "{name}: 1席あたり {hours} 時間（{gbHours} GB 時間）"
 
@@ -1231,6 +1255,9 @@ msgstr "{productName} は、Union Square Ventures がリードし、Y Combinator
 
 msgid "{productName} was called {formerName} until October 2026."
 msgstr "{productName} は 2026 年 10 月まで {formerName} という名前でした。"
+
+msgid "{prompt} · # to change project, host, and more"
+msgstr "{prompt} · # でプロジェクトやホストなどを変更"
 
 msgid "{pullRequestCount, plural, one {# PR} other {# PRs}}"
 msgstr "{pullRequestCount, plural, other {# 件の PR}}"
@@ -1542,6 +1569,9 @@ msgstr "1"
 
 msgid "1 cookie — forget this site"
 msgstr "1件のCookie — このサイトを削除"
+
+msgid "1 file is over {limit} and was not added"
+msgstr "1 件のファイルが {limit} を超えているため追加されませんでした"
 
 msgid "1 hr"
 msgstr "1時間"
@@ -1916,6 +1946,9 @@ msgstr "{0}アカウントを追加"
 msgid "Add {0} to workspace"
 msgstr "{0} をワークスペースに追加"
 
+msgid "Add {localizedName}?"
+msgstr "{localizedName} を追加しますか？"
+
 msgid "Add a comment…"
 msgstr "コメントを追加…"
 
@@ -1993,6 +2026,9 @@ msgstr "説明を追加"
 
 msgid "Add description..."
 msgstr "説明を追加..."
+
+msgid "Add extension"
+msgstr "拡張機能を追加"
 
 msgid "Add file comment"
 msgstr "ファイルにコメントを追加"
@@ -2259,6 +2295,10 @@ msgstr "エージェントが操作するプレビュー"
 
 msgid "Agents"
 msgstr "エージェント"
+
+#. placeholder {0}: displayName(name)
+msgid "Agents cannot reach {0}'s tools"
+msgstr "エージェントは {0} のツールにアクセスできません"
 
 msgid "Agents complete routine tickets with no mid-task intervention."
 msgstr "エージェントが定型チケットを途中の介入なしに完了する。"
@@ -3299,6 +3339,9 @@ msgstr "支援者"
 msgid "Background"
 msgstr "背景"
 
+msgid "Background · {count}"
+msgstr "バックグラウンド · {count}"
+
 msgid "Background processes"
 msgstr "バックグラウンドプロセス"
 
@@ -3540,11 +3583,11 @@ msgstr "{companyName}をチームに導入しましょう。エンタープラ�
 msgid "Bring a link to something you built recently."
 msgstr "最近作ったもののリンクをお持ちください。"
 
-msgid "Bring Any Agent"
-msgstr "どのエージェントでも"
-
 msgid "Bring Claude Code, Codex, OpenCode, or any coding agent into one workspace. Run tasks in parallel on separate branches, and review everything in one place."
 msgstr "Claude Code、Codex、OpenCode、またはあらゆるコーディングエージェントを1つのワークスペースに。タスクを別々のブランチで並行して実行し、すべてを1か所でレビューできます。"
+
+msgid "Bring in an agent"
+msgstr "エージェントを選択"
 
 msgid "Bring over your projects"
 msgstr "プロジェクトを引き継ぐ"
@@ -3567,11 +3610,14 @@ msgstr "コミュニティが共有したスキル、MCPサーバー、エージ
 msgid "Browse for directory"
 msgstr "ディレクトリを参照"
 
+msgid "Browse Paradev plugins, shared themes, and future agent configs."
+msgstr "Paradevのプラグイン、共有テーマ、今後のエージェント設定を閲覧できます。"
+
 msgid "Browse Paradev theme files shared by the community, including GitHub Dark Colorblind, Catppuccin, Ember, and One Dark Pro."
 msgstr "GitHub Dark Colorblind、Catppuccin、Ember、One Dark Proなど、コミュニティが共有するParadevのテーマファイルを閲覧できます。"
 
-msgid "Browse shared themes and future agent configs for Paradev."
-msgstr "Paradev向けに共有されたテーマと今後のエージェント設定を閲覧できます。"
+msgid "Browse the plugins every Paradev agent can use, and submit your own."
+msgstr "すべてのParadevエージェントが使えるプラグインを閲覧し、自分のプラグインを送信できます。"
 
 msgid "Browse the repo ↗"
 msgstr "リポジトリを見る ↗"
@@ -3620,6 +3666,9 @@ msgstr "最後のソフトウェアを作る"
 
 msgid "Building the last piece of software."
 msgstr "最後のソフトウェアを作る。"
+
+msgid "Built a plugin? Submit it here."
+msgstr "プラグインを作りましたか？ここから送信してください。"
 
 msgid "Built in Paradev"
 msgstr "Paradevで開発"
@@ -3744,6 +3793,9 @@ msgstr "カメラを利用できません"
 
 msgid "Can comment"
 msgstr "コメント可"
+
+msgid "Can edit"
+msgstr "編集可"
 
 msgid "Can I buy more cloud GB-hours?"
 msgstr "クラウド GB 時間を追加購入できますか?"
@@ -3956,6 +4008,9 @@ msgstr "月払いに変更"
 
 msgid "Change worktree location"
 msgstr "ワークツリーの場所を変更"
+
+msgid "Change your privacy-related settings"
+msgstr "プライバシー関連の設定の変更"
 
 msgid "Change-failure rate at or below the human-era baseline for two consecutive quarters."
 msgstr "変更失敗率が2四半期連続で人間の時代の基準値以下に収まる。"
@@ -4602,8 +4657,8 @@ msgstr "クラウドワークスペースはこの変数を無視します。エ
 msgid "Cloud workspaces need the Team or Ultra plan. Upgrade in Settings, Billing to start one."
 msgstr "クラウドワークスペースには Team または Ultra プランが必要です。起動するには設定の請求からアップグレードしてください。"
 
-msgid "Cloud workspaces open on it, and its .superset/config.json runs setup. The others are checked out beside it."
-msgstr "クラウドワークスペースはこのリポジトリで開き、その .superset/config.json がセットアップを実行します。ほかのリポジトリは横にチェックアウトされます。"
+msgid "Cloud workspaces open on it, and its Paradev config runs setup. The others are checked out beside it."
+msgstr "クラウドワークスペースはこのリポジトリで開き、その Paradev 設定がセットアップを実行します。ほかのリポジトリは横にチェックアウトされます。"
 
 msgid "Cloud workspaces will stop running {agentLabel} with it."
 msgstr "クラウドワークスペースはこれを使って{agentLabel}を実行しなくなります。"
@@ -4784,6 +4839,9 @@ msgstr "着手が決まっており、まもなく開始します。"
 
 msgid "Common questions"
 msgstr "よくある質問"
+
+msgid "Communicate with cooperating native applications"
+msgstr "連携するネイティブ アプリケーションとの通信"
 
 msgid "Communication"
 msgstr "コミュニケーション"
@@ -5510,6 +5568,9 @@ msgstr "プラグインを無効にできませんでした"
 msgid "Could not disconnect."
 msgstr "接続を解除できませんでした。"
 
+msgid "Could not download {names}."
+msgstr "{names} をダウンロードできませんでした。"
+
 msgid "Could not forget {domain}"
 msgstr "{domain}を削除できませんでした"
 
@@ -5558,6 +5619,9 @@ msgstr "マシンを読み込めませんでした"
 
 msgid "Could not mark ready"
 msgstr "レビュー可能にできませんでした"
+
+msgid "Could not open {name}"
+msgstr "{name} を開けませんでした"
 
 msgid "Could not open billing. Please try again."
 msgstr "請求ページを開けませんでした。もう一度お試しください。"
@@ -5621,6 +5685,9 @@ msgstr "クラウドワークスペースを記録できませんでした"
 
 msgid "Could not record environment"
 msgstr "環境を保存できませんでした"
+
+msgid "Could not remove {name}"
+msgstr "{name} を削除できませんでした"
 
 msgid "Could not remove access"
 msgstr "アクセスを削除できませんでした"
@@ -5705,6 +5772,9 @@ msgstr "スクリーンショットを撮れませんでした"
 
 msgid "Could not undo"
 msgstr "取り消せませんでした"
+
+msgid "Could not update {name}"
+msgstr "{name} を更新できませんでした"
 
 msgid "Could not update plugin"
 msgstr "プラグインを更新できませんでした"
@@ -6477,6 +6547,9 @@ msgstr "停止"
 msgid "Debug"
 msgstr "デバッグ"
 
+msgid "Debug failed runs and rerun functions"
+msgstr "失敗した実行のデバッグと関数の再実行"
+
 msgid "Debug with production stack traces"
 msgstr "本番のスタックトレースでデバッグ"
 
@@ -7078,6 +7151,9 @@ msgstr "がレビューを取り下げました"
 msgid "Display"
 msgstr "表示"
 
+msgid "Display notifications"
+msgstr "通知の表示"
+
 msgid "Display options"
 msgstr "表示オプション"
 
@@ -7089,6 +7165,9 @@ msgstr "モバイルのサイドバーを表示します。"
 
 msgid "Do anything"
 msgstr "何でもどうぞ"
+
+msgid "Do anything in Paradev"
+msgstr "Paradev で何でもどうぞ"
 
 msgid "Do I need my own coding agent subscriptions?"
 msgstr "コーディングエージェントの契約は自分で用意する必要がありますか?"
@@ -7593,6 +7672,9 @@ msgstr "URLを入力..."
 msgid "Enterprise"
 msgstr "エンタープライズ"
 
+msgid "environment"
+msgstr "環境"
+
 msgid "Environment"
 msgstr "環境"
 
@@ -7829,6 +7911,9 @@ msgstr "検討中"
 
 msgid "Extended thinking: {activeLabel}"
 msgstr "拡張思考: {activeLabel}"
+
+msgid "Extensions"
+msgstr "拡張機能"
 
 msgid "External Application"
 msgstr "外部アプリケーション"
@@ -8991,6 +9076,9 @@ msgstr "APIキーを取得"
 msgid "Get channel details"
 msgstr "チャンネルの詳細を表示"
 
+msgid "Get extensions"
+msgstr "拡張機能を入手"
+
 msgid "Get in touch with the {companyName} team."
 msgstr "{companyName}チームにお問い合わせください。"
 
@@ -9381,6 +9469,9 @@ msgctxt "directory"
 msgid "Home"
 msgstr "ホーム"
 
+msgid "host"
+msgstr "ホスト"
+
 msgid "Host"
 msgstr "ホスト"
 
@@ -9469,8 +9560,8 @@ msgstr "実行の間隔（時間）"
 msgid "Hover Card"
 msgstr "Hover Card"
 
-msgid "How {label} signs in when Paradev runs it for you."
-msgstr "Paradev が {label} を実行するときのサインイン方法。"
+msgid "How {label} authenticates in cloud workspaces."
+msgstr "クラウドワークスペースでの {label} の認証方法。"
 
 msgid "How 2026 plays out"
 msgstr "2026年はこう進む"
@@ -9883,6 +9974,9 @@ msgstr "並列コーディングエージェントと開発者の生産性につ
 msgid "Inspect branches and run SQL"
 msgstr "ブランチの確認とSQLの実行"
 
+msgid "Inspect tables and apply migrations"
+msgstr "テーブルの確認とマイグレーションの適用"
+
 #. placeholder {0}: data.targetTitle
 msgid "Inspecting {0}"
 msgstr "{0}を検査中"
@@ -9898,6 +9992,9 @@ msgstr "インストールして再起動"
 
 msgid "Install & Restart"
 msgstr "インストールして再起動"
+
+msgid "Install a plugin in the Paradev app and every agent can use it."
+msgstr "Paradevアプリでプラグインをインストールすると、すべてのエージェントが使えます。"
 
 msgid "Install failed"
 msgstr "インストールに失敗しました"
@@ -10147,8 +10244,14 @@ msgstr "IssueのURLは{repoMismatch}と一致する必要があります。"
 msgid "Issue…"
 msgstr "Issue…"
 
+msgid "It can:"
+msgstr "次の操作を行えます:"
+
 msgid "It can't be brought back."
 msgstr "元に戻すことはできません。"
+
+msgid "It copies the cookies from your \"{profileName}\" profile into a browser pane the agent opened. The agent can then act on the sites you are signed in to."
+msgstr "エージェントが開いたブラウザペインに、\"{profileName}\" プロファイルの Cookie をコピーします。エージェントはその後、あなたがログインしているサイトで操作できます。"
 
 msgid "It keeps the title from your prompt."
 msgstr "プロンプトから付けたタイトルのままになります。"
@@ -10315,6 +10418,9 @@ msgstr "{planLabel} を維持"
 
 msgid "Keep {planName}"
 msgstr "{planName} を維持"
+
+msgid "Keep current version"
+msgstr "現在のバージョンを維持"
 
 msgid "Keep docs fresh"
 msgstr "ドキュメントを最新に保つ"
@@ -10630,6 +10736,9 @@ msgstr "少ない"
 msgid "less than a minute ago"
 msgstr "1分未満前"
 
+msgid "Let an agent use your {browserName} logins?"
+msgstr "エージェントに {browserName} のログインを使わせますか？"
+
 msgid "Let the agent drive."
 msgstr "エージェントに操作させる。"
 
@@ -10721,6 +10830,9 @@ msgstr "Linearがリクエストを制限しています。数分後にもう一
 msgid "Linear issues"
 msgstr "Linear issue"
 
+msgid "Linear project"
+msgstr "Linear プロジェクト"
+
 #. placeholder {0}: m.startLine
 #. placeholder {0}: metadata.startLine
 #. placeholder {1}: m.endLine
@@ -10751,9 +10863,6 @@ msgstr "このタスクをリンク"
 
 msgid "Linked {slug} to workspace"
 msgstr "{slug}をワークスペースにリンクしました"
-
-msgid "Linked to {projectName}"
-msgstr "{projectName} にリンク済み"
 
 msgid "Liquid Glass"
 msgstr "Liquid Glass"
@@ -11041,6 +11150,9 @@ msgstr "重要度: 低"
 msgid "Machine resources"
 msgstr "マシンリソース"
 
+msgid "Machine size"
+msgstr "マシンサイズ"
+
 msgid "Machine size: {label}"
 msgstr "マシンサイズ: {label}"
 
@@ -11134,6 +11246,9 @@ msgstr "使用量を管理"
 
 msgid "Manage your account settings"
 msgstr "アカウント設定を管理"
+
+msgid "Manage your apps, extensions, and themes"
+msgstr "アプリ、拡張機能、テーマの管理"
 
 msgid "Manage your organization's branding and members."
 msgstr "組織のブランディングとメンバーを管理します。"
@@ -11917,9 +12032,6 @@ msgstr "次の画像"
 msgid "Next match"
 msgstr "次の一致"
 
-msgid "Next release"
-msgstr "次のリリース"
-
 #. placeholder {0}: formatDateTimeInTimezone( new Date(automation.nextRunAt), automation.timezone ?? "UTC", )
 msgid "Next run {0}"
 msgstr "次回の実行 {0}"
@@ -12136,14 +12248,14 @@ msgstr "ダウンロードはまだありません"
 msgid "No emoji found"
 msgstr "絵文字が見つかりません"
 
-msgid "No environments are linked to this project yet."
-msgstr "このプロジェクトにリンクされた環境はまだありません。"
-
 msgid "No environments available"
 msgstr "利用可能な環境はありません"
 
 msgid "No environments found."
 msgstr "環境が見つかりません。"
+
+msgid "No environments linked to this project."
+msgstr "このプロジェクトにリンクされた環境はありません。"
 
 msgid "No environments yet."
 msgstr "環境はまだありません。作成すると、そこからクラウドワークスペースを起動できます。"
@@ -13145,6 +13257,9 @@ msgstr "アクティブなターミナル用の複数行プロンプト入力を
 msgid "Open a new {label} chat?"
 msgstr "新しい {label} チャットを開きますか？"
 
+msgid "Open a pull request that adds it to the Paradev repository. We review it and add it to the marketplace."
+msgstr "Paradevリポジトリにプラグインを追加するプルリクエストを開いてください。レビューしてマーケットプレイスに追加します。"
+
 msgid "Open a pull request to view review status, checks, and comments."
 msgstr "プルリクエストを開くと、レビュー状態、チェック、コメントを確認できます。"
 
@@ -13604,9 +13719,6 @@ msgstr "オレンジ"
 msgid "Orchestrate Parallel Agents"
 msgstr "並列エージェントを指揮"
 
-msgid "Orchestrate Them All"
-msgstr "すべてを指揮する"
-
 msgid "Orchestrated"
 msgstr "オーケストレーション"
 
@@ -13888,6 +14000,9 @@ msgstr "Paradevデザインシステム"
 msgid "Paradev desktop app"
 msgstr "Paradev デスクトップアプリ"
 
+msgid "Paradev doesn't have permission to read \"{name}\"."
+msgstr "Paradev には「{name}」を読み取る権限がありません。"
+
 msgid "Paradev Enterprise is Paradev for teams. Reach out to learn more about what's included and how it can work for your organization."
 msgstr "Paradev Enterpriseは、チーム向けのParadevです。含まれる内容や組織での活用方法については、お問い合わせください。"
 
@@ -13987,8 +14102,8 @@ msgstr "Paradev ページのデモ"
 msgid "Paradev Plugins"
 msgstr "Paradev プラグイン"
 
-msgid "Paradev runs locally on your developers' machines. We don't store your code or AI conversations, and Paradev has completed a SOC 2 Type II audit with an independent auditor. Request the report and review our security documentation at trust.superset.sh."
-msgstr "Paradevは開発者のマシン上でローカルに動作します。コードやAIとの会話を当社が保存することはありません。また、Paradevは独立監査人によるSOC 2 Type II監査を完了しています。レポートのご請求やセキュリティ関連ドキュメントの確認はtrust.superset.shから行えます。"
+msgid "Paradev runs locally on your developers' machines. We don't store your code or AI conversations, and Paradev has completed a SOC 2 Type II audit with an independent auditor. Request the report and review our security documentation at {trustHost}."
+msgstr "Paradevは開発者のマシン上でローカルに動作します。コードやAIとの会話を当社が保存することはありません。また、Paradevは独立監査人によるSOC 2 Type II監査を完了しています。レポートのご請求やセキュリティ関連ドキュメントの確認は{trustHost}から行えます。"
 
 msgid "Paradev started as a hackathon project in November 2025. It was a simple desktop app for managing worktrees."
 msgstr "Paradevは2025年11月、ハッカソンのプロジェクトとして始まりました。ワークツリーを管理するだけの、シンプルなデスクトップアプリでした。"
@@ -14026,10 +14141,6 @@ msgstr "並列のエージェントワークツリー"
 
 msgid "Parallel agents"
 msgstr "並列エージェント"
-
-#. Homepage headline, line 2 of 2, after “The IDE for”.
-msgid "Parallel Agents"
-msgstr "専用IDE"
 
 msgid "Parallel agents guide"
 msgstr "並列エージェントガイド"
@@ -14280,6 +14391,9 @@ msgstr "PID"
 msgid "Pin"
 msgstr "ピン留め"
 
+msgid "Pin {name}"
+msgstr "{name} をピン留め"
+
 msgid "Pin feedback to a page and let the agent make the change."
 msgstr "ページにフィードバックを残し、変更はエージェントに任せましょう。"
 
@@ -14377,6 +14491,9 @@ msgstr "プラグインマーケットプレイス"
 
 msgid "Plugins"
 msgstr "プラグイン"
+
+msgid "Plugins, themes, and agents"
+msgstr "プラグイン、テーマ、エージェント"
 
 msgid "Point at the page. Your agent makes the change."
 msgstr "ページを指すだけで、エージェントが変更します。"
@@ -14557,9 +14674,6 @@ msgstr "前の一致"
 msgid "Previous prompts"
 msgstr "以前のプロンプト"
 
-msgid "Previous release"
-msgstr "前のリリース"
-
 msgid "Previous slide"
 msgstr "前のスライド"
 
@@ -14661,6 +14775,9 @@ msgstr "進捗"
 
 msgid "Progress · Spinner"
 msgstr "Progress · Spinner"
+
+msgid "project"
+msgstr "プロジェクト"
 
 msgctxt "MCP server scope"
 msgid "project"
@@ -14826,6 +14943,9 @@ msgstr "Paradev CLI か MCP 経由で公開できます。"
 
 msgid "Publish from your own repo"
 msgstr "自分のリポジトリから公開"
+
+msgid "Publish new versions, rename and share"
+msgstr "新しいバージョンの公開、名前の変更、共有"
 
 msgctxt "github release action"
 msgid "Published"
@@ -15054,6 +15174,15 @@ msgctxt "shell intent"
 msgid "Read"
 msgstr "読み取り済み"
 
+msgid "Read and change all your data on all websites"
+msgstr "すべてのウェブサイト上にある自分のすべてのデータの読み取りと変更"
+
+msgid "Read and change your data on {count} websites"
+msgstr "{count} 件のウェブサイト上にある自分のデータの読み取りと変更"
+
+msgid "Read and change your data on {site}"
+msgstr "{site} 上にある自分のデータの読み取りと変更"
+
 msgid "Read and plan without changing anything"
 msgstr "何も変更せずに読み取りと計画のみ"
 
@@ -15065,6 +15194,9 @@ msgstr "メールの閲覧と送信"
 
 msgid "Read announcement"
 msgstr "お知らせを読む"
+
+msgid "Read data you copy and paste"
+msgstr "コピーして貼り付けたデータの読み取り"
 
 msgid "Read deployment and build logs"
 msgstr "デプロイとビルドのログを確認"
@@ -15104,6 +15236,9 @@ msgstr "セットアップガイドを読む"
 
 msgid "Read the source and every pull request."
 msgstr "ソースコードとすべてのプルリクエストを読む。"
+
+msgid "Read your browsing history"
+msgstr "閲覧履歴の読み取り"
 
 msgctxt "shell intent"
 msgid "Reading"
@@ -15163,6 +15298,9 @@ msgstr "リベースしてマージ"
 
 msgid "Rebase and merge"
 msgstr "リベースしてマージ"
+
+msgid "Recall what was said in meetings"
+msgstr "会議での発言を振り返る"
 
 msgid "Recent Activity"
 msgstr "最近のアクティビティ"
@@ -15390,6 +15528,9 @@ msgstr "{label}を削除しますか?"
 
 msgid "Remove {name}"
 msgstr "{name} を削除"
+
+msgid "Remove {name}?"
+msgstr "{name} を削除しますか?"
 
 msgid "Remove {repo}? Every plugin synced from it is removed from your organization and from every member who has it installed."
 msgstr "{repo} を削除しますか？このリポジトリから同期されたプラグインはすべて、組織からも、インストール済みのすべてのメンバーからも削除されます。"
@@ -16186,8 +16327,8 @@ msgstr "\"gh auth login\" を実行するか GITHUB_TOKEN を設定してくだ�
 msgid "Run {0} now"
 msgstr "{0}を今すぐ実行"
 
-msgid "Run <0>{tokenCommand}</0><1><2/></1> in a terminal and paste the token here."
-msgstr "ターミナルで<0>{tokenCommand}</0><1><2/></1>を実行してトークンをここに貼り付けてください。"
+msgid "Run <0>{tokenCommand}</0><1><2/></1> in a terminal and paste the token you get back here."
+msgstr "ターミナルで<0>{tokenCommand}</0><1><2/></1>を実行し、表示されたトークンをここに貼り付けてください。"
 
 msgid "Run 01"
 msgstr "Run 01"
@@ -16464,6 +16605,9 @@ msgstr "範囲"
 #. placeholder {0}: String(MIN_ACTIVE_DAYS)
 msgid "Scoring starts once the board can see {0} days of usage."
 msgstr "{0}日分の使用状況がそろうとスコアリングが始まります。"
+
+msgid "Scrape and crawl websites"
+msgstr "Webサイトのスクレイピングとクロール"
 
 msgid "Screenshot copied"
 msgstr "スクリーンショットをコピーしました"
@@ -17482,6 +17626,9 @@ msgstr "サインインは一度だけ。接続はParadevが保ちます。"
 msgid "Sign in to {0}"
 msgstr "{0}にサインイン"
 
+msgid "Sign in to change your organization's plugins."
+msgstr "組織のプラグインを変更するにはサインインしてください。"
+
 msgid "Sign in to continue"
 msgstr "続行するにはサインインしてください"
 
@@ -17628,6 +17775,9 @@ msgstr "工場の自律性、6つのレベル"
 msgid "Six levels of factory autonomy, the gates between them, and our forecast for how far 2026 gets us. Written down now so you can grade us later."
 msgstr "工場の自律性を6段階に分け、その間にあるゲートと、2026年にどこまで進むかの予測をまとめました。後から採点できるように、いま書き残しておきます。"
 
+msgid "size"
+msgstr "サイズ"
+
 msgid "Size"
 msgstr "サイズ"
 
@@ -17639,6 +17789,9 @@ msgstr "スキル"
 
 msgid "Skills"
 msgstr "スキル"
+
+msgid "Skills and MCP tools for your agents. Submit your own."
+msgstr "エージェント向けのスキルとMCPツール。自分のプラグインも送信できます。"
 
 msgid "Skills ship with the Paradev plugin and are kept up to date automatically in every agent you use. Click one to preview it."
 msgstr "スキルはParadevプラグインに同梱され、使用するすべてのエージェントで自動的に最新の状態に保たれます。クリックしてプレビューできます。"
@@ -18251,6 +18404,9 @@ msgstr "サブエージェント"
 msgid "Subagents"
 msgstr "サブエージェント"
 
+msgid "Subagents · {count}"
+msgstr "サブエージェント · {count}"
+
 msgid "Subject contains..."
 msgstr "件名に含む..."
 
@@ -18268,6 +18424,9 @@ msgstr "プロンプトを投稿"
 
 msgid "Submit prompt rate limiting is not configured"
 msgstr "プロンプト送信のレート制限が設定されていません"
+
+msgid "Submit your plugin"
+msgstr "プラグインを送信"
 
 msgid "Submitting…"
 msgstr "送信中…"
@@ -18906,8 +19065,8 @@ msgstr "クラウドワークスペースは起動しているはずですが、
 msgid "The code expired. Start again."
 msgstr "コードの有効期限が切れました。やり直してください。"
 
-msgid "The commands Paradev runs to set up, run and archive this project's workspaces, from .superset/config.toml."
-msgstr "このプロジェクトのワークスペースをセットアップ、実行、アーカイブするときに Paradev が実行するコマンド（.superset/config.toml）。"
+msgid "The commands Paradev runs to set up, run and archive this project's workspaces, from the repository's config.toml."
+msgstr "このプロジェクトのワークスペースをセットアップ、実行、アーカイブするときに Paradev が実行するコマンド（リポジトリの config.toml）。"
 
 msgid "The company raised an $11.5M seed round led by Union Square Ventures, with Y Combinator and Paul Graham. TechCrunch named it one of the standout startups from YC Demo Day."
 msgstr "同社は、Union Square Ventures がリードし、Y Combinator と Paul Graham が参加した 1,150 万ドルのシードラウンドを調達しました。TechCrunch は同社を YC Demo Day の注目スタートアップの 1 社に選びました。"
@@ -18950,6 +19109,9 @@ msgstr "エンドポイントは https を使用する必要があります。"
 
 msgid "The environment this automation starts cloud workspaces from was archived or has no repositories. Pick another environment in the automation's settings."
 msgstr "このオートメーションがクラウドワークスペースを起動する環境が、アーカイブされたかリポジトリがありません。オートメーションの設定で別の環境を選択してください。"
+
+msgid "The extension and its local data are deleted from this browser."
+msgstr "拡張機能とそのローカルデータがこのブラウザから削除されます。"
 
 msgid "The factory"
 msgstr "工場"
@@ -19023,10 +19185,6 @@ msgstr "ホストは以前のビルドに戻りました。"
 
 msgid "The human reads every line before it merges."
 msgstr "人間がマージ前に全行を読む。"
-
-#. Homepage headline, line 1 of 2. Line 2 is “Parallel Agents”; reorder the two lines if the language needs it.
-msgid "The IDE for"
-msgstr "並列エージェント"
 
 msgid "The image upload expired — attach it again"
 msgstr "画像のアップロードの有効期限が切れました — もう一度添付してください"
@@ -19119,6 +19277,9 @@ msgstr "Paradevのホストサービスが予期せず停止し ({cause})、自�
 msgid "serverError.plugins.pluginSourcePathOutside"
 msgstr "パスはリポジトリ内にある必要があります"
 
+msgid "The plugin change did not finish in {seconds} seconds."
+msgstr "プラグインの変更が {seconds} 秒以内に完了しませんでした。"
+
 msgid "The pool resets every month. Usage past it is billed per GB-hour at the rate shown on each plan."
 msgstr "プールは毎月リセットされます。超過分は各プランに表示された GB 時間あたりの料金で請求されます。"
 
@@ -19163,6 +19324,9 @@ msgstr "同じアプリが iPad でネイティブに動作し、縦向きにも
 msgid "The scorecard"
 msgstr "スコアカード"
 
+msgid "The selected element's context is too large to send"
+msgstr "選択した要素のコンテキストが大きすぎるため送信できません"
+
 msgid "The self-driving software factory"
 msgstr "自動運転するソフトウェア工場"
 
@@ -19199,6 +19363,9 @@ msgstr "タイトルはこのページが一覧表示される場所すべてと
 msgid "The turn failed"
 msgstr "ターンが失敗しました"
 
+msgid "The update can also:"
+msgstr "この更新では次の操作も可能になります:"
+
 msgid "The very beginning"
 msgstr "最初"
 
@@ -19234,9 +19401,6 @@ msgstr "Theme Preview Card"
 
 msgid "Themes"
 msgstr "テーマ"
-
-msgid "Themes and agents"
-msgstr "テーマとエージェント"
 
 msgid "These commands run automatically when a workspace is created. <0>Read our docs<1/></0>"
 msgstr "これらのコマンドはワークスペース作成時に自動的に実行されます。<0>ドキュメントを読む<1/></0>"
@@ -19580,9 +19744,6 @@ msgstr "このサブエージェントは今はバックグラウンドに移動
 
 msgid "This subagent is no longer tracked by the host. Its transcript stays on disk under the agent's session directory."
 msgstr "このサブエージェントはホストで追跡されなくなりました。トランスクリプトはエージェントのセッションディレクトリにディスク上で残ります。"
-
-msgid "This task is in a channel you can't see"
-msgstr "このタスクはあなたが見られないチャンネルにあります"
 
 msgid "This terminal has no output to hand over yet."
 msgstr "このターミナルには引き継げる出力がまだありません。"
@@ -20566,6 +20727,9 @@ msgstr "グローバルのデフォルトを使用"
 msgid "Use lowercase letters, numbers, dashes and underscores"
 msgstr "小文字、数字、ハイフン、アンダースコアを使用してください"
 
+msgid "Use more browser features: {features}"
+msgstr "ブラウザの追加機能を使用: {features}"
+
 msgid "Use Paradev on mobile"
 msgstr "モバイルでParadevを使う"
 
@@ -21337,9 +21501,6 @@ msgstr "ワークスペースを開きましたが、ターミナルを起動で
 msgid "Workspace path is not available"
 msgstr "ワークスペースのパスを利用できません"
 
-msgid "Workspace path is not available yet"
-msgstr "ワークスペースのパスはまだ利用できません"
-
 msgid "Workspace restored"
 msgstr "ワークスペースを復元しました"
 
@@ -21487,8 +21648,8 @@ msgstr "はい。Freeプランは個人向けで、1ユーザー、ローカル�
 msgid "Yes. On plans with cloud workspaces, owners can buy any amount of extra GB-hours at {packPrice} per GB-hour in Settings, Billing. Bought GB-hours are used after the monthly pool and never expire, and auto top-up can buy more when they run low."
 msgstr "はい。クラウドワークスペースのあるプランでは、オーナーが設定の請求から、GB 時間あたり {packPrice} で追加の GB 時間を好きなだけ購入できます。購入した GB 時間は月間プールの後に使われ、期限はありません。残りが少なくなると自動チャージで追加購入することもできます。"
 
-msgid "Yes. Paradev has completed a SOC 2 Type II audit with an independent auditor, covering our security controls in operation over time. Request the report and review our security documentation at trust.superset.sh."
-msgstr "はい。Paradevは独立監査人によるSOC 2 Type II監査を完了しており、一定期間にわたるセキュリティ統制の運用状況が対象です。レポートのご請求やセキュリティ関連ドキュメントの確認はtrust.superset.shから行えます。"
+msgid "Yes. Paradev has completed a SOC 2 Type II audit with an independent auditor, covering our security controls in operation over time. Request the report and review our security documentation at {trustHost}."
+msgstr "はい。Paradevは独立監査人によるSOC 2 Type II監査を完了しており、一定期間にわたるセキュリティ統制の運用状況が対象です。レポートのご請求やセキュリティ関連ドキュメントの確認は{trustHost}から行えます。"
 
 msgid "Yes. Paradev is the workspace your agents run in, not a model provider. Bring Claude Code, Codex, OpenCode, or any CLI agent, and use your existing accounts or API keys on every plan."
 msgstr "はい。Paradevはエージェントが動くワークスペースであり、モデルのプロバイダーではありません。Claude Code、Codex、OpenCodeなど任意のCLIエージェントを持ち込み、既存のアカウントやAPIキーをどのプランでも使えます。"
@@ -21566,6 +21727,9 @@ msgstr "30 日間は「設定 → プロジェクト」から復元できます�
 
 msgid "You can see how we work before you talk to us."
 msgstr "話をする前に、私たちの働き方を見ることができます。"
+
+msgid "You can view this page but not change it"
+msgstr "このページは閲覧できますが、変更はできません"
 
 msgid "You can view this page but not comment on it"
 msgstr "このページは閲覧できますが、コメントはできません"
@@ -21755,6 +21919,9 @@ msgstr "ご利用のプランにはクラウド環境が含まれていません
 
 msgid "Your plan switches to {planName} on {startDate}. Nothing is charged today."
 msgstr "{startDate} にプランが {planName} に変わります。本日の請求はありません。"
+
+msgid "Your prompt"
+msgstr "入力したプロンプト"
 
 msgid "Your rank"
 msgstr "あなたのランク"

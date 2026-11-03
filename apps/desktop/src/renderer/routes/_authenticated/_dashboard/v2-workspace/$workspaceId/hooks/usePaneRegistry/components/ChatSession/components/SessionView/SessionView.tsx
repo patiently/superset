@@ -71,13 +71,14 @@ import {
 	WorkDrawer,
 	type WorkDrawerHandle,
 } from "../WorkDrawer";
-import { LiveChangesPill } from "./components/LiveChangesPill";
+import { ComposerChips } from "./components/ComposerChips";
 import {
 	type SwitchAccount,
 	type SwitchableAgent,
 	UsageLimitNotice,
 } from "./components/UsageLimitNotice";
 import { useFailureRecovery } from "./hooks/useFailureRecovery";
+import { useLaunchPromptDelivered } from "./hooks/useLaunchPromptDelivered";
 import { useMainSend } from "./hooks/useMainSend";
 import { useMoveToBackground } from "./hooks/useMoveToBackground";
 import { usePendingPrompts } from "./hooks/usePendingPrompts";
@@ -113,6 +114,7 @@ export function SessionView({
 	pendingPrompts,
 	preferredModelLabel,
 	onPendingPromptsSent,
+	onLaunchPromptDelivered,
 	onFork,
 	onSwitchAccount,
 	sessionAccount,
@@ -125,6 +127,7 @@ export function SessionView({
 	openFile,
 	openPage,
 	openLink,
+	getOpenFilePaths,
 	onOpenHistory,
 	terminalId,
 	onNewChat,
@@ -149,6 +152,7 @@ export function SessionView({
 	/** Selected by name once the agent lists its models, before the first prompt goes out. */
 	preferredModelLabel?: string;
 	onPendingPromptsSent: () => void;
+	onLaunchPromptDelivered?: () => void;
 	onSessionState?: (session: SessionState | null) => void;
 	/** The mode the user picked, so a resumed session can start in it again. */
 	onModeChange?: (modeId: string) => void;
@@ -185,6 +189,7 @@ export function SessionView({
 	openDiff?: OpenDiff;
 	openPage?: OpenPage;
 	openLink?: OpenLink;
+	getOpenFilePaths?: () => ReadonlySet<string>;
 	/** Opens the pane header's chat history picker, as `/resume` does. */
 	onOpenHistory?: () => void;
 	onNewChat?: () => void;
@@ -348,6 +353,7 @@ export function SessionView({
 		}
 		return null;
 	}, [snapshotItems]);
+	useLaunchPromptDelivered(snapshotItems, onLaunchPromptDelivered);
 	const queuedPrompts = useStableList(
 		useMemo(
 			() => deriveQueuedPrompts({ items: snapshotItems }),
@@ -516,7 +522,7 @@ export function SessionView({
 	);
 	const onStopTask = useCallback(
 		(taskId: string) =>
-			void stopBackgroundTask(taskId)
+			stopBackgroundTask(taskId)
 				.then((stopped) => {
 					if (!stopped) throw new Error("the agent did not stop the task");
 				})
@@ -668,6 +674,7 @@ export function SessionView({
 			openFile={openFile}
 			openPage={openPage}
 			openLink={openLink}
+			getOpenFilePaths={getOpenFilePaths}
 			workspaceId={workspaceId}
 		>
 			<ComposerDropZone
@@ -746,8 +753,17 @@ export function SessionView({
 						</ConnectionNotice>
 					)
 				)}
-				{runningTurnId && !focusedSubagentId && (
-					<LiveChangesPill refreshKey={liveRefreshKey} turnId={runningTurnId} />
+				{!focusedSubagentId && (
+					<ComposerChips
+						backgroundTasks={sessionState?.backgroundTasks}
+						liveRefreshKey={liveRefreshKey}
+						onMoveToBackground={onBackgroundSubagent}
+						onOpenSubagent={openSubagent}
+						onStopTask={onStopTask}
+						runningTurnId={runningTurnId}
+						sessionId={client.sessionId}
+						terminalId={terminalId}
+					/>
 				)}
 				<WorkDrawer
 					notice={

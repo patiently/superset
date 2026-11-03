@@ -69,12 +69,14 @@ export function AcpChatPane({
 	isActive,
 	onSessionInfo,
 	onPendingPromptsSent,
+	onLaunchPromptDelivered,
 	onQueuePrompt,
 	onOpenDiff,
 	onRestoreQueuedPrompts,
 	onOpenFile,
 	onOpenPage,
 	onOpenLink,
+	getOpenFilePaths,
 	onOpenHistory,
 	onNewChat,
 	onModeChange,
@@ -103,6 +105,7 @@ export function AcpChatPane({
 	/** A cloud launch's first prompt, which the agent got before this pane. */
 	launchPrompt?: string;
 	onPendingPromptsSent: () => void;
+	onLaunchPromptDelivered?: () => void;
 	onQueuePrompt: (content: UserContent[]) => void;
 	onRestoreQueuedPrompts: (prompts: UserContent[][]) => void;
 	onSessionCreated: (sessionId: string, pendingPrompt?: string) => void;
@@ -112,6 +115,7 @@ export function AcpChatPane({
 	onOpenDiff?: OpenDiff;
 	onOpenPage?: OpenPage;
 	onOpenLink?: OpenLink;
+	getOpenFilePaths?: () => ReadonlySet<string>;
 	/** Opens the pane header's chat history picker, as `/resume` does. */
 	onOpenHistory?: () => void;
 	/** Opens a fresh chat with this pane's agent, titled with its label. */
@@ -688,6 +692,7 @@ export function AcpChatPane({
 	const draft = (notice: ReactNode) => (
 		<DraftChat
 			draftKey={draftKey}
+			getOpenFilePaths={getOpenFilePaths}
 			isActive={isActive}
 			notice={notice}
 			onOpenHistory={onOpenHistory}
@@ -760,6 +765,9 @@ export function AcpChatPane({
 				: {})}
 			key={sessionId}
 			onPendingPromptsSent={onPendingPromptsSent}
+			onLaunchPromptDelivered={
+				launchPrompt ? onLaunchPromptDelivered : undefined
+			}
 			agentLabel={agentLabel}
 			agentSwitch={agentSwitch}
 			onModeChange={onModeChange}
@@ -776,6 +784,7 @@ export function AcpChatPane({
 			openFile={onOpenFile}
 			openPage={onOpenPage}
 			openLink={onOpenLink}
+			getOpenFilePaths={getOpenFilePaths}
 			onOpenHistory={onOpenHistory}
 			onNewChat={newChat}
 			onSessionState={(state) => {
