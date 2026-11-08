@@ -6,6 +6,7 @@ import { createChatDb } from "./db";
 import type { ChatJournalOptions } from "./journal";
 import { ChatJournal } from "./journal";
 import { ChatSessionStore } from "./projection";
+import { SelectionMemory } from "./selections";
 import type { HarnessRegistry, LiveSessionObserver } from "./sessions";
 import { LiveSessionRegistry } from "./sessions";
 import type { Schedule, Sink, SubscribeOptions, Subscription } from "./stream";
@@ -19,6 +20,7 @@ export * from "./journal";
 export * from "./projection";
 export * from "./replay";
 export * from "./router";
+export * from "./selections";
 export * from "./sessions";
 export * from "./stream";
 
@@ -59,6 +61,7 @@ export function createChatRuntime(options: ChatRuntimeOptions): ChatRuntime {
 	const journal = new ChatJournal(db, {
 		onSessionChanged: options.onSessionChanged,
 	});
+	journal.settleAllStranded(Date.now());
 	const sessions = new ChatSessionStore(db);
 	const subagentItems = new SubagentItems(db);
 	const subscriptions = new SubscriptionHub(db, {
@@ -82,6 +85,7 @@ export function createChatRuntime(options: ChatRuntimeOptions): ChatRuntime {
 		checkpoints: options.checkpoints,
 		dedupe: new CommandDedupe(options.dedupeCapacity),
 		subagentItems,
+		selections: new SelectionMemory(db),
 	});
 
 	return {

@@ -95,7 +95,8 @@ export const PENDING_CLOUD_CHAT_PANE_KIND = "pending-cloud-chat";
 export interface PendingCloudChatPaneData {
 	draftId: string;
 	agentId: string;
-	promptHash: string;
+	/** The id the box launches the agent under; the pane opens whatever starts with it. */
+	terminalId?: string;
 	/** What the user typed; shown until the box's transcript has it. */
 	launchPrompt?: string;
 	queuedPrompts?: UserContent[][];
@@ -120,7 +121,7 @@ export interface ChatPaneData {
 	queuedPrompts?: UserContent[][];
 	launchPrompt?: string;
 	chatModelId?: string;
-	chatModelLabel?: string;
+	chatEffortId?: string;
 	chatModeId?: string;
 	chatTitle?: string;
 	/** A Paradev agent's session: the pane reads it from the agent session store, not the host. */

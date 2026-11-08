@@ -1,10 +1,9 @@
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { SessionClient } from "@superset/chat/client";
 import {
 	deriveQueuedPrompts,
 	runningTurnId as findRunningTurnId,
 	latestSessionUsage,
-	launchConfigSelections,
 	type OutboxEntry,
 	presetForAnyHarness,
 	userMessageText,
@@ -46,7 +45,7 @@ import {
 import { TurnFailureActionsProvider } from "../../providers/TurnFailureActionsProvider";
 import type { ChatEditRequest, ChatForkTarget } from "../../types";
 import { buildChatHandoffTranscript } from "../../utils/chatHandoffTranscript";
-import { heldPromptQueue } from "../../utils/heldPromptQueue";
+import { heldOutboxEntries } from "../../utils/heldOutboxEntries";
 import { editableMessageIds, rewindTranscript } from "../../utils/messageEdit";
 import { modelDisplayName } from "../../utils/modelDisplayName";
 import { promptHistory } from "../../utils/promptHistory";
@@ -58,7 +57,6 @@ import {
 	type ComposerHandle,
 	prependToDraft,
 } from "../Composer";
-import { ConnectionNotice } from "../ConnectionNotice";
 import { SessionHeader } from "../SessionHeader";
 import { SetupSessionHeader } from "../SetupSessionHeader";
 import { SubagentView } from "../SubagentView";
@@ -80,6 +78,7 @@ import {
 import { useFailureRecovery } from "./hooks/useFailureRecovery";
 import { useLaunchPromptDelivered } from "./hooks/useLaunchPromptDelivered";
 import { useMainSend } from "./hooks/useMainSend";
+import { useManualSignIn } from "./hooks/useManualSignIn";
 import { useMoveToBackground } from "./hooks/useMoveToBackground";
 import { usePendingPrompts } from "./hooks/usePendingPrompts";
 import { useRestoreUnsentPrompts } from "./hooks/useRestoreUnsentPrompts";
@@ -92,8 +91,6 @@ import { setupEnvironmentId } from "./utils/setupEnvironmentLink";
 const RESUME_FOLLOW_PX = 24;
 const NO_COMMANDS: AvailableCommand[] = [];
 const NO_CONFIG_OPTIONS: SessionConfigOption[] = [];
-
-const MODEL_OPTIONS_GRACE_MS = 1000;
 
 function contentText(content: UserContent[]): string {
 	return userMessageText({ content });
@@ -112,7 +109,6 @@ export function SessionView({
 	isActive,
 	onModeChange,
 	pendingPrompts,
-	preferredModelLabel,
 	onPendingPromptsSent,
 	onLaunchPromptDelivered,
 	onFork,
@@ -141,7 +137,6 @@ export function SessionView({
 	terminalId?: string;
 	headerLeft?: ReactNode;
 	held?: {
-		notice: ReactNode;
 		queued: UserContent[][];
 		onQueue: (content: UserContent[]) => void;
 		/** Already sent, so shown only until the transcript has a user message. */
@@ -149,8 +144,6 @@ export function SessionView({
 	};
 	isActive?: boolean;
 	pendingPrompts: UserContent[][];
-	/** Selected by name once the agent lists its models, before the first prompt goes out. */
-	preferredModelLabel?: string;
 	onPendingPromptsSent: () => void;
 	onLaunchPromptDelivered?: () => void;
 	onSessionState?: (session: SessionState | null) => void;
@@ -261,42 +254,12 @@ export function SessionView({
 	);
 
 	const configOptions = session.snapshot.session?.configOptions;
-	const agentStatus = session.snapshot.session?.status;
-	const [modelSettled, setModelSettled] = useState(
-		preferredModelLabel === undefined,
-	);
-	const modelRequested = useRef(false);
-	useEffect(() => {
-		if (modelSettled || session.status !== "ready") return;
-		if (configOptions === undefined) {
-			// An agent that reports no options never sends them.
-			if (agentStatus !== "idle") return;
-			const timer = setTimeout(
-				() => setModelSettled(true),
-				MODEL_OPTIONS_GRACE_MS,
-			);
-			return () => clearTimeout(timer);
-		}
-		if (modelRequested.current) return;
-		const [selection] = launchConfigSelections(configOptions, {
-			modelLabel: preferredModelLabel ?? null,
-			effortLabel: null,
-		});
-		if (!selection) {
-			setModelSettled(true);
-			return;
-		}
-		modelRequested.current = true;
-		void session
-			.setConfigOption(selection.configId, selection.value)
-			.finally(() => setModelSettled(true));
-	}, [agentStatus, configOptions, modelSettled, preferredModelLabel, session]);
 
 	usePendingPrompts({
 		held: held !== undefined,
 		onSent: onPendingPromptsSent,
 		prompts: pendingPrompts,
-		ready: session.status === "ready" && modelSettled,
+		ready: session.status === "ready",
 		sendPrompt: session.sendPrompt,
 	});
 
@@ -579,6 +542,7 @@ export function SessionView({
 			pausedByLimit:
 				sessionState?.usageLimit !== undefined ||
 				sessionState?.queuePausedByLimit === true,
+			pausedByShutdown: sessionState?.queuePausedByShutdown === true,
 			actionable: sessionState?.queueControls === true,
 			remove: session.removeQueuedPrompt,
 			resume: session.resumeQueue,
@@ -590,6 +554,7 @@ export function SessionView({
 			sessionState?.queuePaused,
 			sessionState?.usageLimit,
 			sessionState?.queuePausedByLimit,
+			sessionState?.queuePausedByShutdown,
 			sessionState?.queueControls,
 			session.removeQueuedPrompt,
 			session.resumeQueue,
@@ -629,21 +594,27 @@ export function SessionView({
 
 	const heldQueued = held?.queued;
 	const heldLaunched = held?.launched;
-	const heldQueue = useMemo(
+	const heldOutbox = useMemo(
 		() =>
-			heldQueued
-				? heldPromptQueue(heldQueued, {
-						launched: heldLaunched,
-						items: snapshotItems,
-					})
-				: undefined,
-		[heldQueued, heldLaunched, snapshotItems],
+			heldOutboxEntries(heldQueued ?? [], {
+				launched: heldLaunched,
+				items: snapshotItems,
+			}),
+		[heldLaunched, heldQueued, snapshotItems],
+	);
+	const transcriptOutbox = useMemo(
+		() =>
+			heldOutbox.length > 0
+				? [...session.outbox, ...heldOutbox]
+				: session.outbox,
+		[session.outbox, heldOutbox],
 	);
 	const booting = sessionState?.status === "starting";
 	const openModelPicker = useCallback(
 		() => composerRef.current?.openModelPicker(),
 		[],
 	);
+	const { manualSignIn, openAgentSettings } = useManualSignIn(presetId);
 	const { failureActions, onSetConfigOption, onModelPickerOpenChange } =
 		useFailureRecovery({
 			blocked:
@@ -654,13 +625,15 @@ export function SessionView({
 				approvals.length > 0 ||
 				outbox.length > 0,
 			configOptions,
+			manualSignIn,
+			openAgentSettings,
 			onRestartAndContinue,
 			onStartNewChat,
 			openModelPicker,
 			sendPrompt,
 			setConfigOption,
 		});
-	const composerQueue = heldQueue ?? (held ? undefined : promptQueue);
+	const composerQueue = held ? undefined : promptQueue;
 	const drawerQueue = subagent.target === undefined ? composerQueue : undefined;
 
 	// w-full because the pane lays its children out in a row: without it this
@@ -725,7 +698,7 @@ export function SessionView({
 											onRespond={onRespond}
 											onMessageRevealed={clearRevealMessage}
 											onRetryPrompt={session.retryPrompt}
-											outbox={session.outbox}
+											outbox={transcriptOutbox}
 											ref={transcriptRef}
 											revealMessageId={revealMessageId}
 											sessionId={client.sessionId}
@@ -744,15 +717,6 @@ export function SessionView({
 						)}
 					</div>
 				</MessageScroller.Provider>
-				{held ? (
-					<ConnectionNotice>{held.notice}</ConnectionNotice>
-				) : (
-					booting && (
-						<ConnectionNotice>
-							<Trans>Starting the agent…</Trans>
-						</ConnectionNotice>
-					)
-				)}
 				{!focusedSubagentId && (
 					<ComposerChips
 						backgroundTasks={sessionState?.backgroundTasks}
@@ -809,6 +773,8 @@ export function SessionView({
 					onOpenHistory={onOpenHistory}
 					sessionUsage={sessionUsage}
 					turnRunning={runningTurnId !== null}
+					promptPending={heldOutbox.length > 0}
+					awaitingBackground={awaitingBackground}
 					terminalId={terminalId}
 					agentLabel={agentLabel}
 					onNewChat={onNewChat}

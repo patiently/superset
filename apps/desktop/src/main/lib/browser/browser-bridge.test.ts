@@ -2,9 +2,18 @@ import { afterAll, beforeAll, expect, type mock, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { PaneLayoutSnapshot } from "@superset/shared/pane-layout-ops";
 import { dialog, session, webContents } from "electron";
 import { AGENT_BROWSER_PARTITION, BROWSER_PARTITION } from "shared/constants";
-import { startBrowserBridge, stopBrowserBridge } from "./browser-bridge";
+import {
+	type PaneLayoutRendererRequest,
+	paneLayoutRequests,
+} from "../pane-layout/pane-layout-requests";
+import {
+	startBrowserBridge,
+	stopBrowserBridge,
+	type UserExtensions,
+} from "./browser-bridge";
 import { getBrowserBridgeInfo } from "./browser-bridge-info";
 import { browserManager } from "./browser-manager";
 import { browserLocations } from "./chromium-profiles";
@@ -37,6 +46,38 @@ function fakePane(id: number, partition: string) {
 	});
 }
 
+const INSTALLED_ID = "bcjindcccaagfpapjjmafapmmgkkhgoa";
+const extensionCalls: string[] = [];
+let userSays: boolean | "never answers" = false;
+// Resolves as soon as the question closes: on the user's answer or the bridge's abort.
+const answer = (signal: AbortSignal) =>
+	userSays === "never answers"
+		? new Promise<boolean>((resolve) =>
+				signal.addEventListener("abort", () => resolve(false)),
+			)
+		: Promise.resolve(userSays);
+const extensions: UserExtensions = {
+	list: () => [
+		{ id: INSTALLED_ID, name: "JSON Formatter", version: "1", pinned: false },
+	],
+	install: async (id, signal) => {
+		extensionCalls.push(`install ${id}`);
+		return (await answer(signal))
+			? {
+					status: "installed",
+					extension: { id, name: "New", version: "1" },
+				}
+			: { status: "declined" };
+	},
+	remove: async (id, signal) => {
+		extensionCalls.push(`remove ${id}`);
+		return answer(signal);
+	},
+	setPinned: (id, pinned) => {
+		extensionCalls.push(`pin ${id} ${pinned}`);
+	},
+};
+
 const home = mkdtempSync(join(tmpdir(), "bridge-home-"));
 const [chrome] = browserLocations(process.platform);
 if (!chrome) throw new Error("no Chromium location on this platform");
@@ -54,7 +95,7 @@ beforeAll(async () => {
 	fakePane(902, AGENT_BROWSER_PARTITION);
 	browserManager.register("user-pane", 901, "ws-bridge");
 	browserManager.register("agent-pane", 902, "ws-bridge");
-	await startBrowserBridge({ homeDir: home });
+	await startBrowserBridge({ homeDir: home, extensions, answerDeadlineMs: 50 });
 });
 
 afterAll(async () => {
@@ -139,14 +180,16 @@ test("an agent copies the user's Chrome logins only after the user allows it", a
 	expect((await importLogins()).status).not.toBe(403);
 });
 
-test("an agent's open answers with its own pane, not a user pane that registers first", async () => {
+test("an open answers with the pane made for it, even when an unloaded pane is rebuilt first", async () => {
 	const bridge = getBrowserBridgeInfo();
 	if (!bridge) throw new Error("the bridge did not start");
-	fakePane(903, BROWSER_PARTITION);
+	fakePane(903, AGENT_BROWSER_PARTITION);
 	fakePane(904, AGENT_BROWSER_PARTITION);
-	browserManager.once("open-request", () => {
-		browserManager.register("late-user-pane", 903, "ws-bridge");
-		browserManager.register("late-agent-pane", 904, "ws-bridge");
+	browserManager.once("open-request", (request: { requestId: string }) => {
+		// Showing the workspace rebuilds its unloaded tab before the new one exists.
+		browserManager.register("rebuilt-pane", 903, "ws-bridge");
+		browserManager.resolveOpenRequest(request.requestId, "opened-pane");
+		browserManager.register("opened-pane", 904, "ws-bridge");
 	});
 	try {
 		const opened = await fetch(`${bridge.endpoint}/open`, {
@@ -158,13 +201,211 @@ test("an agent's open answers with its own pane, not a user pane that registers 
 			body: JSON.stringify({
 				workspaceId: "ws-bridge",
 				url: "https://example.com/",
+				show: true,
 			}),
 		});
-		const body = await opened.json();
-		expect(body.paneId).toBe("late-agent-pane");
-		expect(body.title).toBe(AGENT_BROWSER_PARTITION);
+		expect((await opened.json()).paneId).toBe("opened-pane");
 	} finally {
-		browserManager.unregister("late-user-pane");
-		browserManager.unregister("late-agent-pane");
+		browserManager.unregister("rebuilt-pane");
+		browserManager.unregister("opened-pane");
 	}
+});
+
+test("an agent lists and uses its panes after hidden-pane eviction unloaded them", async () => {
+	const bridge = getBrowserBridgeInfo();
+	if (!bridge) throw new Error("the bridge did not start");
+	const RENDERER = 990;
+	const layoutPane = (id: string, agent: boolean) => ({
+		id,
+		kind: "browser",
+		title: id,
+		terminalId: null,
+		active: false,
+		browser: { url: `https://example.com/${id}`, agent },
+	});
+	const layout: PaneLayoutSnapshot = {
+		activeTabId: "tab",
+		tabs: [
+			{
+				id: "tab",
+				title: null,
+				active: true,
+				activePaneId: "agent-pane",
+				layout: { type: "pane", paneId: "agent-pane" },
+				panes: [
+					layoutPane("agent-pane", true),
+					layoutPane("unloaded-agent-pane", true),
+					layoutPane("unloaded-user-pane", false),
+				],
+			},
+		],
+	};
+	const renderer = (request: PaneLayoutRendererRequest) => {
+		if (request.op.type === "wakeBrowser") {
+			if (request.op.paneId !== "unloaded-agent-pane") {
+				paneLayoutRequests.respond(
+					{
+						requestId: request.requestId,
+						error: { code: "NOT_FOUND", message: "no" },
+					},
+					RENDERER,
+				);
+				return;
+			}
+			fakePane(905, AGENT_BROWSER_PARTITION);
+			browserManager.register("unloaded-agent-pane", 905, "ws-bridge");
+		}
+		paneLayoutRequests.respond(
+			{
+				requestId: request.requestId,
+				result: { paneId: null, tabId: null, layout },
+			},
+			RENDERER,
+		);
+	};
+	paneLayoutRequests.addSubscriber(RENDERER);
+	paneLayoutRequests.on("request", renderer);
+	const call = (path: string, init?: RequestInit) =>
+		fetch(`${bridge.endpoint}${path}`, {
+			...init,
+			headers: {
+				authorization: `Bearer ${bridge.secret}`,
+				"content-type": "application/json",
+			},
+		});
+	const evaluate = (paneId: string) =>
+		call(`/panes/${paneId}/eval`, {
+			method: "POST",
+			body: JSON.stringify({
+				workspaceId: "ws-bridge",
+				code: "document.title",
+			}),
+		});
+	try {
+		const listed = await (await call("/panes?workspaceId=ws-bridge")).json();
+		expect(
+			listed.panes.map((pane: { paneId: string; loaded: boolean }) => [
+				pane.paneId,
+				pane.loaded,
+			]),
+		).toEqual([
+			["agent-pane", true],
+			["unloaded-agent-pane", false],
+		]);
+		expect(await (await evaluate("unloaded-agent-pane")).json()).toEqual({
+			result: "page data",
+		});
+		expect((await evaluate("unloaded-user-pane")).status).toBe(404);
+	} finally {
+		paneLayoutRequests.off("request", renderer);
+		paneLayoutRequests.removeSubscriber(RENDERER);
+		browserManager.unregister("unloaded-agent-pane");
+	}
+});
+
+test("before a desktop window is ready, an agent is told to retry, not that its pane is gone", async () => {
+	const bridge = getBrowserBridgeInfo();
+	if (!bridge) throw new Error("the bridge did not start");
+	const response = await fetch(`${bridge.endpoint}/panes/unloaded-pane/eval`, {
+		method: "POST",
+		headers: {
+			authorization: `Bearer ${bridge.secret}`,
+			"content-type": "application/json",
+		},
+		body: JSON.stringify({ workspaceId: "ws-bridge", code: "1" }),
+	});
+	expect(response.status).toBe(503);
+});
+
+test("a CDP client cannot queue unbounded messages while its pane is rebuilt", async () => {
+	const bridge = getBrowserBridgeInfo();
+	if (!bridge) throw new Error("the bridge did not start");
+	const RENDERER = 991;
+	let releaseWake = () => {};
+	const renderer = (request: PaneLayoutRendererRequest) => {
+		releaseWake = () =>
+			paneLayoutRequests.respond(
+				{
+					requestId: request.requestId,
+					error: { code: "NOT_FOUND", message: "gone" },
+				},
+				RENDERER,
+			);
+	};
+	paneLayoutRequests.addSubscriber(RENDERER);
+	paneLayoutRequests.on("request", renderer);
+	try {
+		const url = new URL("/panes/slow-pane/cdp", bridge.endpoint);
+		url.protocol = "ws:";
+		url.searchParams.set("workspaceId", "ws-bridge");
+		url.searchParams.set("token", bridge.secret);
+		const socket = new WebSocket(url);
+		await new Promise((resolve) => {
+			socket.onopen = resolve;
+		});
+		const closed = new Promise<number>((resolve) => {
+			socket.onclose = (event) => resolve(event.code);
+		});
+		for (let i = 0; i < 65; i++)
+			socket.send(JSON.stringify({ id: i, method: "Runtime.enable" }));
+		expect(await closed).toBe(1009);
+	} finally {
+		releaseWake();
+		paneLayoutRequests.off("request", renderer);
+		paneLayoutRequests.removeSubscriber(RENDERER);
+	}
+});
+
+test("the CLI manages the user's extensions only with the user's yes, and never opens one", async () => {
+	const bridge = getBrowserBridgeInfo();
+	if (!bridge) throw new Error("the bridge did not start");
+	const post = (path: string, body: object) =>
+		fetch(`${bridge.endpoint}${path}`, {
+			method: "POST",
+			headers: {
+				authorization: `Bearer ${bridge.secret}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify(body),
+		});
+	const otherId = "a".repeat(32);
+	const missingId = "b".repeat(32);
+
+	userSays = false;
+	expect(
+		(await post("/extensions/install", { extensionId: otherId })).status,
+	).toBe(403);
+	expect(
+		(await post("/extensions/remove", { extensionId: INSTALLED_ID })).status,
+	).toBe(403);
+	userSays = true;
+	expect(
+		await (await post("/extensions/install", { extensionId: otherId })).json(),
+	).toMatchObject({ status: "installed" });
+
+	expect(
+		(await post("/extensions/remove", { extensionId: missingId })).status,
+	).toBe(404);
+	expect(
+		(await post("/extensions/pin", { extensionId: "../../etc" })).status,
+	).toBe(400);
+	expect(
+		(await post("/extensions/activate", { extensionId: INSTALLED_ID })).status,
+	).toBe(404);
+	await post("/extensions/pin", { extensionId: INSTALLED_ID, pinned: true });
+	await post("/extensions/pin", { extensionId: INSTALLED_ID, pinned: false });
+	expect(extensionCalls).toEqual([
+		`install ${otherId}`,
+		`remove ${INSTALLED_ID}`,
+		`install ${otherId}`,
+		`pin ${INSTALLED_ID} true`,
+		`pin ${INSTALLED_ID} false`,
+	]);
+
+	userSays = "never answers";
+	const unanswered = await post("/extensions/install", {
+		extensionId: otherId,
+	});
+	expect(unanswered.status).toBe(408);
+	expect((await unanswered.json()).error).toContain("Nothing changed");
 });

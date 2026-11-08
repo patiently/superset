@@ -81,6 +81,7 @@ import { useRightPaneAreaLifecycle } from "./hooks/useRightPaneAreaLifecycle";
 import { useRunPendingChatHandoff } from "./hooks/useRunPendingChatHandoff";
 import { useRunWorkspaceCreationPresets } from "./hooks/useRunWorkspaceCreationPresets";
 import { useShellInteractionPassthrough } from "./hooks/useShellInteractionPassthrough";
+import { useSyncChatSessionTabs } from "./hooks/useSyncChatSessionTabs";
 import { useTabCloseGuard } from "./hooks/useTabCloseGuard";
 import { useV2PresetExecution } from "./hooks/useV2PresetExecution";
 import { useV2TerminalLauncher } from "./hooks/useV2TerminalLauncher";
@@ -366,6 +367,12 @@ function V2WorkspaceContent() {
 		workspaceId,
 		isLayoutReady: isLayoutReady && isRightLayoutReady,
 	});
+	useSyncChatSessionTabs({
+		store,
+		linkedStores: linkedPaneStores,
+		workspaceId,
+		isLayoutReady: isLayoutReady && isRightLayoutReady,
+	});
 	useConsumeOpenUrlRequest({
 		viewer: viewerTarget,
 		url: openUrl,
@@ -636,13 +643,7 @@ function V2WorkspaceContent() {
 
 	return (
 		<FileDocumentStoreProvider stores={fileDocumentStores}>
-			<WorkspaceAgentEffects
-				workspaceId={workspaceId}
-				store={store}
-				rightStore={rightStore}
-				linkedStores={linkedPaneStores}
-				isLayoutReady={isLayoutReady && isRightLayoutReady}
-			/>
+			<WorkspaceAgentEffects store={store} rightStore={rightStore} />
 			<RightPaneLinkTargetProvider value={rightPaneLinkTarget}>
 				<WorkspaceGitStatusProvider workspaceId={workspaceId}>
 					<WorkspaceSplitLayout

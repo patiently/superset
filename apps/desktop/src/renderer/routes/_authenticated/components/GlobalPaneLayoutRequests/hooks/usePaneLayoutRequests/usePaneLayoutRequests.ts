@@ -1,15 +1,26 @@
 import type { WorkspaceState } from "@superset/panes";
-import type {
-	PaneArea,
-	PaneLayoutOp,
-	PaneLayoutOpResult,
+import {
+	allLayoutTabs,
+	type PaneArea,
+	type PaneLayoutOp,
+	type PaneLayoutOpResult,
 } from "@superset/shared/pane-layout-ops";
 import { useEffect } from "react";
 import { markTerminalForBackground } from "renderer/lib/terminal/terminal-background-intents";
 import { electronTrpcClient } from "renderer/lib/trpc-client";
-import type { PaneViewerData } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/types";
+import { browserRuntimeRegistry } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/BrowserPane/browserRuntimeRegistry";
+import type {
+	ChatPaneData,
+	PaneViewerData,
+} from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/types";
+import {
+	ignoreChatTerminal,
+	markChatSessionClosed,
+} from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/utils/closedChatSessions";
+import { addPendingChatStop } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/utils/pendingChatStops";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import type { AppCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider/collections";
+import { persistAgentBrowserState } from "renderer/routes/_authenticated/utils/persistAgentBrowserState";
 import { useRightPaneFullScreen } from "renderer/stores/right-pane-full-screen";
 import {
 	getV2PaneLayoutStore,
@@ -19,6 +30,7 @@ import {
 	applyRememberedV2PaneSelection,
 	rememberV2PaneSelection,
 } from "renderer/stores/v2-pane-selection";
+import { AGENT_BROWSER_PARTITION } from "shared/constants";
 import {
 	applyPaneLayoutOp,
 	type PaneAreas,
@@ -56,6 +68,26 @@ function backgroundClosedTerminal(
 			markTerminalForBackground(terminalId, workspaceId);
 			return;
 		}
+	}
+}
+
+/** Keeps a chat closed with `superset panes close` from being adopted back into a new tab. */
+function forgetClosedChat(
+	areas: PaneAreas,
+	workspaceId: string,
+	op: PaneLayoutOp,
+): void {
+	if (op.type !== "close") return;
+	for (const tab of [...areas.main.tabs, ...areas.sidebar.tabs]) {
+		const pane = tab.panes[op.paneId];
+		if (pane?.kind !== "chat-v3") continue;
+		const { sessionId, terminalId } = pane.data as ChatPaneData;
+		ignoreChatTerminal(terminalId);
+		if (sessionId && !op.keepTerminal) {
+			markChatSessionClosed(sessionId);
+			addPendingChatStop(workspaceId, sessionId, terminalId);
+		}
+		return;
 	}
 }
 
@@ -115,6 +147,7 @@ function runPaneLayoutOp(
 	};
 	const outcome = applyPaneLayoutOp(previous, op);
 	backgroundClosedTerminal(previous, workspaceId, op);
+	forgetClosedChat(previous, workspaceId, op);
 
 	if (op.type !== "list") {
 		// Sidebar first: a non-terminal pane landing in the main area is moved to
@@ -162,6 +195,32 @@ function runPaneLayoutOp(
 	};
 }
 
+function wakeAgentBrowser(
+	collections: Pick<AppCollections, "v2WorkspaceLocalState">,
+	workspaceId: string,
+	paneId: string,
+): PaneLayoutOpResult {
+	const listed = runPaneLayoutOp(collections, workspaceId, { type: "list" });
+	const tab = allLayoutTabs(listed.layout).find((tab) =>
+		tab.panes.some((pane) => pane.id === paneId),
+	);
+	const pane = tab?.panes.find((pane) => pane.id === paneId);
+	if (!tab || !pane?.browser?.agent) {
+		throw new PaneLayoutOpError(
+			"NOT_FOUND",
+			`No agent browser pane ${paneId} in this workspace`,
+		);
+	}
+	browserRuntimeRegistry.openBackground(
+		paneId,
+		pane.browser.url || "about:blank",
+		workspaceId,
+		persistAgentBrowserState(collections, workspaceId, paneId),
+		AGENT_BROWSER_PARTITION,
+	);
+	return { ...listed, paneId, tabId: tab.id };
+}
+
 /** Applies pane layout ops sent by the CLI and replies with the result. */
 export function usePaneLayoutRequests() {
 	const collections = useCollections();
@@ -175,11 +234,10 @@ export function usePaneLayoutRequests() {
 						typeof electronTrpcClient.paneLayout.respond.mutate
 					>[0];
 					try {
-						const { paneId, tabId, layout } = runPaneLayoutOp(
-							collections,
-							workspaceId,
-							op,
-						);
+						const { paneId, tabId, layout } =
+							op.type === "wakeBrowser"
+								? wakeAgentBrowser(collections, workspaceId, op.paneId)
+								: runPaneLayoutOp(collections, workspaceId, op);
 						reply = { requestId, result: { paneId, tabId, layout } };
 					} catch (error) {
 						reply = {

@@ -369,16 +369,23 @@ export class ClaudeAdapter implements HarnessAdapter {
 		if (decision.type === "cancel") this.cancelTurn();
 	}
 
-	setMode(modeId: string): void {
+	setMode(modeId: string): Promise<boolean> {
 		const previous = this.modeId;
 		const next = claudeMode(modeId);
 		this.modeId = next;
 		this.events.push({ kind: "session", session: { modeId: next } });
-		void this.session?.setPermissionMode?.(next).catch(() => {
-			if (this.modeId !== next) return;
-			this.modeId = previous;
-			this.events.push({ kind: "session", session: { modeId: previous } });
-		});
+		const applied = this.session?.setPermissionMode?.(next);
+		if (!applied) return Promise.resolve(true);
+		return applied.then(
+			() => true,
+			() => {
+				if (this.modeId === next) {
+					this.modeId = previous;
+					this.events.push({ kind: "session", session: { modeId: previous } });
+				}
+				return false;
+			},
+		);
 	}
 
 	async dispose(): Promise<void> {
@@ -405,7 +412,12 @@ export class ClaudeAdapter implements HarnessAdapter {
 			}
 		} catch (error) {
 			const waiting = this.approvals.size > 0;
-			this.pushAll(translator.interrupt(String(error)));
+			const message = error instanceof Error ? error.message : String(error);
+			const canceled =
+				this.abortController.signal.aborted || translator.interruptRequested;
+			this.pushAll(
+				canceled ? translator.interrupt(message) : translator.fail(message),
+			);
 			if (waiting) {
 				this.events.push({ kind: "session", session: { status: "idle" } });
 				return;
@@ -414,6 +426,7 @@ export class ClaudeAdapter implements HarnessAdapter {
 		if (this.staleApprovals()) {
 			this.events.push({ kind: "session", session: { status: "idle" } });
 		}
+		if (!this.disposed) this.events.close();
 	}
 
 	private pushAll(events: AdapterEvent[]): void {
