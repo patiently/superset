@@ -919,7 +919,9 @@ export class FsWatcherManager {
 		// warm watcher reused after this would miss events under it.
 		if (
 			state.listeners.size === 0 &&
-			visibleEvents.some((event) => event.type === "delete" && event.isDirectory)
+			visibleEvents.some(
+				(event) => event.type === "delete" && event.isDirectory,
+			)
 		) {
 			state.removedDirWhileIdle = true;
 		}
