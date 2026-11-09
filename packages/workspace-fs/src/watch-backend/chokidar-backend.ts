@@ -1,5 +1,6 @@
 import { watch } from "chokidar";
 import { createIgnoreMatcher } from "./ignore-matcher";
+import { rewatchRecreatedDirectories } from "./recreated-directories";
 import type { NativeWatchBackend, NativeWatchEvent } from "./types";
 
 const EVENT_TYPES = {
@@ -19,6 +20,7 @@ export const chokidarWatchBackend: NativeWatchBackend = {
 	name: "chokidar",
 	subscribe({ rootPath, ignore, onEvents, onError }) {
 		const isIgnored = createIgnoreMatcher(rootPath, ignore);
+		const directories = new Set<string>();
 		const watcher = watch(rootPath, {
 			ignoreInitial: true,
 			followSymlinks: false,
@@ -26,8 +28,14 @@ export const chokidarWatchBackend: NativeWatchBackend = {
 			// Atomic-write folding would hide the delete half of a rename from
 			// the rename reconciliation in watch-event-coalescing.ts.
 			atomic: false,
-			ignored: (candidate, stats) => isIgnored(candidate, stats?.isDirectory()),
+			ignored: (candidate, stats) => {
+				const isDirectory = stats?.isDirectory();
+				if (isIgnored(candidate, isDirectory)) return true;
+				if (isDirectory) directories.add(candidate);
+				return false;
+			},
 		});
+		const stopRewatching = rewatchRecreatedDirectories(watcher, directories);
 
 		for (const [chokidarEvent, type] of Object.entries(EVENT_TYPES)) {
 			watcher.on(chokidarEvent as keyof typeof EVENT_TYPES, (eventPath) => {
@@ -38,7 +46,12 @@ export const chokidarWatchBackend: NativeWatchBackend = {
 
 		return new Promise((resolve) => {
 			watcher.once("ready", () => {
-				resolve({ unsubscribe: () => watcher.close() });
+				resolve({
+					unsubscribe: () => {
+						stopRewatching();
+						return watcher.close();
+					},
+				});
 			});
 		});
 	},
