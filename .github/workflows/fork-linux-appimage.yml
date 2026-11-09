@@ -145,6 +145,40 @@ jobs:
           fi
           echo "Ignored-dir cap and hover-stats tests fail against the pre-fix code, as expected"
 
+      - name: Idle-watcher directory-removal tests fail without the fix
+        env:
+          PRE_FIX_SHA: f101cc1a7f530010be21a6fc1a1b3ca91bee2373
+        run: |
+          set -u
+          FILES="packages/workspace-fs/src/watch.ts packages/workspace-fs/src/watch-backend/chokidar-backend.ts packages/workspace-fs/src/watch-backend/types.ts"
+          git fetch --depth=1 origin "$PRE_FIX_SHA"
+          for f in $FILES; do
+            cp "$f" "/tmp/$(basename "$f").fixed"
+            git show "$PRE_FIX_SHA:$f" > "$f"
+          done
+          set +e
+          (cd packages/workspace-fs && bun test src/watch-idle-keep-alive.test.ts) > /tmp/red-idle.log 2>&1
+          set -e
+          cat /tmp/red-idle.log
+          for f in $FILES; do cp "/tmp/$(basename "$f").fixed" "$f"; done
+          git diff --exit-code -- $FILES
+          expect() {
+            if ! grep -Fq "($2) $3" "$1"; then
+              echo "::error::Against the pre-fix code, expected ($2): $3"
+              exit 1
+            fi
+          }
+          KA="FsWatcherManager idle keep-alive >"
+          expect /tmp/red-idle.log fail "$KA attaches afresh when a directory under the idle watcher was removed"
+          expect /tmp/red-idle.log fail "$KA sees writes in a directory removed and recreated while idle"
+          expect /tmp/red-idle.log pass "$KA keeps reusing the idle watcher after a file under it was removed"
+          expect /tmp/red-idle.log pass "$KA reuses the warm native subscription when re-subscribed within the grace period"
+          if grep -q "Unhandled error" /tmp/red-idle.log; then
+            echo "::error::Pre-fix run hit an unhandled error instead of assertion failures"
+            exit 1
+          fi
+          echo "Idle-watcher directory-removal tests fail against the pre-fix code, as expected"
+
       - name: Workspace-fs test suite
         working-directory: packages/workspace-fs
         run: bun test
@@ -238,7 +272,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at b77bc046e plus the four fs-watcher fixes. That main is everything in desktop-v2.0.6 plus 7 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
+            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at b77bc046e plus the four fs-watcher fixes, with the keep-alive no longer reusing an idle watcher after a directory under it was removed (from review on #7878). That main is everything in desktop-v2.0.6 plus 7 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
