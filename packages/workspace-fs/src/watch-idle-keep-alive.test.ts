@@ -381,6 +381,7 @@ describe("FsWatcherManager idle keep-alive", () => {
 		const rootPath = await createTempRoot();
 		const dirPath = path.join(rootPath, "x");
 		await fs.mkdir(dirPath);
+		await fs.writeFile(path.join(dirPath, "a.ts"), "a");
 		const manager = createManager(chokidarWatchBackend, {
 			idleKeepAliveMs: 60_000,
 		});
