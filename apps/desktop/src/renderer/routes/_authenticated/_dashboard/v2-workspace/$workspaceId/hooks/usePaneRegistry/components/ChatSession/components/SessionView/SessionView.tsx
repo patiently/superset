@@ -6,6 +6,7 @@ import {
 	latestSessionUsage,
 	type OutboxEntry,
 	presetForAnyHarness,
+	type SessionSnapshot,
 	userMessageText,
 } from "@superset/chat/core";
 import type {
@@ -63,6 +64,7 @@ import { SubagentView } from "../SubagentView";
 import { Transcript, type TranscriptHandle } from "../Transcript";
 import { useChildrenByParent } from "../Transcript/hooks/useChildrenByParent";
 import { NestedItemsProvider } from "../Transcript/providers/NestedItemsProvider";
+import { SessionModeProvider } from "../Transcript/providers/SessionModeProvider";
 import { TranscriptPluginsProvider } from "../Transcript/providers/TranscriptPluginsProvider";
 import {
 	type DrawerExit,
@@ -87,6 +89,7 @@ import { useSubagentTarget } from "./hooks/useSubagentTarget";
 import { escapeBack } from "./utils/escapeBack";
 import { settledToolCalls } from "./utils/settledToolCalls";
 import { setupEnvironmentId } from "./utils/setupEnvironmentLink";
+import { withStoredHistory } from "./utils/withStoredHistory";
 
 const RESUME_FOLLOW_PX = 24;
 const NO_COMMANDS: AvailableCommand[] = [];
@@ -106,6 +109,7 @@ export function SessionView({
 	draftKey,
 	headerLeft,
 	held,
+	storedSnapshot,
 	isActive,
 	onModeChange,
 	pendingPrompts,
@@ -143,6 +147,8 @@ export function SessionView({
 		launched?: UserContent[];
 	};
 	isActive?: boolean;
+	/** The chat as the database holds it, shown until the host sends the live one. */
+	storedSnapshot?: SessionSnapshot | null;
 	pendingPrompts: UserContent[][];
 	onPendingPromptsSent: () => void;
 	onLaunchPromptDelivered?: () => void;
@@ -239,7 +245,14 @@ export function SessionView({
 		}
 	}, [outbox]);
 	useRestoreUnsentPrompts(draftKey, outbox, draftOf);
-	const timeline = useTimeline(session.snapshot, { nestChildItems: true });
+	const shownSnapshot = useMemo(
+		() =>
+			storedSnapshot
+				? withStoredHistory(storedSnapshot, session.snapshot)
+				: session.snapshot,
+		[storedSnapshot, session.snapshot],
+	);
+	const timeline = useTimeline(shownSnapshot, { nestChildItems: true });
 	const rail = useStableList(
 		useMemo(() => railMessages(timeline), [timeline]),
 		(previous, next) =>
@@ -508,10 +521,10 @@ export function SessionView({
 
 	const onBackgroundSubagent = useMoveToBackground(client);
 	const plugins = usePluginMentionOptions();
-	const childrenByParent = useChildrenByParent(session.snapshot);
+	const childrenByParent = useChildrenByParent(shownSnapshot);
 	const nestedItems = useMemo(
 		() => ({
-			snapshot: session.snapshot,
+			snapshot: shownSnapshot,
 			childrenByParent,
 			requestItemBodies: session.requestItemBodies,
 			respondToApproval: onRespond,
@@ -519,7 +532,7 @@ export function SessionView({
 			moveToBackground: onBackgroundSubagent,
 		}),
 		[
-			session.snapshot,
+			shownSnapshot,
 			childrenByParent,
 			session.requestItemBodies,
 			onRespond,
@@ -675,39 +688,41 @@ export function SessionView({
 					scrollPreviousItemPeek={0}
 				>
 					<div className="@container relative flex min-h-0 flex-1">
-						<TranscriptPluginsProvider value={plugins}>
-							<NestedItemsProvider value={nestedItems}>
-								{focusedSubagentId ? (
-									<SubagentView
-										itemId={focusedSubagentId}
-										queued={subagent.queued}
-									/>
-								) : (
-									<TurnFailureActionsProvider value={failureActions}>
-										<Transcript
-											approvals={approvals}
-											canForkToWorktree={canForkToWorktree}
-											groups={timeline}
-											hasOlder={session.hasOlder}
-											isActive={isActive}
-											onCloseFind={focusComposer}
-											onDiscardPrompt={session.discardPrompt}
-											onFork={onFork ? forkWithTranscript : undefined}
-											onLoadOlder={loadOlder}
-											onRequestItemBodies={session.requestItemBodies}
-											onRespond={onRespond}
-											onMessageRevealed={clearRevealMessage}
-											onRetryPrompt={session.retryPrompt}
-											outbox={transcriptOutbox}
-											ref={transcriptRef}
-											revealMessageId={revealMessageId}
-											sessionId={client.sessionId}
-											snapshot={session.snapshot}
+						<SessionModeProvider value={sessionState?.modeId}>
+							<TranscriptPluginsProvider value={plugins}>
+								<NestedItemsProvider value={nestedItems}>
+									{focusedSubagentId ? (
+										<SubagentView
+											itemId={focusedSubagentId}
+											queued={subagent.queued}
 										/>
-									</TurnFailureActionsProvider>
-								)}
-							</NestedItemsProvider>
-						</TranscriptPluginsProvider>
+									) : (
+										<TurnFailureActionsProvider value={failureActions}>
+											<Transcript
+												approvals={approvals}
+												canForkToWorktree={canForkToWorktree}
+												groups={timeline}
+												hasOlder={session.hasOlder}
+												isActive={isActive}
+												onCloseFind={focusComposer}
+												onDiscardPrompt={session.discardPrompt}
+												onFork={onFork ? forkWithTranscript : undefined}
+												onLoadOlder={loadOlder}
+												onRequestItemBodies={session.requestItemBodies}
+												onRespond={onRespond}
+												onMessageRevealed={clearRevealMessage}
+												onRetryPrompt={session.retryPrompt}
+												outbox={transcriptOutbox}
+												ref={transcriptRef}
+												revealMessageId={revealMessageId}
+												sessionId={client.sessionId}
+												snapshot={shownSnapshot}
+											/>
+										</TurnFailureActionsProvider>
+									)}
+								</NestedItemsProvider>
+							</TranscriptPluginsProvider>
+						</SessionModeProvider>
 						{!focusedSubagentId && rail.length > 1 && (
 							<ChatHistorySidebarScroller
 								className="absolute inset-y-0 left-0 my-auto hidden h-fit max-h-full flex-col pl-3 @[56rem]:flex"

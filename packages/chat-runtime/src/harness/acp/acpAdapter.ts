@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { ChatSelections } from "@superset/chat/core";
+import {
+	type ChatSelections,
+	type SelectionCategory,
+	selectionCategoryOf,
+} from "@superset/chat/core";
 import type {
 	ApprovalRequest,
 	AvailableCommand,
@@ -42,6 +46,7 @@ import {
 	airAsyncTaskSpawnedSchema,
 	airAsyncTaskStateSchema,
 	airForkPointMeta,
+	airPermissionReason,
 	airSubagentSpawnedSchema,
 	airSubagentStateSchema,
 	isCompactionCall,
@@ -1997,15 +2002,15 @@ export class AcpAdapter implements HarnessAdapter {
 
 	/** Resolves to the value the agent took, or undefined when it took none. */
 	private applyStartSelection(
-		category: "model" | "thought_level" | "mode",
+		category: SelectionCategory,
 		wanted: string | undefined,
 	): Promise<string | undefined> {
 		const option = this.configOptions.find(
-			(entry) => entry.category === category,
+			(entry) => selectionCategoryOf(entry) === category,
 		);
 		if (!wanted || !option) return Promise.resolve(undefined);
 		const value =
-			category === "mode"
+			category === "mode" || category === "fast"
 				? option.options.some((entry) => entry.id === wanted)
 					? wanted
 					: undefined
@@ -2029,12 +2034,25 @@ export class AcpAdapter implements HarnessAdapter {
 				: undefined,
 		);
 		this.trackSelection(effort);
+		// Fast mode also belongs to the model. It waits for effort too: a refused
+		// setting rolls back every option to before it was sent.
+		const fast = wanted.fast
+			? effort
+					.then(() => model)
+					.then((modelId) =>
+						modelId || !wanted.modelId
+							? this.applyStartSelection("fast", wanted.fast)
+							: undefined,
+					)
+			: Promise.resolve(undefined);
+		if (wanted.fast) this.trackSelection(fast);
 		const mode = this.applyStartSelection("mode", wanted.modeId);
-		return Promise.all([model, effort, mode]).then(
-			([modelId, effortId, modeId]) => ({
+		return Promise.all([model, effort, mode, fast]).then(
+			([modelId, effortId, modeId, fastTaken]) => ({
 				...(modelId ? { modelId } : {}),
 				...(effortId ? { effortId } : {}),
 				...(modeId ? { modeId } : {}),
+				...(fastTaken ? { fast: fastTaken } : {}),
 			}),
 		);
 	}
@@ -2067,6 +2085,7 @@ export class AcpAdapter implements HarnessAdapter {
 		const wanted: ChatSelections = {
 			...(startOptions.modelId ? { modelId: startOptions.modelId } : {}),
 			...(startOptions.effortId ? { effortId: startOptions.effortId } : {}),
+			...(startOptions.fast ? { fast: startOptions.fast } : {}),
 			...(modeId && !this.options.clientApprovalModes ? { modeId } : {}),
 		};
 		const configured =
@@ -2139,6 +2158,7 @@ export class AcpAdapter implements HarnessAdapter {
 			parsed.data.subject?.toolCall?.title ??
 			"Permission required";
 		const description = parsed.data.description;
+		const reason = airPermissionReason(request.params);
 		const asking = [...this.main.allToolCalls()].some(
 			(call) => call.status === "running" && call.title === "ask_user_question",
 		);
@@ -2176,6 +2196,7 @@ export class AcpAdapter implements HarnessAdapter {
 			...(description && description !== title
 				? { detail: [{ type: "text" as const, text: description }] }
 				: {}),
+			...(reason ? { reason } : {}),
 			status: "pending",
 			startedAtMs: this.nextStartMs(),
 			...(question
