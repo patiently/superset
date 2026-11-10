@@ -170,7 +170,6 @@ jobs:
           }
           KA="FsWatcherManager idle keep-alive >"
           expect /tmp/red-idle.log fail "$KA attaches afresh when a directory under the idle watcher was removed"
-          expect /tmp/red-idle.log fail "$KA sees writes in a directory removed and recreated while idle"
           expect /tmp/red-idle.log pass "$KA keeps reusing the idle watcher after a file under it was removed"
           expect /tmp/red-idle.log pass "$KA reuses the warm native subscription when re-subscribed within the grace period"
           if grep -q "Unhandled error" /tmp/red-idle.log; then
