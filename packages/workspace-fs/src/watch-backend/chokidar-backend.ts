@@ -1,3 +1,4 @@
+import path from "node:path";
 import { watch } from "chokidar";
 import { createIgnoreMatcher } from "./ignore-matcher";
 import { rewatchRecreatedDirectories } from "./recreated-directories";
@@ -16,43 +17,54 @@ const EVENT_TYPES = {
  * on the event loop: no watcher thread for a signal to interrupt, and no
  * native state shared between subscriptions.
  */
-export const chokidarWatchBackend: NativeWatchBackend = {
-	name: "chokidar",
-	subscribe({ rootPath, ignore, onEvents, onError }) {
-		const isIgnored = createIgnoreMatcher(rootPath, ignore);
-		const directories = new Set<string>();
-		const watcher = watch(rootPath, {
-			ignoreInitial: true,
-			followSymlinks: false,
-			ignorePermissionErrors: true,
-			// Atomic-write folding would hide the delete half of a rename from
-			// the rename reconciliation in watch-event-coalescing.ts.
-			atomic: false,
-			ignored: (candidate, stats) => {
-				const isDirectory = stats?.isDirectory();
-				if (isIgnored(candidate, isDirectory)) return true;
-				if (isDirectory) directories.add(candidate);
-				return false;
-			},
-		});
-		const stopRewatching = rewatchRecreatedDirectories(watcher, directories);
-
-		for (const [chokidarEvent, type] of Object.entries(EVENT_TYPES)) {
-			watcher.on(chokidarEvent as keyof typeof EVENT_TYPES, (eventPath) => {
-				onEvents([{ type, path: eventPath }]);
+export function createChokidarWatchBackend({
+	recreatedDirectorySettleMs = 100,
+} = {}): NativeWatchBackend {
+	return {
+		name: "chokidar",
+		subscribe({ rootPath, ignore, onEvents, onError }) {
+			const isIgnored = createIgnoreMatcher(rootPath, ignore);
+			const directories = new Set<string>();
+			const watcher = watch(rootPath, {
+				ignoreInitial: true,
+				followSymlinks: false,
+				ignorePermissionErrors: true,
+				// Atomic-write folding would hide the delete half of a rename from
+				// the rename reconciliation in watch-event-coalescing.ts.
+				atomic: false,
+				ignored: (candidate, stats) => {
+					const isDirectory = stats?.isDirectory();
+					if (isIgnored(candidate, isDirectory)) return true;
+					// On Windows chokidar passes `ignored` forward slashes.
+					if (isDirectory) directories.add(path.normalize(candidate));
+					return false;
+				},
 			});
-		}
-		watcher.on("error", onError);
+			const stopRewatching = rewatchRecreatedDirectories(
+				watcher,
+				directories,
+				recreatedDirectorySettleMs,
+			);
 
-		return new Promise((resolve) => {
-			watcher.once("ready", () => {
-				resolve({
-					unsubscribe: () => {
-						stopRewatching();
-						return watcher.close();
-					},
+			for (const [chokidarEvent, type] of Object.entries(EVENT_TYPES)) {
+				watcher.on(chokidarEvent as keyof typeof EVENT_TYPES, (eventPath) => {
+					onEvents([{ type, path: eventPath }]);
+				});
+			}
+			watcher.on("error", onError);
+
+			return new Promise((resolve) => {
+				watcher.once("ready", () => {
+					resolve({
+						unsubscribe: () => {
+							stopRewatching();
+							return watcher.close();
+						},
+					});
 				});
 			});
-		});
-	},
-};
+		},
+	};
+}
+
+export const chokidarWatchBackend = createChokidarWatchBackend();

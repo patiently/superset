@@ -1,67 +1,70 @@
-import { afterEach, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chokidarWatchBackend } from "./chokidar-backend";
+import { createChokidarWatchBackend } from "./chokidar-backend";
 import type { NativeWatchEvent } from "./types";
+
+const backend = createChokidarWatchBackend({ recreatedDirectorySettleMs: 10 });
 
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => {
 	for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 async function waitFor(check: () => boolean, label: string): Promise<void> {
 	const deadline = Date.now() + 2_000;
 	while (!check()) {
 		if (Date.now() > deadline) throw new Error(`timed out: ${label}`);
-		await sleep(25);
+		await new Promise((resolve) => setTimeout(resolve, 10));
 	}
 }
 
 async function watchRoot(files: string[]) {
 	const root = await realpath(await mkdtemp(path.join(tmpdir(), "recreate-")));
 	cleanups.push(() => rm(root, { recursive: true, force: true }));
-	await mkdir(path.join(root, "x"));
 	for (const file of files) {
-		const target = path.join(root, "x", file);
+		const target = path.join(root, file);
 		await mkdir(path.dirname(target), { recursive: true });
 		await writeFile(target, "a");
 	}
 	const events: NativeWatchEvent[] = [];
-	const subscription = await chokidarWatchBackend.subscribe({
+	const errors: unknown[] = [];
+	const subscription = await backend.subscribe({
 		rootPath: root,
 		ignore: [],
 		generation: 1,
 		onEvents: (batch) => events.push(...batch),
-		onError: () => {},
+		onError: (error) => errors.push(error),
 	});
 	cleanups.push(() => subscription.unsubscribe());
-	return { root, events };
+	return { root, events, errors };
 }
 
 const SHAPES = [
-	{ shape: "an empty directory", files: [], writeDir: "." },
-	{ shape: "a directory with a file", files: ["a.ts"], writeDir: "." },
-	{ shape: "a nested directory", files: ["sub/a.ts"], writeDir: "sub" },
+	{ shape: "a directory", files: ["x/a.ts"], watched: "x" },
+	{ shape: "a nested directory", files: ["x/sub/a.ts"], watched: "x/sub" },
 ];
 
-for (const { shape, files, writeDir } of SHAPES) {
-	test(`watches ${shape} removed and recreated back to back`, async () => {
-		const { root, events } = await watchRoot(files);
-		const dir = path.join(root, "x");
+for (const { shape, files, watched } of SHAPES) {
+	test(`watches ${shape} again after it is removed and recreated`, async () => {
+		const { root, events, errors } = await watchRoot(files);
+		const dir = path.join(root, watched);
+		const created = (target: string) => () =>
+			events.some((e) => e.type === "create" && e.path === target);
 
-		rmSync(dir, { recursive: true, force: true });
-		mkdirSync(path.join(dir, writeDir), { recursive: true });
-		await sleep(300);
-		const file = path.join(dir, writeDir, "f.ts");
-		await writeFile(file, "f");
+		rmSync(path.join(root, "x"), { recursive: true, force: true });
+		mkdirSync(dir, { recursive: true });
+		await waitFor(created(dir), `recreate ${watched}`);
 
-		await waitFor(
-			() => events.some((e) => e.type === "create" && e.path === file),
-			`create ${path.relative(root, file)}`,
-		);
+		// The re-add's crawl can report the first file. The second is written
+		// after that, so only a live watch reports it.
+		for (const name of ["f.ts", "g.ts"]) {
+			const file = path.join(dir, name);
+			await writeFile(file, name);
+			await waitFor(created(file), `create ${watched}/${name}`);
+		}
+		expect(errors).toEqual([]);
 	});
 }

@@ -2,31 +2,35 @@ import { lstat } from "node:fs/promises";
 import path from "node:path";
 import type { FSWatcher } from "chokidar";
 
-const RECREATED_DIRECTORY_SETTLE_MS = 100;
+const MAX_SETTLE_DELAYS = 10;
 
-/**
- * A directory removed and recreated at the same path keeps its dead
- * `fs.watch` when chokidar's re-read of the parent sees the name both before
- * and after. On Node that happens when both changes land in one inotify read.
- * Bun merges the two `rename` events into one (oven-sh/bun#44005), so there
- * it happens for any back-to-back rm and mkdir.
- *
- * A `rename` from a parent that names a directory in `directories` queues it,
- * and chokidar's own `addDir` for it settles it. A queued directory that
- * still exists once events settle is watched again. The inode can't tell a
- * recreated directory apart: ext4 and tmpfs hand the freed one straight back.
- */
+// chokidar 4.0.3 keeps the dead `fs.watch` of a directory recreated between
+// two reads of its parent. The re-add uses `add()`'s private third argument.
 export function rewatchRecreatedDirectories(
 	watcher: FSWatcher,
 	directories: Set<string>,
-	settleMs = RECREATED_DIRECTORY_SETTLE_MS,
+	settleMs: number,
 ) {
 	const pending = new Set<string>();
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	let firstQueuedAt = 0;
+	let reconciling: Promise<unknown> = Promise.resolve();
 	let disposed = false;
 
+	function schedule() {
+		const now = Date.now();
+		if (timer === undefined) firstQueuedAt = now;
+		else if (now - firstQueuedAt >= settleMs * MAX_SETTLE_DELAYS) return;
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = undefined;
+			reconciling = reconciling
+				.then(reconcile)
+				.catch((error) => watcher.emit("error", error));
+		}, settleMs);
+	}
+
 	async function reconcile() {
-		timer = undefined;
 		const candidates = [...pending].sort();
 		pending.clear();
 		const stats = await Promise.all(
@@ -36,15 +40,15 @@ export function rewatchRecreatedDirectories(
 
 		const rewatched: string[] = [];
 		for (const [index, dir] of candidates.entries()) {
-			if (!stats[index]?.isDirectory()) continue;
+			if (!stats[index]?.isDirectory()) {
+				directories.delete(dir);
+				continue;
+			}
 			if (directories.has(dir)) {
 				watcher.unwatch(dir);
 			} else if (rewatched.some((parent) => isInside(dir, parent))) {
-				// A re-added ancestor's crawl already covers a dropped directory.
 				continue;
 			}
-			// `_internal` reports the directory and its entries as new, the way
-			// chokidar reports a directory created after `ready`.
 			watcher.add(dir, undefined, true);
 			rewatched.push(dir);
 		}
@@ -57,8 +61,7 @@ export function rewatchRecreatedDirectories(
 		const candidate = path.join(watchedPath, filename);
 		if (!directories.has(candidate)) return;
 		pending.add(candidate);
-		clearTimeout(timer);
-		timer = setTimeout(reconcile, settleMs);
+		schedule();
 	});
 	watcher.on("addDir", (dir) => pending.delete(dir));
 	watcher.on("unlinkDir", (dir) => directories.delete(dir));
