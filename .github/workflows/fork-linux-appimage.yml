@@ -1,9 +1,9 @@
 name: Fork Linux AppImage Release
 
-# Build on upstream main bdd0a5be9 (everything in 2.0.8 plus 2 later commits),
-# the last commit before #9582 broke the desktop build upstream, with the four
-# fs-watcher fixes. Proves each fix's tests go red without it and green with
-# it, then builds and publishes desktop-v<VERSION> with the upstream asset name.
+# Daily build on upstream main da70e87f9 (everything in 2.0.8 plus 38 later
+# commits) with the four fs-watcher fixes. Proves each fix's tests go red
+# without it and green with it, then builds and publishes desktop-v<VERSION>
+# with the upstream asset name.
 
 on:
   push:
@@ -305,7 +305,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "Superset $VERSION (fork)" \
             --latest=false \
-            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at bdd0a5be9 plus the four fs-watcher fixes, with the keep-alive no longer reusing an idle watcher after a directory under it was removed or a .gitignore changed, and concurrent re-subscribes sharing one reuse check (from review on #7878). That commit is everything in desktop-v2.0.8 plus 2 later commits; it is the last commit before #9582, which broke the desktop build upstream. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
+            --notes "Daily build: upstream ParadevAI/Paradev (formerly superset-sh/superset) main at da70e87f9 plus the four fs-watcher fixes, with the keep-alive no longer reusing an idle watcher after a directory under it was removed or a .gitignore changed, and concurrent re-subscribes sharing one reuse check (from review on #7878). That main is everything in desktop-v2.0.8 plus 38 later commits. The watcher fixes are the open upstream PRs #7878 (keep-alive) and #7879 (hover card) plus the two held-back ignored-dir listing fixes. Linux x64 AppImage only.
 
           sha256: \`$SHA256\`  $ASSET"
 
