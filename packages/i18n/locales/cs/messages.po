@@ -984,6 +984,9 @@ msgstr "{count} hostitelů používá starší službu hostitele než tato aplik
 msgid "{count} selected"
 msgstr "Vybráno: {count}"
 
+msgid "{count} variables can't be saved. See the highlighted rows"
+msgstr "Proměnné nelze uložit ({count}). Podívejte se na zvýrazněné řádky"
+
 msgid "{count}/day"
 msgstr "{count}/den"
 
@@ -1131,6 +1134,9 @@ msgstr "{lines, plural, one {# řádek} few {# řádky} many {# řádku} other {
 
 msgid "{localHostName} (this device)"
 msgstr "{localHostName} (toto zařízení)"
+
+msgid "{machineSize} (not on your plan)"
+msgstr "{machineSize} (není ve vašem tarifu)"
 
 #. placeholder {0}: <> <span className="tabular-nums font-medium text-foreground"> # </span>{" "} result for &ldquo;{query}&rdquo; </>
 #. placeholder {1}: <> <span className="tabular-nums font-medium text-foreground"> # </span>{" "} results for &ldquo;{query}&rdquo; </>
@@ -1322,9 +1328,6 @@ msgstr "{productName} získal 11,5 milionu dolarů v seed kole, které vedl fond
 
 msgid "{productName} was called {formerName} until October 2026."
 msgstr "{productName} se až do října 2026 jmenoval {formerName}."
-
-msgid "{prompt} · # to change project, host, and more"
-msgstr "{prompt} · # pro změnu projektu, hostu a dalších"
 
 msgid "{pullRequestCount, plural, one {# PR} other {# PRs}}"
 msgstr "{pullRequestCount, plural, one {# PR} few {# PR} many {# PR} other {# PR}}"
@@ -2112,6 +2115,9 @@ msgstr "přidat agenta"
 msgid "Add an environment in Settings before creating a cloud workspace"
 msgstr "Před vytvořením cloudového pracovního prostoru přidejte prostředí v Nastavení"
 
+msgid "Add Another"
+msgstr "Přidat další"
+
 msgid "Add another account, or disconnect one you no longer use."
 msgstr "Připoj další účet nebo odpoj ten, který už nepoužíváš."
 
@@ -2138,6 +2144,9 @@ msgstr "Přidat popis"
 
 msgid "Add description..."
 msgstr "Přidat popis..."
+
+msgid "Add Environment Variable"
+msgstr "Přidat proměnnou prostředí"
 
 msgid "Add extension"
 msgstr "Přidat rozšíření"
@@ -2175,6 +2184,9 @@ msgstr "Přidat další…"
 
 msgid "Add one from the menu in the sidebar to get started."
 msgstr "Začněte tím, že jednoho přidáte z nabídky v postranním panelu."
+
+msgid "Add one or more environment variables. You can also drag and drop a .env file."
+msgstr "Přidejte jednu nebo více proměnných prostředí. Můžete také přetáhnout soubor .env."
 
 msgid "Add people"
 msgstr "Přidat lidi"
@@ -2287,8 +2299,17 @@ msgstr "Přidáno: {added}"
 msgid "Added {added} files to {where}"
 msgstr "Přidáno {added} souborů do {where}"
 
+msgid "Added {addedOn}"
+msgstr "Přidáno {addedOn}"
+
 msgid "Added {bought} GB-hours."
 msgstr "Přidáno {bought} GB-hodin."
+
+msgid "Added {count} environment variables"
+msgstr "Přidané proměnné prostředí: {count}"
+
+msgid "Added {key}"
+msgstr "{key} přidáno"
 
 msgid "Added 1 file to {where}"
 msgstr "Přidán 1 soubor do {where}"
@@ -2784,8 +2805,14 @@ msgstr "Vždy víte, který agent vás potřebuje — oznámení vedou přímo n
 msgid "An agent completes multi-file changes end to end."
 msgstr "Agent dokončí změnu napříč více soubory od začátku do konce."
 
+msgid "An agent sets up this environment in a cloud workspace (about 20 minutes or more): it installs dependencies, writes the setup config and asks for any secrets it needs. Interrupt it at any time, or take over in the workspace to finish setup yourself."
+msgstr "Agent nastaví toto prostředí v cloudovém pracovním prostoru (asi 20 minut nebo déle): nainstaluje závislosti, zapíše konfiguraci nastavení a vyžádá si potřebné tajné hodnoty. Kdykoli ho můžete přerušit nebo převzít práci v pracovním prostoru a dokončit nastavení sami."
+
 msgid "An agent writes whole functions and files while a human watches every step and approves every command. One agent, one human. Faster, but still serial."
 msgstr "Agent píše celé funkce a soubory, zatímco člověk sleduje každý krok a schvaluje každý příkaz. Jeden agent, jeden člověk. Rychlejší, ale pořád sériové."
+
+msgid "An Anthropic API key."
+msgstr "Klíč API od Anthropic."
 
 msgid "An automation can only use a cloud workspace you created"
 msgstr "Automatizace může používat jen cloudový pracovní prostor, který jste vytvořili"
@@ -2798,6 +2825,9 @@ msgstr "Došlo k chybě"
 
 msgid "An isolated git worktree where an agent runs without touching your main checkout."
 msgstr "Izolovaný git worktree, kde agent běží, aniž by sáhl na váš hlavní checkout."
+
+msgid "An OpenAI API key."
+msgstr "Klíč API od OpenAI."
 
 msgid "An unknown error occurred"
 msgstr "Došlo k neznámé chybě"
@@ -2906,6 +2936,9 @@ msgstr "jakýkoli příjemce"
 
 msgid "Any review"
 msgstr "Jakákoli revize"
+
+msgid "Any reviewer"
+msgstr "Libovolný recenzent"
 
 msgid "any sender"
 msgstr "jakýkoli odesílatel"
@@ -3870,6 +3903,9 @@ msgstr "Součást aplikace Paradev na tomto zařízení."
 msgid "Bundled with the Paradev app on this device. Updates with the app."
 msgstr "Součást aplikace Paradev na tomto zařízení. Aktualizuje se spolu s aplikací."
 
+msgid "Business"
+msgstr "Business"
+
 msgid "Business plan"
 msgstr "Firemní plán"
 
@@ -4211,6 +4247,9 @@ msgstr "Changelog"
 msgid "Changes"
 msgstr "Změny"
 
+msgid "Changes load when the workspace wakes up"
+msgstr "Změny se načtou, až se pracovní prostor probudí"
+
 msgid "Changes open target"
 msgstr "Cíl otevření změn"
 
@@ -4353,6 +4392,9 @@ msgstr "Checkout PR vyžaduje projekt"
 msgid "Checking pull requests in {what}"
 msgstr "Kontroluji pull requesty v {what}"
 
+msgid "Checking with the provider."
+msgstr "Ověřování u poskytovatele."
+
 msgid "Checking workspaces"
 msgstr "Kontroluji pracovní prostory"
 
@@ -4377,6 +4419,9 @@ msgstr "Kontrolní bod · před refaktorem tooltipů"
 #. placeholder {0}: formatRelativeTime(new Date(row.updatedAt))
 msgid "Checkpoint saved {0}"
 msgstr "Kontrolní bod uložen {0}"
+
+msgid "Checkpoint saved to {name}"
+msgstr "Checkpoint uložen do {name}"
 
 msgid "Checks"
 msgstr "Kontroly"
@@ -4613,17 +4658,20 @@ msgstr "Klikněte na prvek."
 msgid "Click any element to send it to an agent."
 msgstr "Kliknutím na libovolný prvek ho pošlete agentovi."
 
+msgid "Click Authorize on claude.ai. Anthropic then shows a code. Paste it here."
+msgstr "Na claude.ai klikněte na Authorize. Anthropic pak zobrazí kód. Vložte ho sem."
+
 msgid "Click here if not redirected"
 msgstr "Pokud nedojde k přesměrování, klikněte sem"
 
 msgid "Click the “↑ update” pill to see the pre-update confirm"
 msgstr "Kliknutím na „↑ update“ zobrazíte potvrzení před aktualizací"
 
+msgid "Click to copy"
+msgstr "Klikněte pro zkopírování"
+
 msgid "Click to copy the session ID (resume with `claude --resume <id>`)."
 msgstr "Kliknutím zkopírujete ID relace (pokračování přes `claude --resume <id>`)."
-
-msgid "Click to open the pull request"
-msgstr "Kliknutím otevřete pull request"
 
 msgid "Click two commits to define the range."
 msgstr "Kliknutím na dva commity určíte rozsah."
@@ -5815,6 +5863,9 @@ msgstr "Odkaz se nepodařilo zkopírovat"
 
 msgid "Could not create cloud workspace"
 msgstr "Nepodařilo se vytvořit cloudový pracovní prostor"
+
+msgid "Could not create environment"
+msgstr "Prostředí se nepodařilo vytvořit"
 
 msgid "Could not create project"
 msgstr "Projekt se nepodařilo vytvořit"
@@ -7340,6 +7391,9 @@ msgstr "Přehled změn diff"
 msgid "diff in new tab"
 msgstr "rozdíl na nové kartě"
 
+msgid "Diff opens when the workspace wakes up"
+msgstr "Diff se otevře, až se pracovní prostor probudí"
+
 msgid "Digital Product Designer"
 msgstr "Designér digitálních produktů"
 
@@ -7403,6 +7457,9 @@ msgstr "Zahodit změny?"
 
 msgid "Discard recording"
 msgstr "Zahodit nahrávku"
+
+msgid "Discard unsaved changes?"
+msgstr "Zahodit neuložené změny?"
 
 msgid "Discarded"
 msgstr "Zahozeno"
@@ -7809,6 +7866,9 @@ msgstr "Získáno: {name} ×{tier}"
 msgid "Edit"
 msgstr "Upravit"
 
+msgid "Edit {selectedName}"
+msgstr "Upravit {selectedName}"
+
 msgid "Edit Channel Name"
 msgstr "Upravit název kanálu"
 
@@ -7821,8 +7881,8 @@ msgstr "Upravit popis"
 msgid "Edit Description"
 msgstr "Upravit popis"
 
-msgid "Edit environment"
-msgstr "Upravit prostředí"
+msgid "Edit Environment Variable"
+msgstr "Upravit proměnnou prostředí"
 
 msgid "Edit files without asking; ask before commands"
 msgstr "Upravovat soubory bez ptaní; ptát se před příkazy"
@@ -8013,6 +8073,12 @@ msgstr "Zadejte celé číslo"
 msgid "Enter a whole number from {minHours} to {maxHours} GB-hours."
 msgstr "Zadejte celé číslo od {minHours} do {maxHours} GB-hodin."
 
+msgid "Enter new value"
+msgstr "Zadejte novou hodnotu"
+
+msgid "Enter this code on the page we opened:"
+msgstr "Zadejte tento kód na stránce, kterou jsme otevřeli:"
+
 msgid "Enter this code when OpenAI asks for it:"
 msgstr "Až o to OpenAI požádá, zadejte tento kód:"
 
@@ -8042,6 +8108,9 @@ msgstr "Příprava prostředí, nestabilní testy a rozvody přihlašovacích ú
 
 msgid "Environment Variables"
 msgstr "Proměnné prostředí"
+
+msgid "Environment's size"
+msgstr "Velikost prostředí"
 
 msgid "Environments"
 msgstr "Prostředí"
@@ -8474,6 +8543,9 @@ msgstr "Nepodařilo se smazat účet"
 msgid "Failed to delete automation"
 msgstr "Automatizaci se nepodařilo smazat"
 
+msgid "Failed to delete environment variable"
+msgstr "Proměnnou prostředí se nepodařilo smazat"
+
 msgid "Failed to delete host"
 msgstr "Hostitele se nepodařilo smazat"
 
@@ -8592,6 +8664,9 @@ msgstr "Nepodařilo se odeslat odpověď"
 msgid "Failed to push branch"
 msgstr "Nepodařilo se odeslat větev"
 
+msgid "Failed to read file."
+msgstr "Soubor se nepodařilo načíst."
+
 msgid "Failed to record page version"
 msgstr "Nepodařilo se zaznamenat verzi stránky"
 
@@ -8685,6 +8760,9 @@ msgstr "Nepodařilo se spustit příkaz pracovního prostoru"
 msgid "Failed to save"
 msgstr "Nepodařilo se uložit"
 
+msgid "Failed to save environment variables"
+msgstr "Proměnné prostředí se nepodařilo uložit"
+
 msgid "Failed to save installation. Please try again."
 msgstr "Nepodařilo se uložit instalaci. Zkuste to prosím znovu."
 
@@ -8750,6 +8828,9 @@ msgstr "Nepodařilo se aktualizovat avatar"
 
 msgid "Failed to update branch prefix"
 msgstr "Nepodařilo se změnit prefix větve"
+
+msgid "Failed to update environment variable"
+msgstr "Proměnnou prostředí se nepodařilo aktualizovat"
 
 msgid "Failed to update hooks"
 msgstr "Nepodařilo se aktualizovat hooky"
@@ -8892,6 +8973,12 @@ msgstr "Soubor nenalezen"
 msgid "File open mode"
 msgstr "Režim otevírání souborů"
 
+msgid "File opens when the workspace wakes up"
+msgstr "Soubor se otevře, až se pracovní prostor probudí"
+
+msgid "File too large. Maximum size is 256 KB."
+msgstr "Soubor je příliš velký. Maximální velikost je 256 KB."
+
 msgid "File viewer"
 msgstr "Prohlížeč souborů"
 
@@ -8909,6 +8996,9 @@ msgstr "Soubory a editor"
 
 msgid "Files changed"
 msgstr "Změněné soubory"
+
+msgid "Files load when the workspace wakes up"
+msgstr "Soubory se načtou, až se pracovní prostor probudí"
 
 msgid "files to exclude (glob)"
 msgstr "soubory k vyloučení (glob)"
@@ -9044,6 +9134,9 @@ msgstr "hotovo · pracoval 7 s"
 
 msgid "Finishing the move…"
 msgstr "Dokončování přesunu…"
+
+msgid "First time? Turn on device code sign-in in <0>ChatGPT settings</0>."
+msgstr "Poprvé? Zapněte přihlášení kódem zařízení v <0>nastavení ChatGPT</0>."
 
 msgid "Fit"
 msgstr "Přizpůsobit"
@@ -10186,6 +10279,9 @@ msgstr "Vydává se za někoho jiného"
 msgid "Import"
 msgstr "Importovat"
 
+msgid "Import .env"
+msgstr "Importovat .env"
+
 msgid "import a folder"
 msgstr "importovat složku"
 
@@ -10927,6 +11023,9 @@ msgstr "Nový soubor byl zachován, po vytvoření se změnil"
 msgid "Kept the new folder because it is no longer empty"
 msgstr "Nová složka byla zachována, už není prázdná"
 
+msgid "Key"
+msgstr "Klíč"
+
 msgid "Key dates"
 msgstr "Důležitá data"
 
@@ -11070,6 +11169,9 @@ msgid "Last seen {lastSeen}"
 msgstr "Naposledy viděn: {lastSeen}"
 
 msgid "Last updated"
+msgstr "Naposledy aktualizováno"
+
+msgid "Last Updated"
 msgstr "Naposledy aktualizováno"
 
 msgid "Last updated on {date}"
@@ -11662,9 +11764,6 @@ msgstr "Prostředky počítače"
 msgid "Machine size"
 msgstr "Velikost stroje"
 
-msgid "Machine size: {label}"
-msgstr "Velikost stroje: {label}"
-
 msgid "Machine-unbound cloud workspaces that spin up in seconds and can be shared with teammates."
 msgstr "Cloudové pracovní prostory nevázané na počítač, které naběhnou během sekund a dají se sdílet s kolegy."
 
@@ -11721,6 +11820,9 @@ msgstr "Správa účtů…"
 
 msgid "Manage billing"
 msgstr "Spravovat fakturaci"
+
+msgid "Manage environment"
+msgstr "Spravovat prostředí"
 
 msgid "Manage environments"
 msgstr "Spravovat prostředí"
@@ -12349,6 +12451,10 @@ msgstr "Záhadný strojník"
 msgid "Name"
 msgstr "Název"
 
+msgctxt "sort order"
+msgid "Name"
+msgstr "Název"
+
 msgid "Name and a URL-friendly slug. Both can be changed later."
 msgstr "Název a slug vhodný do URL. Obojí jde později změnit."
 
@@ -12699,6 +12805,9 @@ msgstr "Žádné aktivní pracovní prostory"
 msgid "No agent"
 msgstr "Žádný agent"
 
+msgid "No agent is available to set up the environment"
+msgstr "K nastavení prostředí není k dispozici žádný agent"
+
 msgid "No agent is configured on this host"
 msgstr "Na tomto hostiteli není nakonfigurován žádný agent"
 
@@ -12846,6 +12955,9 @@ msgstr "Zatím žádná stahování"
 
 msgid "No emoji found"
 msgstr "Žádné emoji nenalezeno"
+
+msgid "No environment variables yet"
+msgstr "Zatím žádné proměnné prostředí"
 
 msgid "No environments available"
 msgstr "Žádná dostupná prostředí"
@@ -13002,6 +13114,9 @@ msgstr "Žádné odpovídající pull requesty"
 
 msgid "No matching tasks"
 msgstr "Žádné odpovídající úkoly"
+
+msgid "No matching variables"
+msgstr "Žádné odpovídající proměnné"
 
 msgid "No MCP servers found"
 msgstr "Nenalezeny žádné MCP servery"
@@ -13190,6 +13305,9 @@ msgstr "Nepřiřazeni žádní recenzenti"
 msgid "No reviewers assigned yet."
 msgstr "Zatím nejsou přiřazeni žádní recenzenti."
 
+msgid "No reviewers found."
+msgstr "Nenalezeni žádní recenzenti."
+
 msgid "No reviews"
 msgstr "Žádné revize"
 
@@ -13307,8 +13425,8 @@ msgstr "Na tomto zařízení nebyly nalezeny žádné projekty v1."
 msgid "No v1 terminal scripts found."
 msgstr "Nebyly nalezeny žádné terminálové skripty v1."
 
-msgid "No variables set yet."
-msgstr "Zatím nejsou nastaveny žádné proměnné."
+msgid "No valid environment variables found in file"
+msgstr "V souboru nebyly nalezeny žádné platné proměnné prostředí"
 
 msgid "No versions yet"
 msgstr "Zatím žádné verze"
@@ -13705,6 +13823,9 @@ msgstr "Jeden plugin. Každý programovací agent."
 msgid "One step left"
 msgstr "Zbývá jeden krok"
 
+msgid "One variable can't be saved. See the highlighted row"
+msgstr "Jednu proměnnou nelze uložit. Podívejte se na zvýrazněný řádek"
+
 msgid "online"
 msgstr "online"
 
@@ -13955,8 +14076,17 @@ msgstr "Otevřít nastavení správce ChatGPT"
 msgid "Open ChatGPT settings"
 msgstr "Otevřít nastavení ChatGPT"
 
+msgid "Open ChatGPT to sign in"
+msgstr "Otevřít ChatGPT a přihlásit se"
+
 msgid "Open Claude Code, Codex, OpenCode, and Pi sessions as chats"
 msgstr "Otevírat relace Claude Code, Codex, OpenCode a Pi jako chaty"
+
+msgid "Open claude.ai again"
+msgstr "Znovu otevřít claude.ai"
+
+msgid "Open claude.ai to sign in"
+msgstr "Otevřít claude.ai a přihlásit se"
 
 msgid "Open Command Palette"
 msgstr "Otevřít paletu příkazů"
@@ -14360,6 +14490,9 @@ msgstr "Nepovinné. Pomůže nám zjistit, co funguje."
 msgid "Options"
 msgstr "Možnosti"
 
+msgid "or paste .env contents in Key input"
+msgstr "nebo vložte obsah souboru .env do pole Klíč"
+
 msgid "Orange"
 msgstr "Oranžová"
 
@@ -14389,6 +14522,9 @@ msgstr "Organizace {id}"
 
 msgid "Organization created successfully!"
 msgstr "Organizace byla vytvořena!"
+
+msgid "Organization default ({defaultName})"
+msgstr "Výchozí pro organizaci ({defaultName})"
 
 msgid "Organization deleted"
 msgstr "Organizace smazána"
@@ -14846,6 +14982,12 @@ msgstr "Vložit"
 msgid "Paste a link"
 msgstr "Vložte odkaz"
 
+msgid "Paste an API key instead"
+msgstr "Místo toho vložit klíč API"
+
+msgid "Paste the code"
+msgstr "Vložte kód"
+
 msgid "Paste this into Paradev CLI:"
 msgstr "Vložte to do Paradev CLI:"
 
@@ -15050,8 +15192,8 @@ msgstr "Vyberte novou složku projektu na {hostName}."
 msgid "Pick the project worktree folder on {hostName}."
 msgstr "Vyberte složku pro worktree projektu na {hostName}."
 
-msgid "Pick the repositories it checks out. An agent on this machine works out what to install and gets it running in the cloud."
-msgstr "Vyberte repozitáře, které si stáhne. Agent na tomto počítači zjistí, co nainstalovat, a zprovozní to v cloudu."
+msgid "Pick the repositories it checks out. An agent in a cloud workspace works out what to install and gets it running."
+msgstr "Vyberte repozitáře, které si stáhne. Agent v cloudovém pracovním prostoru zjistí, co nainstalovat, a zprovozní ho."
 
 msgid "Pick the worktree folder on {hostName}."
 msgstr "Vyberte složku pro worktree na {hostName}."
@@ -15155,6 +15297,9 @@ msgstr "Vyberte prosím organizaci"
 msgid "Please try again, or restart Paradev on that device."
 msgstr "Zkuste to znovu nebo na daném zařízení restartujte Paradev."
 
+msgid "Please upload a valid .env file."
+msgstr "Nahrajte prosím platný soubor .env."
+
 msgid "Plugin"
 msgstr "Plugin"
 
@@ -15222,11 +15367,6 @@ msgstr "PR"
 
 msgid "PR {position} of {size} · targets {base}"
 msgstr "PR {position} z {size} · cíl {base}"
-
-#. placeholder {0}: pullRequest.number
-#. placeholder {1}: i18n._(PR_STATE_LABEL[pullRequest.state])
-msgid "PR #{0} · {1}"
-msgstr "PR #{0} · {1}"
 
 #. placeholder {0}: workspace.pr.prNumber
 #. placeholder {1}: workspace.pr.state
@@ -16781,6 +16921,9 @@ msgstr "Restartována 1 host service"
 msgid "Restarting"
 msgstr "Restartování"
 
+msgid "Restarting {label}…"
+msgstr "Restartuje se {label}…"
+
 msgid "Restarting {what}"
 msgstr "Restartuje se {what}"
 
@@ -16972,6 +17115,9 @@ msgstr "Revize zamítnuta"
 msgid "Review each failure before deciding whether to continue."
 msgstr "Než se rozhodnete pokračovat, projděte si každé selhání."
 
+msgid "Review loads when the workspace wakes up"
+msgstr "Kontrola se načte, až se pracovní prostor probudí"
+
 msgid "Review message"
 msgstr "Zpráva k revizi"
 
@@ -17010,6 +17156,12 @@ msgstr "zrevidoval(a)"
 
 msgid "Reviewed by you"
 msgstr "S vaší revizí"
+
+msgid "Reviewer"
+msgstr "Recenzent"
+
+msgid "Reviewer: {label}"
+msgstr "Recenzent: {label}"
 
 msgid "Reviewers"
 msgstr "Recenzenti"
@@ -17305,8 +17457,14 @@ msgstr "Uložit"
 msgid "Save & create workspace"
 msgstr "Uložit a vytvořit pracovní prostor"
 
+msgid "Save a checkpoint to {name}?"
+msgstr "Uložit checkpoint do {name}?"
+
 msgid "Save All"
 msgstr "Uložit vše"
+
+msgid "Save and continue"
+msgstr "Uložit a pokračovat"
 
 msgid "Save as environment"
 msgstr "Uložit jako prostředí"
@@ -17316,6 +17474,9 @@ msgstr "Uložit jako pohled"
 
 msgid "Save Changes"
 msgstr "Uložit změny"
+
+msgid "Save checkpoint"
+msgstr "Uložit checkpoint"
 
 msgid "Save edits"
 msgstr "Uložit úpravy"
@@ -17357,8 +17518,20 @@ msgstr "Uloženo"
 msgid "Saved \"{0}\" as an environment"
 msgstr "\"{0}\" uloženo jako prostředí"
 
+msgid "Saved {name}"
+msgstr "Uloženo: {name}"
+
+msgid "Saved {name}, but its setup workspace could not start: {reason}"
+msgstr "{name} uloženo, ale jeho pracovní prostor pro nastavení se nepodařilo spustit: {reason}"
+
 msgid "Saved to Downloads"
 msgstr "Uloženo do Stažených souborů"
+
+msgid "Saves this workspace as it is now, with everything installed in it. New workspaces from {name} start from this checkpoint. The workspace stops for a moment while it saves."
+msgstr "Uloží tento pracovní prostor tak, jak je teď, se vším, co je v něm nainstalované. Nové pracovní prostory z {name} začnou z tohoto checkpointu. Pracovní prostor se během ukládání na chvíli zastaví."
+
+msgid "Saving a checkpoint to {name}..."
+msgstr "Ukládání checkpointu do {name}..."
 
 msgid "Saving as an environment..."
 msgstr "Ukládání jako prostředí..."
@@ -17590,6 +17763,9 @@ msgstr "Hledat repozitáře..."
 msgid "Search results"
 msgstr "Výsledky hledání"
 
+msgid "Search reviewers…"
+msgstr "Hledat recenzenty…"
+
 msgid "Search settings..."
 msgstr "Hledat v nastavení..."
 
@@ -17791,9 +17967,6 @@ msgstr "Vyberte agenta"
 msgid "Select an editor from the dropdown"
 msgstr "Vyberte editor z nabídky"
 
-msgid "Select an environment"
-msgstr "Vyberte prostředí"
-
 msgid "Select an organization"
 msgstr "Vyberte organizaci"
 
@@ -17974,6 +18147,12 @@ msgstr "Odesílám…"
 msgid "Sends {0} characters of terminal context (about {1} tokens) to {2}."
 msgstr "Odešle {0} znaků kontextu terminálu (přibližně {1} tokenů) agentovi {2}."
 
+msgid "Sensitive"
+msgstr "Citlivé"
+
+msgid "Sensitive values are encrypted and cannot be revealed in the UI after saving."
+msgstr "Citlivé hodnoty jsou šifrované a po uložení je nelze zobrazit."
+
 msgid "Sent"
 msgstr "Odesláno"
 
@@ -18049,9 +18228,6 @@ msgstr "Relace"
 msgid "Sessions · top {0} by cost"
 msgstr "Relace · top {0} podle nákladů"
 
-msgid "Set"
-msgstr "Nastaveno"
-
 msgid "Set a notification schedule"
 msgstr "Nastavit plán oznámení"
 
@@ -18093,6 +18269,9 @@ msgstr "Nastavit host přes SSH"
 
 msgid "Set up an automation"
 msgstr "Nastavte automatizaci"
+
+msgid "Set up Environment"
+msgstr "Nastavit prostředí"
 
 msgid "Set up once"
 msgstr "Nastavte jednou"
@@ -18489,6 +18668,9 @@ msgstr "Přihlaste se jednou. Paradev udržuje připojení."
 msgid "Sign in to {0}"
 msgstr "Přihlaste se do {0}"
 
+msgid "Sign in to {label}"
+msgstr "Přihlásit se do {label}"
+
 msgid "Sign in to change your organization's plugins."
 msgstr "Pro změnu pluginů organizace se přihlaste."
 
@@ -18584,6 +18766,9 @@ msgstr "Přihlášeno do ChatGPT"
 msgid "Signed in to ChatGPT as {connectedAs}"
 msgstr "Přihlášeno do ChatGPT jako {connectedAs}"
 
+msgid "Signed in, but {label} did not restart."
+msgstr "Přihlášeno, ale {label} se nerestartoval."
+
 msgid "Signed out"
 msgstr "Odhlášeno"
 
@@ -18592,6 +18777,9 @@ msgstr "Weby, kde jste přihlášeni"
 
 msgid "Signing in..."
 msgstr "Přihlašuji..."
+
+msgid "Signing in…"
+msgstr "Přihlašování…"
 
 msgid "Signup works. The welcome screen loads and the console is clean."
 msgstr "Registrace funguje. Uvítací obrazovka se načte a konzole je čistá."
@@ -18616,6 +18804,9 @@ msgstr "Simulovat aktualizaci: připraveno"
 
 msgid "Simulator"
 msgstr "Simulátor"
+
+msgid "Simulator starts when the workspace wakes up"
+msgstr "Simulátor se spustí, až se pracovní prostor probudí"
 
 msgid "Since 2025"
 msgstr "Od roku 2025"
@@ -18644,9 +18835,6 @@ msgstr "Šest úrovní autonomie továrny"
 msgid "Six levels of factory autonomy, the gates between them, and our forecast for how far 2026 gets us. Written down now so you can grade us later."
 msgstr "Šest úrovní autonomie továrny, brány mezi nimi a naše předpověď, kam nás dostane rok 2026. Sepsáno teď, abyste nás mohli později oznámkovat."
 
-msgid "size"
-msgstr "Velikost"
-
 msgid "Size"
 msgstr "Velikost"
 
@@ -18670,6 +18858,9 @@ msgstr "Odstín pleti"
 
 msgid "Skip"
 msgstr "Přeskočit"
+
+msgid "Skip & save"
+msgstr "Přeskočit a uložit"
 
 msgid "Skip All"
 msgstr "Přeskočit vše"
@@ -19070,6 +19261,9 @@ msgstr "Zahájit nový chat"
 
 msgid "Start a session"
 msgstr "Spustit relaci"
+
+msgid "Start agent"
+msgstr "Spustit agenta"
 
 msgid "Start agents on events or a schedule"
 msgstr "Spouštějte agenty událostmi nebo podle plánu"
@@ -19831,6 +20025,9 @@ msgstr "Relace terminálu ukončena"
 
 msgid "Terminal sessions"
 msgstr "Relace terminálu"
+
+msgid "Terminal starts when the workspace wakes up"
+msgstr "Terminál se spustí, až se pracovní prostor probudí"
 
 msgid "Terminal theme color-palette preview"
 msgstr "Náhled barevné palety motivu terminálu"
@@ -21207,6 +21404,9 @@ msgstr "Zkuste jiný hledaný výraz nebo jiné místo."
 msgid "Try again"
 msgstr "Zkusit znovu"
 
+msgid "Try again, or close this and press Continue in the chat."
+msgstr "Zkuste to znovu, nebo okno zavřete a v chatu stiskněte Pokračovat."
+
 msgid "Try again, or restart the host service from the Paradev tray menu."
 msgstr "Zkuste to znovu nebo restartujte službu hostitele z nabídky Paradev v systémové liště."
 
@@ -21264,6 +21464,10 @@ msgstr "Vypnuto, protože se změnily jeho soubory"
 msgid "Two Hands"
 msgstr "Obě ruce"
 
+msgid "Type"
+msgstr "Typ"
+
+msgctxt "sort order"
 msgid "Type"
 msgstr "Typ"
 
@@ -21640,6 +21844,9 @@ msgstr "Aktualizujte službu hostitele na obou počítačích a zkuste to znovu.
 msgid "Update the host service on this device and try again."
 msgstr "Aktualizujte službu hostitele na tomto zařízení a zkuste to znovu."
 
+msgid "Update the value for <0>{key}</0>"
+msgstr "Aktualizujte hodnotu <0>{key}</0>"
+
 msgid "Update this host to message subagents"
 msgstr "Aktualizujte tohoto hostitele, abyste mohli psát subagentům"
 
@@ -21655,6 +21862,9 @@ msgstr "Aktualizováno {0}"
 
 msgid "Updated {date}"
 msgstr "Aktualizováno {date}"
+
+msgid "Updated {key}"
+msgstr "{key} aktualizováno"
 
 msgid "Updated {updatedRelative}"
 msgstr "Aktualizováno {updatedRelative}"
@@ -21828,6 +22038,12 @@ msgstr "Použijte při volání Paradev API."
 msgid "Use voice transcription and push-to-talk features."
 msgstr "Používat přepis řeči a funkce push-to-talk."
 
+msgid "Use your ChatGPT plan."
+msgstr "Použijte svůj plán ChatGPT."
+
+msgid "Use your Claude Pro or Max plan."
+msgstr "Použijte svůj plán Claude Pro nebo Max."
+
 msgid "Used"
 msgstr "Využito"
 
@@ -21873,6 +22089,9 @@ msgstr "uživatel@host, ssh://uživatel@host:2222 nebo alias z konfigurace ssh"
 
 msgid "v2ProjectId does not match the workspace's project"
 msgstr "v2ProjectId neodpovídá projektu pracovního prostoru"
+
+msgid "Value"
+msgstr "Hodnota"
 
 msgid "Variables"
 msgstr "Proměnné"
@@ -22076,6 +22295,9 @@ msgstr "Čeká se na data o aktivitě"
 msgid "Waiting for approval. Keep this dialog open."
 msgstr "Čeká se na schválení. Nechte tento dialog otevřený."
 
+msgid "Waiting for approval…"
+msgstr "Čeká se na schválení…"
+
 msgid "Waiting for Checks"
 msgstr "Čeká na kontroly"
 
@@ -22132,6 +22354,9 @@ msgstr "Orientace a postupné odkrývání"
 
 msgid "We build in public, so you can see how we work before you talk to us."
 msgstr "Stavíme veřejně, takže uvidíte, jak pracujeme, ještě než s námi promluvíte."
+
+msgid "We check it with the provider before we save it."
+msgstr "Před uložením ho ověříme u poskytovatele."
 
 msgid "We couldn't charge {amountDue}. Update your payment method to keep this plan."
 msgstr "Nepodařilo se strhnout {amountDue}. Aktualizujte způsob platby, ať vám tarif zůstane."
@@ -22867,6 +23092,9 @@ msgstr "K tomuto terminálu nemáte přístup."
 msgid "You don't have permission to remove this member"
 msgstr "Nemáte oprávnění tohoto člena odebrat"
 
+msgid "You have unsaved environment variables. Are you sure you want to close?"
+msgstr "Máte neuložené proměnné prostředí. Opravdu chcete zavřít?"
+
 msgid "You install and connect once per account."
 msgstr "Instalujete a připojujete jednou na účet."
 
@@ -22970,6 +23198,9 @@ msgstr "Vaše změny"
 msgid "Your changes will be lost if you don't save them."
 msgstr "Pokud změny neuložíte, budou ztraceny."
 
+msgid "Your chat history stays. Only the agent restarts."
+msgstr "Historie chatu zůstane. Restartuje se jen agent."
+
 msgid "Your cloud workspaces will no longer be able to reach this host."
 msgstr "Vaše cloudové pracovní prostory už k tomuto hostu nebudou mít přístup."
 
@@ -22997,6 +23228,9 @@ msgstr "Odkaz na GitHub pochází z účtu, kterým jste se přihlásili, proto 
 
 msgid "Your last payment failed. Update your payment method to keep Pro."
 msgstr "Poslední platba se nezdařila. Aktualizujte způsob platby, abyste si Pro zachovali."
+
+msgid "Your model provider stopped this request because the account reached its usage or spend limit. Wait for the limit to reset, raise it with your provider, or switch to another account in Usage settings."
+msgstr "Poskytovatel modelu zastavil tento požadavek, protože účet dosáhl limitu využití nebo útraty. Počkejte na obnovení limitu, navyšte ho u poskytovatele nebo v Nastavení využití přepněte na jiný účet."
 
 msgid "Your name"
 msgstr "Vaše jméno"

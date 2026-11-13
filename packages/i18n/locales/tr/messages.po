@@ -984,6 +984,9 @@ msgstr "{count} ana makine bu uygulamadan daha eski bir ana makine hizmeti çal�
 msgid "{count} selected"
 msgstr "{count} seçildi"
 
+msgid "{count} variables can't be saved. See the highlighted rows"
+msgstr "{count} değişken kaydedilemiyor. Vurgulanan satırlara bakın"
+
 msgid "{count}/day"
 msgstr "{count}/gün"
 
@@ -1131,6 +1134,9 @@ msgstr "{lines, plural, one {# satır} other {# satır}}"
 
 msgid "{localHostName} (this device)"
 msgstr "{localHostName} (bu cihaz)"
+
+msgid "{machineSize} (not on your plan)"
+msgstr "{machineSize} (planınızda yok)"
 
 #. placeholder {0}: <> <span className="tabular-nums font-medium text-foreground"> # </span>{" "} result for &ldquo;{query}&rdquo; </>
 #. placeholder {1}: <> <span className="tabular-nums font-medium text-foreground"> # </span>{" "} results for &ldquo;{query}&rdquo; </>
@@ -1322,9 +1328,6 @@ msgstr "{productName}, Union Square Ventures liderliğinde, Y Combinator ve Paul
 
 msgid "{productName} was called {formerName} until October 2026."
 msgstr "{productName}, Ekim 2026'ya kadar {formerName} adını taşıyordu."
-
-msgid "{prompt} · # to change project, host, and more"
-msgstr "{prompt} · Projeyi, host'u ve daha fazlasını değiştirmek için #"
 
 msgid "{pullRequestCount, plural, one {# PR} other {# PRs}}"
 msgstr "{pullRequestCount, plural, one {# PR} other {# PR}}"
@@ -2112,6 +2115,9 @@ msgstr "ajan ekleme"
 msgid "Add an environment in Settings before creating a cloud workspace"
 msgstr "Bulut çalışma alanı oluşturmadan önce Ayarlar'da bir ortam ekleyin"
 
+msgid "Add Another"
+msgstr "Bir tane daha ekle"
+
 msgid "Add another account, or disconnect one you no longer use."
 msgstr "Başka bir hesap bağla ya da artık kullanmadığın birini kaldır."
 
@@ -2138,6 +2144,9 @@ msgstr "Açıklama Ekle"
 
 msgid "Add description..."
 msgstr "Açıklama ekleyin..."
+
+msgid "Add Environment Variable"
+msgstr "Ortam değişkeni ekle"
 
 msgid "Add extension"
 msgstr "Uzantı ekle"
@@ -2175,6 +2184,9 @@ msgstr "Daha fazla ekle…"
 
 msgid "Add one from the menu in the sidebar to get started."
 msgstr "Başlamak için kenar çubuğundaki menüden bir tane ekleyin."
+
+msgid "Add one or more environment variables. You can also drag and drop a .env file."
+msgstr "Bir veya daha fazla ortam değişkeni ekleyin. Bir .env dosyasını sürükleyip bırakabilirsiniz."
 
 msgid "Add people"
 msgstr "Kişi ekle"
@@ -2287,8 +2299,17 @@ msgstr "{added} eklendi"
 msgid "Added {added} files to {where}"
 msgstr "{where} konumuna {added} dosya eklendi"
 
+msgid "Added {addedOn}"
+msgstr "{addedOn} tarihinde eklendi"
+
 msgid "Added {bought} GB-hours."
 msgstr "{bought} GB-saat eklendi."
+
+msgid "Added {count} environment variables"
+msgstr "{count} ortam değişkeni eklendi"
+
+msgid "Added {key}"
+msgstr "{key} eklendi"
 
 msgid "Added 1 file to {where}"
 msgstr "{where} konumuna 1 dosya eklendi"
@@ -2784,8 +2805,14 @@ msgstr "Doğrudan engellenen ajana bağlanan bildirimlerle, hangi ajanın size i
 msgid "An agent completes multi-file changes end to end."
 msgstr "Bir ajan, çok dosyalı değişiklikleri baştan sona tamamlar."
 
+msgid "An agent sets up this environment in a cloud workspace (about 20 minutes or more): it installs dependencies, writes the setup config and asks for any secrets it needs. Interrupt it at any time, or take over in the workspace to finish setup yourself."
+msgstr "Bir ajan bu ortamı bir bulut çalışma alanında kurar (yaklaşık 20 dakika veya daha uzun): bağımlılıkları yükler, kurulum yapılandırmasını yazar ve gereken gizli değerleri sorar. İstediğiniz an durdurabilir veya çalışma alanında devralıp kurulumu kendiniz bitirebilirsiniz."
+
 msgid "An agent writes whole functions and files while a human watches every step and approves every command. One agent, one human. Faster, but still serial."
 msgstr "Bir ajan tüm fonksiyonları ve dosyaları yazarken bir insan her adımı izler ve her komutu onaylar. Bir ajan, bir insan. Daha hızlı, ama hâlâ sıralı."
+
+msgid "An Anthropic API key."
+msgstr "Bir Anthropic API anahtarı."
 
 msgid "An automation can only use a cloud workspace you created"
 msgstr "Bir otomasyon yalnızca sizin oluşturduğunuz bir bulut çalışma alanını kullanabilir"
@@ -2798,6 +2825,9 @@ msgstr "Bir hata oluştu"
 
 msgid "An isolated git worktree where an agent runs without touching your main checkout."
 msgstr "Ajanın, ana checkout'unuza dokunmadan çalıştığı yalıtılmış bir git worktree'si."
+
+msgid "An OpenAI API key."
+msgstr "Bir OpenAI API anahtarı."
 
 msgid "An unknown error occurred"
 msgstr "Bilinmeyen bir hata oluştu"
@@ -2906,6 +2936,9 @@ msgstr "tüm alıcılar"
 
 msgid "Any review"
 msgstr "Tüm incelemeler"
+
+msgid "Any reviewer"
+msgstr "Tüm inceleyenler"
 
 msgid "any sender"
 msgstr "tüm gönderenler"
@@ -3870,6 +3903,9 @@ msgstr "Bu cihazdaki Paradev uygulamasıyla birlikte gelir."
 msgid "Bundled with the Paradev app on this device. Updates with the app."
 msgstr "Bu cihazdaki Paradev uygulamasıyla birlikte gelir. Uygulamayla birlikte güncellenir."
 
+msgid "Business"
+msgstr "Business"
+
 msgid "Business plan"
 msgstr "Business planı"
 
@@ -4211,6 +4247,9 @@ msgstr "Değişiklik günlüğü"
 msgid "Changes"
 msgstr "Değişiklikler"
 
+msgid "Changes load when the workspace wakes up"
+msgstr "Değişiklikler, çalışma alanı uyandığında yüklenir"
+
 msgid "Changes open target"
 msgstr "Değişiklikleri açma hedefi"
 
@@ -4353,6 +4392,9 @@ msgstr "Bir PR'ı checkout etmek proje gerektirir"
 msgid "Checking pull requests in {what}"
 msgstr "{what} içindeki pull request'ler kontrol ediliyor"
 
+msgid "Checking with the provider."
+msgstr "Sağlayıcıyla kontrol ediliyor."
+
 msgid "Checking workspaces"
 msgstr "Çalışma alanları kontrol ediliyor"
 
@@ -4377,6 +4419,9 @@ msgstr "Kontrol noktası · tooltip yeniden düzenlemesinden önce"
 #. placeholder {0}: formatRelativeTime(new Date(row.updatedAt))
 msgid "Checkpoint saved {0}"
 msgstr "Kontrol noktası kaydedildi {0}"
+
+msgid "Checkpoint saved to {name}"
+msgstr "Kontrol noktası {name} ortamına kaydedildi"
 
 msgid "Checks"
 msgstr "Kontroller"
@@ -4613,17 +4658,20 @@ msgstr "Bir öğeye tıklayın."
 msgid "Click any element to send it to an agent."
 msgstr "Herhangi bir öğeye tıklayıp bir ajana gönderin."
 
+msgid "Click Authorize on claude.ai. Anthropic then shows a code. Paste it here."
+msgstr "claude.ai'de Authorize'a tıklayın. Anthropic ardından bir kod gösterir. Buraya yapıştırın."
+
 msgid "Click here if not redirected"
 msgstr "Yönlendirilmediyseniz buraya tıklayın"
 
 msgid "Click the “↑ update” pill to see the pre-update confirm"
 msgstr "Güncelleme öncesi onayı görmek için “↑ update” düğmesine tıklayın"
 
+msgid "Click to copy"
+msgstr "Kopyalamak için tıklayın"
+
 msgid "Click to copy the session ID (resume with `claude --resume <id>`)."
 msgstr "Oturum kimliğini kopyalamak için tıklayın (`claude --resume <id>` ile sürdürün)."
-
-msgid "Click to open the pull request"
-msgstr "Pull request'i açmak için tıklayın"
 
 msgid "Click two commits to define the range."
 msgstr "Aralığı tanımlamak için iki commit'e tıklayın."
@@ -5815,6 +5863,9 @@ msgstr "Bağlantı kopyalanamadı"
 
 msgid "Could not create cloud workspace"
 msgstr "Bulut çalışma alanı oluşturulamadı"
+
+msgid "Could not create environment"
+msgstr "Ortam oluşturulamadı"
 
 msgid "Could not create project"
 msgstr "Proje oluşturulamadı"
@@ -7340,6 +7391,9 @@ msgstr "Fark değişikliklerine genel bakış"
 msgid "diff in new tab"
 msgstr "yeni sekmede fark"
 
+msgid "Diff opens when the workspace wakes up"
+msgstr "Fark, çalışma alanı uyandığında açılır"
+
 msgid "Digital Product Designer"
 msgstr "Dijital Ürün Tasarımcısı"
 
@@ -7403,6 +7457,9 @@ msgstr "Değişiklikler atılsın mı?"
 
 msgid "Discard recording"
 msgstr "Kaydı at"
+
+msgid "Discard unsaved changes?"
+msgstr "Kaydedilmemiş değişiklikler atılsın mı?"
 
 msgid "Discarded"
 msgstr "Atıldı"
@@ -7809,6 +7866,9 @@ msgstr "{name} ×{tier} kazanıldı"
 msgid "Edit"
 msgstr "Düzenle"
 
+msgid "Edit {selectedName}"
+msgstr "{selectedName} ortamını düzenle"
+
 msgid "Edit Channel Name"
 msgstr "Kanal Adını Düzenle"
 
@@ -7821,8 +7881,8 @@ msgstr "Açıklamayı düzenle"
 msgid "Edit Description"
 msgstr "Açıklamayı Düzenle"
 
-msgid "Edit environment"
-msgstr "Ortamı düzenle"
+msgid "Edit Environment Variable"
+msgstr "Ortam değişkenini düzenle"
 
 msgid "Edit files without asking; ask before commands"
 msgstr "Dosyaları sormadan düzenle; komutlardan önce sor"
@@ -8013,6 +8073,12 @@ msgstr "Bir tam sayı girin"
 msgid "Enter a whole number from {minHours} to {maxHours} GB-hours."
 msgstr "{minHours} ile {maxHours} GB-saat arasında tam sayı girin."
 
+msgid "Enter new value"
+msgstr "Yeni değer girin"
+
+msgid "Enter this code on the page we opened:"
+msgstr "Bu kodu açtığımız sayfaya girin:"
+
 msgid "Enter this code when OpenAI asks for it:"
 msgstr "OpenAI istediğinde bu kodu girin:"
 
@@ -8042,6 +8108,9 @@ msgstr "Ortam kurulumu, kararsız testler ve kimlik bilgisi tesisatı, yani 2025
 
 msgid "Environment Variables"
 msgstr "Ortam değişkenleri"
+
+msgid "Environment's size"
+msgstr "Ortamın boyutu"
 
 msgid "Environments"
 msgstr "Ortamlar"
@@ -8474,6 +8543,9 @@ msgstr "Hesap silinemedi"
 msgid "Failed to delete automation"
 msgstr "Otomasyon silinemedi"
 
+msgid "Failed to delete environment variable"
+msgstr "Ortam değişkeni silinemedi"
+
 msgid "Failed to delete host"
 msgstr "Ana makine silinemedi"
 
@@ -8592,6 +8664,9 @@ msgstr "Yanıt gönderilemedi"
 msgid "Failed to push branch"
 msgstr "Dal push edilemedi"
 
+msgid "Failed to read file."
+msgstr "Dosya okunamadı."
+
 msgid "Failed to record page version"
 msgstr "Sayfa sürümü kaydedilemedi"
 
@@ -8685,6 +8760,9 @@ msgstr "Çalışma alanı komutu çalıştırılamadı"
 msgid "Failed to save"
 msgstr "Kaydedilemedi"
 
+msgid "Failed to save environment variables"
+msgstr "Ortam değişkenleri kaydedilemedi"
+
 msgid "Failed to save installation. Please try again."
 msgstr "Kurulum kaydedilemedi. Lütfen yeniden deneyin."
 
@@ -8750,6 +8828,9 @@ msgstr "Avatar güncellenemedi"
 
 msgid "Failed to update branch prefix"
 msgstr "Dal ön eki güncellenemedi"
+
+msgid "Failed to update environment variable"
+msgstr "Ortam değişkeni güncellenemedi"
 
 msgid "Failed to update hooks"
 msgstr "Hook'lar güncellenemedi"
@@ -8892,6 +8973,12 @@ msgstr "Dosya bulunamadı"
 msgid "File open mode"
 msgstr "Dosya açma modu"
 
+msgid "File opens when the workspace wakes up"
+msgstr "Dosya, çalışma alanı uyandığında açılır"
+
+msgid "File too large. Maximum size is 256 KB."
+msgstr "Dosya çok büyük. En fazla 256 KB olabilir."
+
 msgid "File viewer"
 msgstr "Dosya görüntüleyici"
 
@@ -8909,6 +8996,9 @@ msgstr "Dosyalar ve Düzenleyici"
 
 msgid "Files changed"
 msgstr "Değişen dosyalar"
+
+msgid "Files load when the workspace wakes up"
+msgstr "Dosyalar, çalışma alanı uyandığında yüklenir"
 
 msgid "files to exclude (glob)"
 msgstr "hariç tutulacak dosyalar (glob)"
@@ -9044,6 +9134,9 @@ msgstr "bitti · 7 sn çalıştı"
 
 msgid "Finishing the move…"
 msgstr "Taşıma tamamlanıyor…"
+
+msgid "First time? Turn on device code sign-in in <0>ChatGPT settings</0>."
+msgstr "İlk kez mi? <0>ChatGPT ayarlarında</0> cihaz koduyla oturum açmayı etkinleştirin."
 
 msgid "Fit"
 msgstr "Sığdır"
@@ -10186,6 +10279,9 @@ msgstr "Başkasının kimliğine bürünüyor"
 msgid "Import"
 msgstr "İçe aktar"
 
+msgid "Import .env"
+msgstr ".env içe aktar"
+
 msgid "import a folder"
 msgstr "klasör içe aktarma"
 
@@ -10927,6 +11023,9 @@ msgstr "Yeni dosya korundu, oluşturulduktan sonra değişti"
 msgid "Kept the new folder because it is no longer empty"
 msgstr "Yeni klasör korundu, artık boş değil"
 
+msgid "Key"
+msgstr "Anahtar"
+
 msgid "Key dates"
 msgstr "Önemli tarihler"
 
@@ -11070,6 +11169,9 @@ msgid "Last seen {lastSeen}"
 msgstr "Son görülme: {lastSeen}"
 
 msgid "Last updated"
+msgstr "Son güncelleme"
+
+msgid "Last Updated"
 msgstr "Son güncelleme"
 
 msgid "Last updated on {date}"
@@ -11662,9 +11764,6 @@ msgstr "Makine kaynakları"
 msgid "Machine size"
 msgstr "Makine boyutu"
 
-msgid "Machine size: {label}"
-msgstr "Makine boyutu: {label}"
-
 msgid "Machine-unbound cloud workspaces that spin up in seconds and can be shared with teammates."
 msgstr "Saniyeler içinde açılan ve takım arkadaşlarınızla paylaşılabilen, makineye bağlı olmayan bulut çalışma alanları."
 
@@ -11721,6 +11820,9 @@ msgstr "Hesapları yönet…"
 
 msgid "Manage billing"
 msgstr "Faturalandırmayı yönet"
+
+msgid "Manage environment"
+msgstr "Ortamı yönet"
 
 msgid "Manage environments"
 msgstr "Ortamları yönet"
@@ -12349,6 +12451,10 @@ msgstr "Gizemli Makinist"
 msgid "Name"
 msgstr "Ad"
 
+msgctxt "sort order"
+msgid "Name"
+msgstr "Ad"
+
 msgid "Name and a URL-friendly slug. Both can be changed later."
 msgstr "Bir ad ve URL dostu bir slug. İkisi de sonradan değiştirilebilir."
 
@@ -12699,6 +12805,9 @@ msgstr "Etkin çalışma alanı yok"
 msgid "No agent"
 msgstr "Ajan yok"
 
+msgid "No agent is available to set up the environment"
+msgstr "Ortamı kurmak için kullanılabilir ajan yok"
+
 msgid "No agent is configured on this host"
 msgstr "Bu ana makinede yapılandırılmış bir ajan yok"
 
@@ -12846,6 +12955,9 @@ msgstr "Henüz indirme yok"
 
 msgid "No emoji found"
 msgstr "Emoji bulunamadı"
+
+msgid "No environment variables yet"
+msgstr "Henüz ortam değişkeni yok"
 
 msgid "No environments available"
 msgstr "Kullanılabilir ortam yok"
@@ -13002,6 +13114,9 @@ msgstr "Eşleşen pull request yok"
 
 msgid "No matching tasks"
 msgstr "Eşleşen görev yok"
+
+msgid "No matching variables"
+msgstr "Eşleşen değişken yok"
 
 msgid "No MCP servers found"
 msgstr "MCP sunucusu bulunamadı"
@@ -13190,6 +13305,9 @@ msgstr "İnceleyici atanmadı"
 msgid "No reviewers assigned yet."
 msgstr "Henüz inceleyici atanmadı."
 
+msgid "No reviewers found."
+msgstr "İnceleyen bulunamadı."
+
 msgid "No reviews"
 msgstr "İnceleme yok"
 
@@ -13307,8 +13425,8 @@ msgstr "Bu cihazda v1 projesi bulunamadı."
 msgid "No v1 terminal scripts found."
 msgstr "v1 terminal betiği bulunamadı."
 
-msgid "No variables set yet."
-msgstr "Henüz değişken ayarlanmadı."
+msgid "No valid environment variables found in file"
+msgstr "Dosyada geçerli ortam değişkeni bulunamadı"
 
 msgid "No versions yet"
 msgstr "Henüz sürüm yok"
@@ -13705,6 +13823,9 @@ msgstr "Tek eklenti. Her kodlama ajanı."
 msgid "One step left"
 msgstr "Bir adım kaldı"
 
+msgid "One variable can't be saved. See the highlighted row"
+msgstr "Bir değişken kaydedilemiyor. Vurgulanan satıra bakın"
+
 msgid "online"
 msgstr "çevrimiçi"
 
@@ -13955,8 +14076,17 @@ msgstr "ChatGPT yönetici ayarlarını aç"
 msgid "Open ChatGPT settings"
 msgstr "ChatGPT ayarlarını aç"
 
+msgid "Open ChatGPT to sign in"
+msgstr "Oturum açmak için ChatGPT'yi aç"
+
 msgid "Open Claude Code, Codex, OpenCode, and Pi sessions as chats"
 msgstr "Claude Code, Codex, OpenCode ve Pi oturumlarını sohbet olarak aç"
+
+msgid "Open claude.ai again"
+msgstr "claude.ai'yi yeniden aç"
+
+msgid "Open claude.ai to sign in"
+msgstr "Oturum açmak için claude.ai'yi aç"
 
 msgid "Open Command Palette"
 msgstr "Komut paletini aç"
@@ -14360,6 +14490,9 @@ msgstr "İsteğe bağlı. Neyin işe yaradığını anlamamıza yardımcı olur.
 msgid "Options"
 msgstr "Seçenekler"
 
+msgid "or paste .env contents in Key input"
+msgstr "veya .env içeriğini Anahtar alanına yapıştırın"
+
 msgid "Orange"
 msgstr "Turuncu"
 
@@ -14389,6 +14522,9 @@ msgstr "{id} kuruluşu"
 
 msgid "Organization created successfully!"
 msgstr "Kuruluş oluşturuldu!"
+
+msgid "Organization default ({defaultName})"
+msgstr "Kuruluş varsayılanı ({defaultName})"
 
 msgid "Organization deleted"
 msgstr "Kuruluş silindi"
@@ -14846,6 +14982,12 @@ msgstr "Yapıştır"
 msgid "Paste a link"
 msgstr "Bağlantı yapıştır"
 
+msgid "Paste an API key instead"
+msgstr "Bunun yerine bir API anahtarı yapıştır"
+
+msgid "Paste the code"
+msgstr "Kodu yapıştırın"
+
 msgid "Paste this into Paradev CLI:"
 msgstr "Bunu Paradev CLI'ye yapıştırın:"
 
@@ -15050,8 +15192,8 @@ msgstr "{hostName} üzerindeki yeni proje klasörünü seçin."
 msgid "Pick the project worktree folder on {hostName}."
 msgstr "{hostName} üzerindeki proje worktree klasörünü seçin."
 
-msgid "Pick the repositories it checks out. An agent on this machine works out what to install and gets it running in the cloud."
-msgstr "Alacağı depoları seçin. Bu makinedeki bir ajan neyin kurulacağını bulur ve bulutta çalıştırır."
+msgid "Pick the repositories it checks out. An agent in a cloud workspace works out what to install and gets it running."
+msgstr "Alınacak depoları seçin. Bulut çalışma alanındaki bir ajan neyin kurulacağını belirler ve çalışır hale getirir."
 
 msgid "Pick the worktree folder on {hostName}."
 msgstr "{hostName} üzerindeki worktree klasörünü seçin."
@@ -15155,6 +15297,9 @@ msgstr "Lütfen bir kuruluş seçin"
 msgid "Please try again, or restart Paradev on that device."
 msgstr "Lütfen tekrar deneyin veya o cihazda Paradev’i yeniden başlatın."
 
+msgid "Please upload a valid .env file."
+msgstr "Lütfen geçerli bir .env dosyası yükleyin."
+
 msgid "Plugin"
 msgstr "Eklenti"
 
@@ -15222,11 +15367,6 @@ msgstr "PR"
 
 msgid "PR {position} of {size} · targets {base}"
 msgstr "PR {position} / {size} · hedef {base}"
-
-#. placeholder {0}: pullRequest.number
-#. placeholder {1}: i18n._(PR_STATE_LABEL[pullRequest.state])
-msgid "PR #{0} · {1}"
-msgstr "PR #{0} · {1}"
 
 #. placeholder {0}: workspace.pr.prNumber
 #. placeholder {1}: workspace.pr.state
@@ -16781,6 +16921,9 @@ msgstr "1 host hizmeti yeniden başlatıldı"
 msgid "Restarting"
 msgstr "Yeniden başlatılıyor"
 
+msgid "Restarting {label}…"
+msgstr "{label} yeniden başlatılıyor…"
+
 msgid "Restarting {what}"
 msgstr "{what} yeniden başlatılıyor"
 
@@ -16972,6 +17115,9 @@ msgstr "İnceleme yok sayıldı"
 msgid "Review each failure before deciding whether to continue."
 msgstr "Devam edip etmemeye karar vermeden önce her hatayı inceleyin."
 
+msgid "Review loads when the workspace wakes up"
+msgstr "İnceleme, çalışma alanı uyandığında yüklenir"
+
 msgid "Review message"
 msgstr "İnceleme mesajı"
 
@@ -17010,6 +17156,12 @@ msgstr "inceledi"
 
 msgid "Reviewed by you"
 msgstr "Sizin incelediğiniz"
+
+msgid "Reviewer"
+msgstr "İnceleyen"
+
+msgid "Reviewer: {label}"
+msgstr "İnceleyen: {label}"
 
 msgid "Reviewers"
 msgstr "İnceleyiciler"
@@ -17305,8 +17457,14 @@ msgstr "Kaydet"
 msgid "Save & create workspace"
 msgstr "Kaydet ve çalışma alanı oluştur"
 
+msgid "Save a checkpoint to {name}?"
+msgstr "{name} ortamına kontrol noktası kaydedilsin mi?"
+
 msgid "Save All"
 msgstr "Tümünü kaydet"
+
+msgid "Save and continue"
+msgstr "Kaydet ve devam et"
 
 msgid "Save as environment"
 msgstr "Ortam olarak kaydet"
@@ -17316,6 +17474,9 @@ msgstr "Görünüm olarak kaydet"
 
 msgid "Save Changes"
 msgstr "Değişiklikleri Kaydet"
+
+msgid "Save checkpoint"
+msgstr "Kontrol noktası kaydet"
 
 msgid "Save edits"
 msgstr "Düzenlemeleri kaydet"
@@ -17357,8 +17518,20 @@ msgstr "Kaydedildi"
 msgid "Saved \"{0}\" as an environment"
 msgstr "\"{0}\" ortam olarak kaydedildi"
 
+msgid "Saved {name}"
+msgstr "{name} kaydedildi"
+
+msgid "Saved {name}, but its setup workspace could not start: {reason}"
+msgstr "{name} kaydedildi, ancak kurulum çalışma alanı başlatılamadı: {reason}"
+
 msgid "Saved to Downloads"
 msgstr "İndirilenler klasörüne kaydedildi"
+
+msgid "Saves this workspace as it is now, with everything installed in it. New workspaces from {name} start from this checkpoint. The workspace stops for a moment while it saves."
+msgstr "Bu çalışma alanını, içine kurulan her şeyle birlikte şu anki haliyle kaydeder. {name} ortamından açılan yeni çalışma alanları bu kontrol noktasından başlar. Kaydederken çalışma alanı kısa bir süre durur."
+
+msgid "Saving a checkpoint to {name}..."
+msgstr "{name} ortamına kontrol noktası kaydediliyor..."
 
 msgid "Saving as an environment..."
 msgstr "Ortam olarak kaydediliyor..."
@@ -17590,6 +17763,9 @@ msgstr "Depolarda ara..."
 msgid "Search results"
 msgstr "Arama sonuçları"
 
+msgid "Search reviewers…"
+msgstr "İnceleyen ara…"
+
 msgid "Search settings..."
 msgstr "Ayarlarda ara..."
 
@@ -17791,9 +17967,6 @@ msgstr "Bir ajan seçin"
 msgid "Select an editor from the dropdown"
 msgstr "Açılır menüden bir düzenleyici seçin"
 
-msgid "Select an environment"
-msgstr "Bir ortam seçin"
-
 msgid "Select an organization"
 msgstr "Bir kuruluş seçin"
 
@@ -17974,6 +18147,12 @@ msgstr "Gönderiliyor…"
 msgid "Sends {0} characters of terminal context (about {1} tokens) to {2}."
 msgstr "{2} ajanına {0} karakterlik terminal bağlamı (yaklaşık {1} token) gönderir."
 
+msgid "Sensitive"
+msgstr "Hassas"
+
+msgid "Sensitive values are encrypted and cannot be revealed in the UI after saving."
+msgstr "Hassas değerler şifrelenir ve kaydedildikten sonra gösterilemez."
+
 msgid "Sent"
 msgstr "Gönderildi"
 
@@ -18049,9 +18228,6 @@ msgstr "Oturumlar"
 msgid "Sessions · top {0} by cost"
 msgstr "Oturumlar · maliyete göre ilk {0}"
 
-msgid "Set"
-msgstr "Ayarlandı"
-
 msgid "Set a notification schedule"
 msgstr "Bildirim programı ayarla"
 
@@ -18093,6 +18269,9 @@ msgstr "SSH ile host kur"
 
 msgid "Set up an automation"
 msgstr "Bir otomasyon kur"
+
+msgid "Set up Environment"
+msgstr "Ortamı kur"
 
 msgid "Set up once"
 msgstr "Bir kez kurun"
@@ -18489,6 +18668,9 @@ msgstr "Bir kez oturum açın. Paradev bağlantıyı korur."
 msgid "Sign in to {0}"
 msgstr "{0} kuruluşunda oturum açın"
 
+msgid "Sign in to {label}"
+msgstr "{label} ile oturum aç"
+
 msgid "Sign in to change your organization's plugins."
 msgstr "Kuruluşunuzun eklentilerini değiştirmek için oturum açın."
 
@@ -18584,6 +18766,9 @@ msgstr "ChatGPT'ye giriş yapıldı"
 msgid "Signed in to ChatGPT as {connectedAs}"
 msgstr "ChatGPT'ye {connectedAs} olarak giriş yapıldı"
 
+msgid "Signed in, but {label} did not restart."
+msgstr "Oturum açıldı ancak {label} yeniden başlamadı."
+
 msgid "Signed out"
 msgstr "Oturum kapatıldı"
 
@@ -18592,6 +18777,9 @@ msgstr "Oturum açılmış siteler"
 
 msgid "Signing in..."
 msgstr "Oturum açılıyor..."
+
+msgid "Signing in…"
+msgstr "Oturum açılıyor…"
 
 msgid "Signup works. The welcome screen loads and the console is clean."
 msgstr "Kayıt çalışıyor. Hoş geldiniz ekranı yükleniyor ve konsol temiz."
@@ -18616,6 +18804,9 @@ msgstr "Güncellemeyi simüle et: hazır"
 
 msgid "Simulator"
 msgstr "Simülatör"
+
+msgid "Simulator starts when the workspace wakes up"
+msgstr "Simülatör, çalışma alanı uyandığında başlar"
 
 msgid "Since 2025"
 msgstr "2025'ten beri"
@@ -18644,9 +18835,6 @@ msgstr "Altı fabrika otonomi düzeyi"
 msgid "Six levels of factory autonomy, the gates between them, and our forecast for how far 2026 gets us. Written down now so you can grade us later."
 msgstr "Altı fabrika otonomi düzeyi, aralarındaki eşikler ve 2026'nın bizi ne kadar ileri götüreceğine dair öngörümüz. Sonradan bizi notlandırabilesiniz diye şimdi yazıldı."
 
-msgid "size"
-msgstr "Boyut"
-
 msgid "Size"
 msgstr "Boyut"
 
@@ -18670,6 +18858,9 @@ msgstr "Ten Rengi"
 
 msgid "Skip"
 msgstr "Atla"
+
+msgid "Skip & save"
+msgstr "Atla ve kaydet"
 
 msgid "Skip All"
 msgstr "Tümünü atla"
@@ -19070,6 +19261,9 @@ msgstr "Yeni sohbet başlat"
 
 msgid "Start a session"
 msgstr "Bir oturum başlat"
+
+msgid "Start agent"
+msgstr "Ajanı başlat"
 
 msgid "Start agents on events or a schedule"
 msgstr "Ajanları olaylarla veya zamanlamayla başlatın"
@@ -19831,6 +20025,9 @@ msgstr "Terminal oturumu sonlandırıldı"
 
 msgid "Terminal sessions"
 msgstr "Terminal oturumları"
+
+msgid "Terminal starts when the workspace wakes up"
+msgstr "Terminal, çalışma alanı uyandığında başlar"
 
 msgid "Terminal theme color-palette preview"
 msgstr "Terminal teması renk paleti önizlemesi"
@@ -21207,6 +21404,9 @@ msgstr "Farklı bir arama terimi veya başka bir yer deneyin."
 msgid "Try again"
 msgstr "Yeniden dene"
 
+msgid "Try again, or close this and press Continue in the chat."
+msgstr "Tekrar deneyin ya da bunu kapatıp sohbette Devam'a basın."
+
 msgid "Try again, or restart the host service from the Paradev tray menu."
 msgstr "Tekrar deneyin veya sistem tepsisindeki Paradev menüsünden ana makine hizmetini yeniden başlatın."
 
@@ -21264,6 +21464,10 @@ msgstr "Dosyaları değiştiği için kapatıldı"
 msgid "Two Hands"
 msgstr "İki el"
 
+msgid "Type"
+msgstr "Tür"
+
+msgctxt "sort order"
 msgid "Type"
 msgstr "Tür"
 
@@ -21640,6 +21844,9 @@ msgstr "Her iki bilgisayardaki host hizmetini güncelleyip yeniden deneyin."
 msgid "Update the host service on this device and try again."
 msgstr "Bu cihazdaki host hizmetini güncelleyip yeniden deneyin."
 
+msgid "Update the value for <0>{key}</0>"
+msgstr "<0>{key}</0> değerini güncelleyin"
+
 msgid "Update this host to message subagents"
 msgstr "Alt ajanlara mesaj göndermek için bu ana makineyi güncelleyin"
 
@@ -21655,6 +21862,9 @@ msgstr "{0} güncellendi"
 
 msgid "Updated {date}"
 msgstr "Güncelleme: {date}"
+
+msgid "Updated {key}"
+msgstr "{key} güncellendi"
 
 msgid "Updated {updatedRelative}"
 msgstr "Güncelleme {updatedRelative}"
@@ -21828,6 +22038,12 @@ msgstr "Paradev API'yi çağırırken bunu kullanın."
 msgid "Use voice transcription and push-to-talk features."
 msgstr "Sesli yazıya dökme ve bas-konuş özelliklerini kullanın."
 
+msgid "Use your ChatGPT plan."
+msgstr "ChatGPT planınızı kullanın."
+
+msgid "Use your Claude Pro or Max plan."
+msgstr "Claude Pro veya Max planınızı kullanın."
+
 msgid "Used"
 msgstr "Kullanılan"
 
@@ -21873,6 +22089,9 @@ msgstr "kullanıcı@host, ssh://kullanıcı@host:2222 veya bir ssh yapılandırm
 
 msgid "v2ProjectId does not match the workspace's project"
 msgstr "v2ProjectId, çalışma alanının projesiyle eşleşmiyor"
+
+msgid "Value"
+msgstr "Değer"
 
 msgid "Variables"
 msgstr "Değişkenler"
@@ -22076,6 +22295,9 @@ msgstr "Etkinlik verileri bekleniyor"
 msgid "Waiting for approval. Keep this dialog open."
 msgstr "Onay bekleniyor. Bu pencereyi açık tutun."
 
+msgid "Waiting for approval…"
+msgstr "Onay bekleniyor…"
+
 msgid "Waiting for Checks"
 msgstr "Kontroller bekleniyor"
 
@@ -22132,6 +22354,9 @@ msgstr "Yönlendirme ve açma-kapama"
 
 msgid "We build in public, so you can see how we work before you talk to us."
 msgstr "Açıkta geliştiriyoruz; bizimle konuşmadan önce nasıl çalıştığımızı görebilirsiniz."
+
+msgid "We check it with the provider before we save it."
+msgstr "Kaydetmeden önce sağlayıcıyla kontrol ediyoruz."
 
 msgid "We couldn't charge {amountDue}. Update your payment method to keep this plan."
 msgstr "{amountDue} tutarını tahsil edemedik. Bu planı sürdürmek için ödeme yönteminizi güncelleyin."
@@ -22867,6 +23092,9 @@ msgstr "Bu terminale erişiminiz yok."
 msgid "You don't have permission to remove this member"
 msgstr "Bu üyeyi kaldırma izniniz yok"
 
+msgid "You have unsaved environment variables. Are you sure you want to close?"
+msgstr "Kaydedilmemiş ortam değişkenleriniz var. Kapatmak istediğinizden emin misiniz?"
+
 msgid "You install and connect once per account."
 msgstr "Kurulumu ve bağlantıyı hesap başına bir kez yaparsınız."
 
@@ -22970,6 +23198,9 @@ msgstr "Değişiklikleriniz"
 msgid "Your changes will be lost if you don't save them."
 msgstr "Kaydetmezseniz değişiklikleriniz kaybolur."
 
+msgid "Your chat history stays. Only the agent restarts."
+msgstr "Sohbet geçmişiniz korunur. Yalnızca ajan yeniden başlar."
+
 msgid "Your cloud workspaces will no longer be able to reach this host."
 msgstr "Bulut çalışma alanlarınız artık bu host'a erişemeyecek."
 
@@ -22997,6 +23228,9 @@ msgstr "GitHub bağlantın oturum açtığın hesaptan gelir, bu yüzden doğrul
 
 msgid "Your last payment failed. Update your payment method to keep Pro."
 msgstr "Son ödemeniz başarısız oldu. Pro'yu sürdürmek için ödeme yönteminizi güncelleyin."
+
+msgid "Your model provider stopped this request because the account reached its usage or spend limit. Wait for the limit to reset, raise it with your provider, or switch to another account in Usage settings."
+msgstr "Hesap kullanım veya harcama sınırına ulaştığı için model sağlayıcınız bu isteği durdurdu. Sınırın sıfırlanmasını bekleyin, sağlayıcınızdan sınırı yükseltin veya Kullanım ayarları'ndan başka bir hesaba geçin."
 
 msgid "Your name"
 msgstr "Adınız"

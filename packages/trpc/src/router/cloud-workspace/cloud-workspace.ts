@@ -402,8 +402,10 @@ export const cloudWorkspaceRouter = {
 				typedPrompt: z.string().max(20000).optional(),
 				/** Tasks the composer linked; each must be in this organization. */
 				taskIds: z.array(z.string().uuid()).max(10).optional(),
-				/** A size the organization offers (see `machineSizes`); omitted = its default. */
+				/** A size the organization offers (see `machineSizes`); omitted = the environment's size, else the organization's default. */
 				machineSize: z.enum(MACHINE_SIZES).optional(),
+				/** The caller's own tags, as `setTags` files them. */
+				tags: workspaceTagsInputSchema.optional(),
 				/**
 				 * A workspace that moves into the new one, in place of an agent:
 				 * the move `workspaceMove.begin` recorded. The new workspace starts
@@ -464,6 +466,7 @@ export const cloudWorkspaceRouter = {
 				taskIds: input.taskIds,
 				attachmentFileIds: input.attachmentFileIds,
 				machineSize: input.machineSize,
+				tags: input.tags,
 				chat: !!input.agent && (await acpChatEnabled(ctx.principal.userId)),
 				...(input.agent
 					? {
@@ -519,7 +522,7 @@ export const cloudWorkspaceRouter = {
 					? { userId: creator.id, name: creator.name, image: creator.image }
 					: null,
 				presence: NO_PRESENCE,
-				tags: [] as string[],
+				tags: input.tags ?? [],
 				/** Chats of a moving workspace that could not move, and stay where they were. */
 				skippedChats,
 			};

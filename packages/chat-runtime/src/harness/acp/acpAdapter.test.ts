@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from "bun:test";
+import { describe, expect, it, jest, spyOn } from "bun:test";
 import { spawn } from "node:child_process";
 import type { ChatSelections } from "@superset/chat/core";
 import type { Item } from "@superset/chat/protocol";
@@ -46,6 +46,8 @@ class FakeAcpAgent {
 	newSessionConfigOptions: Array<Record<string, unknown>> | null = null;
 	/** v1's session/new `modes` block; v2 agents report the mode as a config option. */
 	newSessionModes: Record<string, unknown> | null = null;
+	/** Refuse session/new with this message. */
+	newSessionError: string | null = null;
 	/** Reported while a session loads, as an agent restoring its saved options does. */
 	loadConfigOptions: Array<Record<string, unknown>> | null = null;
 	/** Hold mode and option answers until `releaseSelections`. */
@@ -340,6 +342,12 @@ class FakeAcpAgent {
 							? { sessionCapabilities: this.sessionCapabilities }
 							: {}),
 					},
+				});
+			} else if (frame.method === "session/new" && this.newSessionError) {
+				this.deliver({
+					jsonrpc: "2.0",
+					id: frame.id,
+					error: { code: -32000, message: this.newSessionError },
 				});
 			} else if (frame.method === "session/new") {
 				this.respond(frame.id as number, {
@@ -5937,6 +5945,26 @@ describe("AcpAdapter config options", () => {
 		await adapter.dispose();
 	});
 
+	it("warns when the agent lists no options in time to take the start effort", async () => {
+		const warn = spyOn(console, "warn").mockImplementation(() => {});
+		const agent = new FakeAcpAgent();
+		agent.protocolVersion = 1;
+		const { adapter } = startAdapter(
+			agent,
+			undefined,
+			{ effortId: "high" },
+			{ startOptionsGraceMs: 1 },
+		);
+
+		expect(await adapter.startSelections()).toEqual({});
+		expect(warn).toHaveBeenCalledWith(
+			'[acp] the agent did not take reasoning effort "high"; it runs at its default',
+		);
+
+		warn.mockRestore();
+		await adapter.dispose();
+	});
+
 	it("leaves the model alone when the start model is not offered", async () => {
 		const agent = new FakeAcpAgent();
 		agent.protocolVersion = 1;
@@ -6483,6 +6511,30 @@ describe("AcpAdapter when the agent fails", () => {
 			detail: "POST /v1/messages 401",
 			loginCommand: "claude auth login",
 		});
+
+		await adapter.dispose();
+	});
+
+	it("names this agent's own login when it cannot open a session signed out", async () => {
+		const agent = new FakeAcpAgent();
+		agent.newSessionError = "Authentication required";
+		const { adapter, events } = startAdapter(
+			agent,
+			undefined,
+			{},
+			{
+				launch: async () => ({ command: "fake", loginCommand: "codex login" }),
+			},
+		);
+		await flush();
+
+		const notice = itemsOf(events).find(
+			(item) => item.kind === "notice" && item.noticeKind === "error",
+		);
+		expect(notice?.kind === "notice" && notice.text).toContain(
+			"Run `codex login` in a terminal",
+		);
+		expect(JSON.stringify(notice)).not.toContain("claude");
 
 		await adapter.dispose();
 	});
