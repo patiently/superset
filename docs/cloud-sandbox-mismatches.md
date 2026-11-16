@@ -31,6 +31,16 @@ the sandbox credential, and the sandbox scope refuses any procedure missing from
 ask whether to sync` every 5 minutes and stored no chats. We added it to the list. Any new procedure
 host-service calls on a box must go in that list too.
 
+Automation reads were allowed while updates were blocked by the same list. Cloud workspaces now
+allow `automation.update`, `setPrompt`, `setGroup`, and `setEnabled`, so the CLI can edit automation
+settings, prompts, groups, and enabled state. Existing organization and automation permission checks
+still apply. Writes also check the resolved target against the relay's cloud workspace access
+policy: the creator must own the host and its owner must have enabled cloud workspace access. A
+cloud workspace cannot leave the host unspecified, since dispatch could then select a closed host.
+Prompt, group, and enabled-state updates check the existing target too, and their writes must
+still match that target so a concurrent retarget cannot bypass the check. Signed-in clients keep
+their existing access. This is an API change; existing boxes do not need a new host-service bundle.
+
 **The workspace's name belongs to the cloud row, not the sandbox.** For a local
 or remote host, `host.db` owns the workspace because the user created it there.
 A cloud workspace is created, named (by the API's namer) and listed by the
@@ -533,6 +543,26 @@ either: gate a new host feature on the version the box reports
 (`health.check`), the same way as a remote host. The chat attachment parts
 floor (`ATTACHMENT_PARTS_MIN_HOST_VERSION`) works like this.
 
+**A machine someone owns is visibly on or off; a box falls asleep without
+telling anyone.** A session ends at its idle timeout, and Vercel sends no
+webhook for that or for a crash. The client cannot ask either: one
+provider read per row per client costs a `Sandbox.get` and a ticket mint, and
+an org-wide `Sandbox.list` pages 50 boxes at a time in creation order.
+**What we did:** every path that starts, extends or stops a box records when
+its session ends (`cloud_workspaces.sandbox_expires_at`) and which Vercel
+session it is (`sandbox_session_id`), and moves the row between `awake` and
+`asleep`; our own stops write `asleep` at once. A QStash watch runs just after
+each expiry, confirms the stop with one provider read, writes `asleep` and
+nudges clients; an extension only moves the expiry, which the watch follows. A
+stop we did not cause (about 0.5% of sessions end `failed`), or a lost watch,
+is corrected by the 30-minute reconcile. Every write is decided from a Vercel
+read that can be stale by the time it lands, so an `asleep` write needs the row
+to still record the session that stopped, and an `awake` write flips an asleep
+row only for a new session: Vercel never resumes a session, it starts a new
+one. Opening an `asleep` workspace wakes it like an `awake` one
+(`isLiveCloudWorkspaceStatus`). Code: `sandbox-sleep.ts`, `sandbox-expiry.ts`;
+model: `.agents/skills/verify-sandbox-asleep`.
+
 **A tag-filtered sandbox list is not sorted by status time. Fixed.** The usage
 reconciler scans by `statusUpdatedAt` and stops at entries older than the maximum
 session length. Vercel's server-side tag filter uses creation-order pagination
@@ -546,6 +576,21 @@ for a cloud workspace deleted the row *inside* the sandbox and left the
 sandbox running (and billing) plus the `cloud_workspaces` row intact — the
 workspace reappeared on the next refetch. **Fixed:** `useDestroyWorkspace`
 sends a cloud workspace to `cloudWorkspace.delete`.
+
+**The boot-started Run command was invisible. Fixed.** Locally, Run starts the
+default terminal when the person asks for it. A box starts it at boot, so the
+workspace opens with its dev server up. It used to run as a detached bash beside
+`[setup]`, with no terminal: the port scanner, which only attributes processes
+under a terminal session, never saw its ports, so nothing forwarded them, and
+the desktop's Run started a second copy (`next dev` then fails with "Another
+next dev server is already running"). `runSandboxStartHook` now starts the
+default terminal in a terminal session once setup ends, records its id under
+`/run/superset`, and on startup re-attaches that session (or starts it, if the
+restart lost setup's exit). `sandbox.status` reports it as `runTerminalId`
+while it is live. The desktop reads it when the workspace opens and again when
+Run is pressed, and adopts a running one instead of starting a second copy
+(SUPER-3421). There is no push for it, so a workspace open while setup ends
+shows Run until it is pressed.
 
 **Archive ran no teardown.** Locally, deleting a workspace runs the repository's
 teardown before the worktree goes. A cloud archive only stopped the box and

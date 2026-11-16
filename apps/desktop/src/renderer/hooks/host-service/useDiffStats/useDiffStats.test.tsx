@@ -95,6 +95,7 @@ function renderDiffStats(hostUrl: string, options?: { live?: boolean }) {
 							isReady: true,
 							agentCredentialsChangedWorkspaceId: null,
 							usageRefusal: null,
+							wakeOpenWorkspace: async () => {},
 						}}
 					>
 						{children}

@@ -108,12 +108,14 @@ export async function runInCloud(
 		launch: { agent: automation.agent, prompt, automationRunId: runId },
 		chat,
 		tags: automation.tags,
-		machineSize: (
-			await resolveMachineSize(
-				automation.organizationId,
-				automation.machineSize,
-			)
-		)?.name,
+		machineSize: automation.machineSize
+			? (
+					await resolveMachineSize(
+						automation.organizationId,
+						automation.machineSize,
+					)
+				)?.name
+			: undefined,
 		beforeProvision: async (workspaceId) => {
 			placed({ cloudWorkspaceId: workspaceId });
 			const bound = await db
@@ -257,7 +259,7 @@ async function reachablePin(
 	const row = await db.query.cloudWorkspaces.findFirst({
 		where: eq(cloudWorkspaces.id, cloudWorkspaceId),
 	});
-	if (!row || row.status === "deleted" || row.status === "failed") {
+	if (!row || row.status === "archived" || row.status === "failed") {
 		return null;
 	}
 	if (row.status === "provisioning") {
