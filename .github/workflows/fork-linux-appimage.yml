@@ -129,6 +129,12 @@ jobs:
           set -euo pipefail
           ls -la release
           ASSET="superset-${VERSION}-x86_64.AppImage"
+          # Upstream names the Linux build paradev-* since #10123; the sandbox
+          # launcher downloads superset-<VERSION>-x86_64.AppImage.
+          PARADEV="paradev-${VERSION}-x86_64.AppImage"
+          if [ ! -f "release/$ASSET" ] && [ -f "release/$PARADEV" ]; then
+            cp "release/$PARADEV" "release/$ASSET"
+          fi
           test -f "release/$ASSET" || {
             echo "::error::Expected release/$ASSET"
             exit 1
